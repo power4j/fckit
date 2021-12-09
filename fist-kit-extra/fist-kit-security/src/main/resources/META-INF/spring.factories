@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.power4j.fist.autoconfigure.security.SecurityAutoConfiguration
