@@ -358,6 +358,9 @@
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
         <version>${git-commit-id-plugin.version}</version>
+        <configuration>
+          <offline>true</offline>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>io.spring.javaformat</groupId>
