@@ -57,15 +57,15 @@ public class BearTokenAuthenticationConverterFilter implements WebFilter {
 		if (log.isTraceEnabled()) {
 			log.trace("No authentication : {}", exchange.getRequest().getURI().toString());
 		}
-		return chain.filter(exchange);
+		return Mono.empty();
 	}
 
 	private Mono<Void> handle(SecurityContext context, ServerWebExchange exchange, WebFilterChain chain) {
 		final Authentication authentication = context.getAuthentication();
 		if (authentication != null) {
-			log.debug("Authentication : {},request = {}", authentication.getClass().getSimpleName(),
-					exchange.getRequest().getURI().toString());
 			if (authentication instanceof BearerTokenAuthentication) {
+				log.debug("Authentication : {},request = {}", authentication.getClass().getSimpleName(),
+						exchange.getRequest().getURI().toString());
 				BearerTokenAuthentication tokenAuthentication = (BearerTokenAuthentication) authentication;
 				// @formatter:off
 				String inner = extractor
