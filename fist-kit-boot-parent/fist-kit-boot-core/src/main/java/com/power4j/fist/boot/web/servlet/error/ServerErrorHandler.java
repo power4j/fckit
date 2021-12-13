@@ -85,9 +85,10 @@ public class ServerErrorHandler extends AbstractExceptionHandler {
 	@ExceptionHandler(SQLException.class)
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	public Result<Object> handleException(SQLException e) {
-		log.error("数据库访问异常", e);
+		log.error("数据库访问异常,vendorCode = {}", e.getErrorCode(), e);
 		doNotify(e);
-		return Results.serverError(String.format("数据库访问异常(%s),请联系管理员", e.getClass().getSimpleName()), null);
+		return Results.serverError(String.format("数据库访问异常(%s),请联系管理员", e.getClass().getSimpleName()),
+				"vendorCode " + e.getErrorCode());
 	}
 
 	@ExceptionHandler(Throwable.class)

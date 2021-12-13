@@ -73,6 +73,16 @@ public class Results {
 	}
 
 	/**
+	 * 请求参数错误 (二级宏观错误 A0400)
+	 * @param message 错误消息
+	 * @param hint 提示
+	 * @return Result 对象
+	 */
+	public <T> Result<T> requestParameterError(@Nullable String message, @Nullable String hint) {
+		return resultWithHint(ErrorCode.A0400, message, null, hint);
+	}
+
+	/**
 	 * 系统执行出错 (一级宏观错误 B0001)
 	 * @param message 错误消息
 	 * @param hint 提示
@@ -100,16 +110,6 @@ public class Results {
 	 */
 	public <T> Result<T> rpcError(@Nullable String message, @Nullable String hint) {
 		return resultWithHint(ErrorCode.C0110, message, null, hint);
-	}
-
-	/**
-	 * 请求参数错误 (二级宏观错误 A0400)
-	 * @param message 错误消息
-	 * @param hint 提示
-	 * @return Result 对象
-	 */
-	public <T> Result<T> requestParameterError(@Nullable String message, @Nullable String hint) {
-		return resultWithHint(ErrorCode.A0400, message, null, hint);
 	}
 
 	// ~ 安全相关
