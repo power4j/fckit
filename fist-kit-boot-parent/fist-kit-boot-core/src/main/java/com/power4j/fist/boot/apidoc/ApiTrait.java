@@ -40,7 +40,7 @@ public @interface ApiTrait {
 	String resourceId() default "";
 
 	/**
-	 * 管理级别
+	 * 管理级别,仅对SASS环境有效
 	 */
 	ApiLevel level() default ApiLevel.TN;
 

@@ -16,6 +16,7 @@
 
 package com.power4j.fist.data.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.util.Assert;
 
 /**
@@ -48,6 +49,7 @@ public interface Pageable {
 	 * @param sort 默认值，不能是null
 	 * @return Sort object
 	 */
+	@JsonIgnore
 	default Sort getSortOr(Sort sort) {
 
 		Assert.notNull(sort, "Fallback Sort must not be null!");
@@ -59,18 +61,21 @@ public interface Pageable {
 	 * 翻页，下一页
 	 * @return Pageable
 	 */
+	@JsonIgnore
 	Pageable next();
 
 	/**
 	 * 翻页，前一页或者第一页
 	 * @return Pageable
 	 */
+	@JsonIgnore
 	Pageable previousOrFirst();
 
 	/**
 	 * 翻页，第一页
 	 * @return Pageable
 	 */
+	@JsonIgnore
 	Pageable first();
 
 	/**
@@ -78,6 +83,7 @@ public interface Pageable {
 	 * @param pageNumber 页码
 	 * @return Pageable
 	 */
+	@JsonIgnore
 	Pageable at(int pageNumber);
 
 	/**

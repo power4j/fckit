@@ -16,8 +16,8 @@
 
 package com.power4j.fist.boot.web;
 
+import com.power4j.fist.boot.web.model.PageParameter;
 import com.power4j.fist.data.domain.PageRequest;
-import com.power4j.fist.data.domain.Pageable;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -29,14 +29,14 @@ import java.util.Objects;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/10/9
+ * @date 2021/12/15
  * @since 1.0
  */
-public class PageRequestResolver extends AbstractPageRequestResolver {
+public class PageParameterResolver extends AbstractPageRequestResolver {
 
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
-		return parameter.getParameterType().isAssignableFrom(Pageable.class);
+		return parameter.getParameterType().isAssignableFrom(PageParameter.class);
 	}
 
 	@Nullable
@@ -50,8 +50,7 @@ public class PageRequestResolver extends AbstractPageRequestResolver {
 		int page = parseInt(request.getParameter(getPageNumberKey()), PageRequest.FIRST_PAGE);
 		int size = parseInt(request.getParameter(getPageSizeKey()), PageRequest.DEFAULT_PAGE_SIZE);
 
-		// TODO : 支持排序
-		return PageRequest.of(page, size);
+		return PageParameter.of(page, size);
 	}
 
 }

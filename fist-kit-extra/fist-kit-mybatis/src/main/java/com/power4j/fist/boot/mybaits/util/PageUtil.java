@@ -19,6 +19,7 @@ package com.power4j.fist.boot.mybaits.util;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.power4j.fist.boot.web.model.PageParameter;
 import com.power4j.fist.data.domain.PageImpl;
 import com.power4j.fist.data.domain.PageRequest;
 import com.power4j.fist.data.domain.Pageable;
@@ -36,6 +37,16 @@ import java.util.stream.Collectors;
  */
 @UtilityClass
 public class PageUtil {
+
+	// ~ Web
+	// ===================================================================================================
+
+	public <T> Page<T> toPage(PageParameter parameter) {
+		return new Page<>(parameter.getPageNumber() + 1, parameter.getPageSize());
+	}
+
+	// ~ Domain
+	// ===================================================================================================
 
 	public <T> Page<T> toPage(Pageable pageable) {
 		Page<T> page = new Page<>(pageable.getPageNumber() + 1, pageable.getPageSize());

@@ -14,30 +14,45 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.autoconfigure.data;
+package com.power4j.fist.boot.web;
 
-import com.power4j.fist.boot.web.PageParameterResolver;
-import com.power4j.fist.boot.web.PageRequestResolver;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.context.annotation.Configuration;
+import lombok.Getter;
+import org.springframework.lang.Nullable;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/1
+ * @date 2021/12/15
  * @since 1.0
  */
-@Configuration
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-public class WebMvcConfiguration implements WebMvcConfigurer {
+public abstract class AbstractPageRequestResolver implements HandlerMethodArgumentResolver {
 
-	@Override
-	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-		resolvers.add(new PageRequestResolver());
-		resolvers.add(new PageParameterResolver());
+	@Getter
+	private String pageNumberKey = "current";
+
+	@Getter
+	private String pageSizeKey = "size";
+
+	public void setPageNumberKey(String pageNumberKey) {
+		this.pageNumberKey = pageNumberKey;
+	}
+
+	public void setPageSizeKey(String pageSizeKey) {
+		this.pageSizeKey = pageSizeKey;
+	}
+
+	protected int parseInt(@Nullable String str, int defaultVal) {
+		if (Objects.isNull(str) || str.isEmpty()) {
+			return defaultVal;
+		}
+		try {
+			return Integer.parseInt(str);
+		}
+		catch (NumberFormatException e) {
+			return defaultVal;
+		}
 	}
 
 }
