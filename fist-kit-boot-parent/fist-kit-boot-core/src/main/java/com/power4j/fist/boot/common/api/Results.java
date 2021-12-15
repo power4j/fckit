@@ -25,6 +25,7 @@ import org.springframework.lang.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -151,6 +152,15 @@ public class Results {
 		return requiredData(data, null);
 	}
 
+	/**
+	 * 包装业务数据
+	 * @param opt Optional包装
+	 * @param <T> 业务数据类型
+	 * @return data 为 null 返回错误码 A9900
+	 */
+	public <T> Result<T> requiredData(Optional<? extends T> opt) {
+		return requiredData(opt.orElse(null), null);
+	}
 	// ~ 异常处理
 	// ===================================================================================================
 
