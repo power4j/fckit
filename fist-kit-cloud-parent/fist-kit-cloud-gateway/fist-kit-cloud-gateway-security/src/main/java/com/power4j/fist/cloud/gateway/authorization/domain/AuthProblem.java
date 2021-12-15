@@ -76,6 +76,11 @@ public class AuthProblem {
 	public final static AuthProblem SKIP_AUTH = new AuthProblem(CODE_AUTH_PASS, "SKIP_AUTH");
 
 	/**
+	 * 安全模式放行
+	 */
+	public final static AuthProblem SAFE_MODE_PASS = new AuthProblem(CODE_AUTH_PASS, "SAFE_MODE_PASS");
+
+	/**
 	 * 鉴权正常结束
 	 */
 	public final static AuthProblem AUTH_END = new AuthProblem(CODE_AUTH_PASS, "AUTH_END");
@@ -124,6 +129,11 @@ public class AuthProblem {
 	 * 调用外部服务异常
 	 */
 	public final static AuthProblem RPC_EXCEPTION = new AuthProblem(10, "RPC_EXCEPTION");
+
+	/**
+	 * 安全模式放行
+	 */
+	public final static AuthProblem SAFE_MODE_DENIED = new AuthProblem(99, "SAFE_MODE_DENIED");
 
 	/**
 	 * 认证插件异常

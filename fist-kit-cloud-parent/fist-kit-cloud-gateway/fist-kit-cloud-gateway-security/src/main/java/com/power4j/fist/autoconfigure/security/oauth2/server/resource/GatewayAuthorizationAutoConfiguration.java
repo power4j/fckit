@@ -27,6 +27,7 @@ import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.LoadPermi
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.LoginAccessFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.PrepareAuthFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.PublicAccessFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.SafeModeFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.SkipAuthorizationFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.UpstreamLocateFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.UserPermissionFilter;
@@ -97,6 +98,14 @@ public class GatewayAuthorizationAutoConfiguration {
 		@Order(BASE_ORDER + 100)
 		public PrepareAuthFilter prepareAuthFilter() {
 			return new PrepareAuthFilter();
+		}
+
+		@Bean
+		@Order(BASE_ORDER + 110)
+		@ConditionalOnProperty(prefix = GlobalAuthorizationProperties.PROP_PREFIX, name = "safe-mode",
+				havingValue = "true")
+		public SafeModeFilter safeModeFilter() {
+			return new SafeModeFilter();
 		}
 
 		@Bean

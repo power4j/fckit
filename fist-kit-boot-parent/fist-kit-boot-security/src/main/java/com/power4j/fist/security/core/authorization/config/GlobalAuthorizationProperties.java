@@ -39,6 +39,11 @@ public class GlobalAuthorizationProperties {
 	private boolean enabled = true;
 
 	/**
+	 * 安全模式
+	 */
+	private boolean safeMode = false;
+
+	/**
 	 * 跳过鉴权的入站地址,支持ANT,比如 {@code '/api/**'}
 	 *
 	 */
