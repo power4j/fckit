@@ -18,7 +18,7 @@ package com.power4j.fist.security.oauth2.server.resource.reactive;
 
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
-import com.power4j.fist.cloud.gateway.authorization.filter.servlet.GatewayAuthFilterChain;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.GatewayAuthFilterChain;
 import com.power4j.fist.security.core.authentication.UserConverter;
 import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;

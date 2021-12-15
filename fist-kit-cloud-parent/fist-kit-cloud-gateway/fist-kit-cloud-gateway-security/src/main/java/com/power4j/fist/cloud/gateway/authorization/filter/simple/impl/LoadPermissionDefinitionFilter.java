@@ -14,13 +14,13 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.authorization.filter.servlet.impl;
+package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
 
 import com.power4j.fist.boot.common.matcher.PathMatcher;
 import com.power4j.fist.cloud.gateway.authorization.domain.ApiProxy;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
-import com.power4j.fist.cloud.gateway.authorization.filter.servlet.AbstractAuthFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import com.power4j.fist.security.core.authorization.service.reactive.PermissionDefinitionService;
 import lombok.RequiredArgsConstructor;

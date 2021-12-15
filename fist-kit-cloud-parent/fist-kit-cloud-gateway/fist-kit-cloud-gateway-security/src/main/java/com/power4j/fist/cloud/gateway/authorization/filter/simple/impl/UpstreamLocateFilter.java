@@ -14,12 +14,12 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.authorization.filter.servlet.impl;
+package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
 
 import com.power4j.coca.kit.common.text.StringPool;
 import com.power4j.fist.cloud.gateway.authorization.domain.ApiProxy;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
-import com.power4j.fist.cloud.gateway.authorization.filter.servlet.AbstractAuthFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
 import com.power4j.fist.cloud.gateway.proxy.DefaultProxyResolver;
 import com.power4j.fist.cloud.gateway.proxy.ProxyResolver;
 import com.power4j.fist.cloud.gateway.proxy.RouteInfo;

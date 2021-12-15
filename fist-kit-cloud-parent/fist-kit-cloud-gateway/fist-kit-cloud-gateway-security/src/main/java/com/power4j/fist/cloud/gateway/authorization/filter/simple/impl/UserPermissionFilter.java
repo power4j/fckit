@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.authorization.filter.servlet.impl;
+package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
 
 import cn.hutool.core.lang.TypeReference;
 import com.power4j.fist.boot.security.core.SecurityConstant;
@@ -23,7 +23,7 @@ import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthUser;
 import com.power4j.fist.cloud.gateway.authorization.domain.ResourceLevel;
-import com.power4j.fist.cloud.gateway.authorization.filter.servlet.AbstractAuthFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
 import com.power4j.fist.security.core.authorization.config.GlobalAuthorizationProperties;
 import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;

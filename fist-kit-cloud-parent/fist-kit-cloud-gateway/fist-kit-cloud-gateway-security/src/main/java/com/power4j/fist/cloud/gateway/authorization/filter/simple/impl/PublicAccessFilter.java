@@ -14,11 +14,11 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.authorization.filter.servlet.impl;
+package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
 
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
-import com.power4j.fist.cloud.gateway.authorization.filter.servlet.AbstractAuthFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,17 +28,17 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0
  */
 @Slf4j
-public class InternalAccessFilter extends AbstractAuthFilter {
+public class PublicAccessFilter extends AbstractAuthFilter {
 
 	@Override
 	protected boolean process(AuthContext ctx) {
 		final PermissionDefinition permissionDefinition = ctx.getPermissionDefinition();
 
-		if (permissionDefinition != null && permissionDefinition.isInternalAccess()) {
+		if (permissionDefinition != null && permissionDefinition.isPublicAccess()) {
 			if (log.isTraceEnabled()) {
-				log.trace("internal access rule matches. => {}", ctx.getInbound().shortDescription());
+				log.trace("public access rule matches. => {}", ctx.getInbound().shortDescription());
 			}
-			return exitChain(ctx, AuthProblem.INTERNAL_ACCESS_DENIED);
+			return exitChain(ctx, AuthProblem.PUB_ACCESS);
 		}
 		return true;
 	}

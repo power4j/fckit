@@ -14,16 +14,20 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.authorization.filter.servlet;
+package com.power4j.fist.cloud.gateway.authorization.filter.simple;
 
-import com.power4j.coca.kit.common.lang.Chain;
+import com.power4j.coca.kit.common.lang.ChainWorker;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 
 /**
+ * 注意事项: 终结处理链必须更新 AuthProblem
+ *
  * @author CJ (power4j@outlook.com)
  * @date 2021/6/23
  * @since 1.0
  */
-public interface GatewayAuthFilterChain extends Chain<AuthContext> {
+public interface GatewayAuthFilter extends ChainWorker<AuthContext, GatewayAuthFilterChain> {
+
+	int BASE_ORDER = 10000;
 
 }

@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.authorization.filter.servlet;
+package com.power4j.fist.cloud.gateway.authorization.filter.simple;
 
 import com.power4j.coca.kit.common.exception.RuntimeFaultException;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
