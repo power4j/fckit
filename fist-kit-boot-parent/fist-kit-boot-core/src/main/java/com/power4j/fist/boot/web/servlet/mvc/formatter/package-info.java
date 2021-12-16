@@ -14,22 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.autoconfigure.common;
-
-import com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration;
-import com.power4j.fist.boot.common.jackson.JacksonConfig;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/10/14
+ * @date 2021/6/2
  * @since 1.0
  */
-@Slf4j
-@Configuration(proxyBeanMethods = false)
-@Import({ MessageConfiguration.class, JacksonConfig.class })
-public class CommonConfiguration {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.boot.web.servlet.mvc.formatter;
 
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;

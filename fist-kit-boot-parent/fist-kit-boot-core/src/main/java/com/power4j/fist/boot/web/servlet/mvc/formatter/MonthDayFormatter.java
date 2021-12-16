@@ -14,22 +14,32 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.autoconfigure.common;
+package com.power4j.fist.boot.web.servlet.mvc.formatter;
 
-import com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration;
-import com.power4j.fist.boot.common.jackson.JacksonConfig;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.format.Formatter;
+
+import java.text.ParseException;
+import java.time.MonthDay;
+import java.util.Locale;
 
 /**
+ * MonthDay 解析
+ * <p>
+ *
  * @author CJ (power4j@outlook.com)
- * @date 2021/10/14
+ * @date 2020-11-17
  * @since 1.0
  */
-@Slf4j
-@Configuration(proxyBeanMethods = false)
-@Import({ MessageConfiguration.class, JacksonConfig.class })
-public class CommonConfiguration {
+public class MonthDayFormatter implements Formatter<MonthDay> {
+
+	@Override
+	public MonthDay parse(String text, Locale locale) throws ParseException {
+		return DateTimeParser.parseMonthDay(text).orElseThrow(() -> new ParseException(text, 0));
+	}
+
+	@Override
+	public String print(MonthDay monthDay, Locale locale) {
+		return DateTimeParser.DEFAULT_MONTH_DAY_FORMATTER.format(monthDay);
+	}
 
 }

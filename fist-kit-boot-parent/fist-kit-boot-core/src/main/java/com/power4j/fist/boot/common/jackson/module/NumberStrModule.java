@@ -14,22 +14,27 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.autoconfigure.common;
+package com.power4j.fist.boot.common.jackson.module;
 
-import com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration;
-import com.power4j.fist.boot.common.jackson.JacksonConfig;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/10/14
+ * @date 2021/12/16
  * @since 1.0
  */
-@Slf4j
-@Configuration(proxyBeanMethods = false)
-@Import({ MessageConfiguration.class, JacksonConfig.class })
-public class CommonConfiguration {
+public class NumberStrModule extends SimpleModule {
+
+	public NumberStrModule() {
+		super(NumberStrModule.class.getName());
+		addSerializer(Long.class, ToStringSerializer.instance);
+		addSerializer(Long.TYPE, ToStringSerializer.instance);
+		addSerializer(BigInteger.class, ToStringSerializer.instance);
+		addSerializer(BigDecimal.class, ToStringSerializer.instance);
+	}
 
 }
