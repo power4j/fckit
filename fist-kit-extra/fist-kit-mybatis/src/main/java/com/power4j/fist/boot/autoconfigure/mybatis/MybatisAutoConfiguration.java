@@ -32,6 +32,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -79,8 +80,9 @@ public class MybatisAutoConfiguration {
 		return new AuditFiller(userInfoSupplier);
 	}
 
-	@Order(1000)
 	@Bean
+	@Order(1000)
+	@ConditionalOnProperty(prefix = TenantProperties.PROP_PREFIX, name = "enabled", havingValue = "true")
 	public TenantLineInnerInterceptor tenantLineInnerInterceptor() {
 		TenantLineInnerInterceptor innerInterceptor = new TenantLineInnerInterceptor();
 		innerInterceptor
