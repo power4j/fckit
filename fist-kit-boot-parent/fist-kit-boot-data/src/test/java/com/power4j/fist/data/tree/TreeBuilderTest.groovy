@@ -39,18 +39,18 @@ class TreeBuilderTest extends Specification {
 	// (101) (102)
 	//
 	List<OrgNodeIdx> links = GroovyTables.createListOf(OrgNodeIdx.class).fromTable {
-		ancestor  | descendant   | distance
-		0         | 0            | 0
-		1         | 1            | 0
-		2         | 2            | 0
-		101       | 101          | 0
-		102       | 102          | 0
-		0         | 1            | 1
-		0         | 2            | 1
-		1         | 101          | 1
-		1         | 102          | 1
-		0         | 101          | 2
-		0         | 102          | 2
+		ancestor   | descendant    | distance
+		0L         | 0L            | 0
+		1L         | 1L            | 0
+		2L         | 2L            | 0
+		101L       | 101L          | 0
+		102L       | 102L          | 0
+		0L         | 1L            | 1
+		0L         | 2L            | 1
+		1L         | 101L          | 1
+		1L         | 102L          | 1
+		0L         | 101L          | 2
+		0L         | 102L          | 2
 	}
 
 	TreeCustomizer<Long> customizer = new TreeCustomizer<Long>(){

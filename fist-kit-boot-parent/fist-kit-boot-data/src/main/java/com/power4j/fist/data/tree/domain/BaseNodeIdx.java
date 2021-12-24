@@ -23,11 +23,11 @@ package com.power4j.fist.data.tree.domain;
  * @date 2021/9/23
  * @since 1.0
  */
-public abstract class BaseNodeIdx<C extends BaseNodeIdx<C>> implements NodeIdx<Long, C> {
+public abstract class BaseNodeIdx<ID, C extends BaseNodeIdx<ID, C>> implements NodeIdx<ID, C> {
 
-	private Long ancestor;
+	private ID ancestor;
 
-	private Long descendant;
+	private ID descendant;
 
 	private Integer distance;
 
@@ -35,17 +35,17 @@ public abstract class BaseNodeIdx<C extends BaseNodeIdx<C>> implements NodeIdx<L
 
 	}
 
-	public BaseNodeIdx(Long ancestor, Long descendant, Integer distance) {
+	public BaseNodeIdx(ID ancestor, ID descendant, Integer distance) {
 		this.ancestor = ancestor;
 		this.descendant = descendant;
 		this.distance = distance;
 	}
 
-	public void setAncestor(Long ancestor) {
+	public void setAncestor(ID ancestor) {
 		this.ancestor = ancestor;
 	}
 
-	public void setDescendant(Long descendant) {
+	public void setDescendant(ID descendant) {
 		this.descendant = descendant;
 	}
 
@@ -54,12 +54,12 @@ public abstract class BaseNodeIdx<C extends BaseNodeIdx<C>> implements NodeIdx<L
 	}
 
 	@Override
-	public Long getAncestor() {
+	public ID getAncestor() {
 		return ancestor;
 	}
 
 	@Override
-	public Long getDescendant() {
+	public ID getDescendant() {
 		return descendant;
 	}
 

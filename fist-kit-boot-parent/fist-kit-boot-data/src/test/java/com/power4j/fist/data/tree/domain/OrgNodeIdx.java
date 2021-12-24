@@ -28,7 +28,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class OrgNodeIdx extends BaseNodeIdx<OrgNodeIdx> {
+public class OrgNodeIdx extends BaseNodeIdx<Long, OrgNodeIdx> {
 
 	@TableId(type = IdType.ASSIGN_ID)
 	private Long id;
