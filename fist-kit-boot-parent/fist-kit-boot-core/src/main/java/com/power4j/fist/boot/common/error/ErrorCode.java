@@ -100,11 +100,6 @@ public interface ErrorCode {
 	String A0311 = "A0311";
 
 	/**
-	 * 无权限使用 API
-	 */
-	String A0312 = "A0312";
-
-	/**
 	 * API Token 无效
 	 */
 	String A0321 = "A0321";
