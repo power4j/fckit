@@ -29,115 +29,86 @@ import java.util.Optional;
 public interface CrudRepository<T, ID> {
 
 	/**
-	 * Saves a given entity. Use the returned instance for further operations as the save
-	 * operation might have changed the entity instance completely.
-	 * @param entity must not be {@literal null}.
-	 * @return the saved entity; will never be {@literal null}.
-	 * @throws IllegalArgumentException in case the given {@literal entity} is
-	 * {@literal null}.
+	 * 保存
+	 * @param entity 实体
+	 * @return 返回保存后的实体
 	 */
 	T saveOne(T entity);
 
 	/**
-	 * Saves all given entities.
-	 * @param entities must not be {@literal null} nor must it contain {@literal null}.
-	 * @return the saved entities; will never be {@literal null}. The returned
-	 * {@literal Iterable} will have the same size as the {@literal Iterable} passed as an
-	 * argument.
-	 * @throws IllegalArgumentException in case the given {@link Iterable entities} or one
-	 * of its entities is {@literal null}.
+	 * 批量保存
+	 * @param entities 实体集合
+	 * @return 返回保存后的实体集合
 	 */
 	List<T> saveAll(Iterable<T> entities);
 
 	/**
-	 * Update a given entity. Use the returned instance for further operations as the save
-	 * operation might have changed the entity instance completely.
-	 * @param entity must not be {@literal null}.
-	 * @return the saved entity; will never be {@literal null}.
-	 * @throws IllegalArgumentException in case the given {@literal entity} is
-	 * {@literal null}.
+	 * 更新(根据ID)
+	 * @param entity 实体
+	 * @return 返回更新后的实体
 	 */
 	T updateOneById(T entity);
 
 	/**
-	 * Update all given entities.
-	 * @param entities must not be {@literal null} nor must it contain {@literal null}.
-	 * @return the saved entities; will never be {@literal null}. The returned
-	 * {@literal Iterable} will have the same size as the {@literal Iterable} passed as an
-	 * argument.
-	 * @throws IllegalArgumentException in case the given {@link Iterable entities} or one
-	 * of its entities is {@literal null}.
+	 * 批量更新(根据ID)
+	 * @param entities 实体集合
+	 * @return 返回更新后的实体集合
 	 */
 	List<T> updateAllById(Iterable<T> entities);
 
 	/**
-	 * Retrieves an entity by its id.
-	 * @param id must not be {@literal null}.
-	 * @return the entity with the given id or {@literal Optional#empty()} if none found.
-	 * @throws IllegalArgumentException if {@literal id} is {@literal null}.
+	 * 查询(根据ID)
+	 * @param id ID
+	 * @return Optional
 	 */
 	Optional<T> findOneById(ID id);
 
 	/**
-	 * Returns whether an entity with the given id exists.
-	 * @param id must not be {@literal null}.
-	 * @return {@literal true} if an entity with the given id exists, {@literal false}
-	 * otherwise.
-	 * @throws IllegalArgumentException if {@literal id} is {@literal null}.
+	 * 查询是否存在(根据ID)
+	 * @param id ID
+	 * @return true 表示存在
 	 */
 	boolean existsById(ID id);
 
 	/**
-	 * Returns all instances of the type.
-	 * @return all entities
+	 * 查询全部,<b>大表请注意！</b>
+	 * @return 实体集合
 	 */
 	List<T> findAll();
 
 	/**
-	 * Returns all instances of the type {@code T} with the given IDs.
-	 * <p>
-	 * If some or all ids are not found, no entities are returned for these IDs.
-	 * <p>
-	 * Note that the order of elements in the result is not guaranteed.
-	 * @param ids must not be {@literal null} nor contain any {@literal null} values.
-	 * @return guaranteed to be not {@literal null}. The size can be equal or less than
-	 * the number of given {@literal ids}.
-	 * @throws IllegalArgumentException in case the given {@link Iterable ids} or one of
-	 * its items is {@literal null}.
+	 * 批量查询(根据ID)
+	 * @param ids ID集合
+	 * @return 返回实体集合
 	 */
 	List<T> findAllById(Iterable<ID> ids);
 
 	/**
-	 * Returns the number of entities available.
-	 * @return the number of entities.
+	 * 统计数量
+	 * @return 返回全部实体的数量
 	 */
 	long countAll();
 
 	/**
-	 * Deletes the entity with the given id.
-	 * @param id must not be {@literal null}.
-	 * @throws IllegalArgumentException in case the given {@literal id} is {@literal null}
+	 * 删除(根据ID)
+	 * @param id ID
 	 */
 	void deleteOneById(ID id);
 
 	/**
-	 * Deletes a given entity.
-	 * @param entity must not be {@literal null}.
-	 * @throws IllegalArgumentException in case the given entity is {@literal null}.
+	 * 条件删除,传入的实体做为查询条件
+	 * @param entity 查询参数
 	 */
 	void deleteOne(T entity);
 
 	/**
-	 * Deletes all instances of the type {@code T} with the given IDs.
-	 * @param ids must not be {@literal null}. Must not contain {@literal null} elements.
-	 * @throws IllegalArgumentException in case the given {@literal ids} or one of its
-	 * elements is {@literal null}.
-	 * @since 2.5
+	 * 批量删除(根据ID)
+	 * @param ids ID集合
 	 */
 	void deleteAllById(Iterable<? extends ID> ids);
 
 	/**
-	 * Deletes all entities managed by the repository.
+	 * 全部删除,<b>请谨慎使用！</b>
 	 */
 	void deleteAll();
 
