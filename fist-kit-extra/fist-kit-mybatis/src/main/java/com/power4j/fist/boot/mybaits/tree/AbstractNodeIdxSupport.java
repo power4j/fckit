@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * @param <ID> ID 类型
  * @param <R> Repository
  */
-public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extends Serializable, R extends Repository<T, ID>>
+public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extends Serializable, R extends Repository<T, ?>>
 		implements TreePathSupport<T, ID> {
 
 	/**
