@@ -64,7 +64,6 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <spring-boot.version>${project.parent.version}</spring-boot.version>
     <spring-cloud.version>2020.0.3</spring-cloud.version>
     <spring-cloud-alibaba.version>2021.1</spring-cloud-alibaba.version>
     <!-- plugin -->
@@ -242,13 +241,6 @@
         <version>${ez-captcha.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.springdoc</groupId>
-        <artifactId>springdoc-openapi</artifactId>
-        <version>${springdoc-openapi.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
         <groupId>io.springfox</groupId>
         <artifactId>springfox-oas</artifactId>
         <version>${springfox.version}</version>
@@ -332,6 +324,13 @@
         <groupId>org.zalando</groupId>
         <artifactId>logbook-bom</artifactId>
         <version>${logbook.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi</artifactId>
+        <version>${springdoc-openapi.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
