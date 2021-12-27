@@ -29,7 +29,7 @@ import spock.lang.Specification
  * @date 2021/9/27
  * @since 1.0
  */
-class TreeBuilderTest extends Specification {
+class NodeIdxTreeBuilderTest extends Specification {
 
 	//
 	//        (0)
@@ -73,14 +73,13 @@ class TreeBuilderTest extends Specification {
 
     def "Test Make Tree"() {
 		given:
-		TreeBuilder<Long> maker = TreeBuilder.<Long>with(links).customizer(customizer).nodeConfig(config)
+		TreeBuilder<Long> maker = new TreeBuilder().nodeConfig(config).customizer(customizer).nodes(links);
 
 		when:
-		Optional<Tree<Long>> ret = maker.build(0L)
+		Tree<Long> root = maker.build(0L)
 
 		then:
-		ret.isPresent()
-		Tree<Long> root = ret.get()
+		root != null
 		System.out.println(JSONUtil.toJsonPrettyStr(root))
 
 		then:
