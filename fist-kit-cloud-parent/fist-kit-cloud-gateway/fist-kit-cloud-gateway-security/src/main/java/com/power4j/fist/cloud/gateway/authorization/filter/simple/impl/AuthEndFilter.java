@@ -27,7 +27,7 @@ import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFi
  */
 public class AuthEndFilter extends AbstractAuthFilter {
 
-	private boolean pass = true;
+	private boolean pass = false;
 
 	@Override
 	protected boolean process(AuthContext ctx) {
