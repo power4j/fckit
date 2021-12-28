@@ -55,7 +55,7 @@ public class UserPermissionFilter extends AbstractAuthFilter {
 	protected boolean process(AuthContext ctx) {
 		final PermissionDefinition permissionDefinition = ctx.getPermissionDefinition();
 		if (Objects.isNull(permissionDefinition)) {
-			return exitChain(ctx, AuthProblem.PERMISSION_CHECK_DENIED.moreInfo("No permission definition"));
+			return true;
 		}
 		final AuthenticatedUser userInfo = ctx.getUserInfo();
 		if (Objects.isNull(userInfo)) {
@@ -79,7 +79,7 @@ public class UserPermissionFilter extends AbstractAuthFilter {
 			}
 			return exitChain(ctx, AuthProblem.PERMISSION_CHECK_DENIED);
 		}
-		return exitChain(ctx, AuthProblem.AUTH_END);
+		return true;
 	}
 
 	private boolean validateTenant(@Nullable String tenantId, AuthContext ctx) {

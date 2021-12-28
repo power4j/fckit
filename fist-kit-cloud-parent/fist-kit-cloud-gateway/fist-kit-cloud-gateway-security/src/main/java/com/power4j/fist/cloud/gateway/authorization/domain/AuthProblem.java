@@ -83,57 +83,62 @@ public class AuthProblem {
 	/**
 	 * 鉴权正常结束
 	 */
-	public final static AuthProblem AUTH_END = new AuthProblem(CODE_AUTH_PASS, "AUTH_END");
+	public final static AuthProblem AUTH_END_PASS = new AuthProblem(CODE_AUTH_PASS, "AUTH_END_PASS");
+
+	/**
+	 * 鉴权正常结束
+	 */
+	public final static AuthProblem AUTH_END_DENIED = new AuthProblem(1, "AUTH_END_DENIED");
 
 	/**
 	 * HTTP 协议不支持
 	 */
-	public final static AuthProblem HTTP_PROTOCOL = new AuthProblem(1, "HTTP_PROTOCOL");
+	public final static AuthProblem HTTP_PROTOCOL = new AuthProblem(10, "HTTP_PROTOCOL");
 
 	/**
 	 * 传入token无效
 	 */
-	public final static AuthProblem TOKEN_INVALID = new AuthProblem(2, "TOKEN_INVALID");
+	public final static AuthProblem TOKEN_INVALID = new AuthProblem(20, "TOKEN_INVALID");
 
 	/**
 	 * 用户不存在
 	 */
-	public final static AuthProblem USER_NOT_EXISTS = new AuthProblem(3, "USER_NOT_EXISTS");
+	public final static AuthProblem USER_NOT_EXISTS = new AuthProblem(30, "USER_NOT_EXISTS");
 
 	/**
 	 * 内部接口拒绝访问
 	 */
-	public final static AuthProblem INTERNAL_ACCESS_DENIED = new AuthProblem(4, "INTERNAL_ACCESS_DENIED");
+	public final static AuthProblem INTERNAL_ACCESS_DENIED = new AuthProblem(40, "INTERNAL_ACCESS_DENIED");
 
 	/**
 	 * 未登录不能访问
 	 */
-	public final static AuthProblem USER_ACCESS_DENIED = new AuthProblem(5, "USER_ACCESS_DENIED");
+	public final static AuthProblem USER_ACCESS_DENIED = new AuthProblem(50, "USER_ACCESS_DENIED");
 
 	/**
 	 * 无API访问权限
 	 */
-	public final static AuthProblem PERMISSION_CHECK_DENIED = new AuthProblem(6, "PERMISSION_CHECK_DENIED");
+	public final static AuthProblem PERMISSION_CHECK_DENIED = new AuthProblem(60, "PERMISSION_CHECK_DENIED");
 
 	/**
 	 * 租户级API必须传入租户ID
 	 */
-	public final static AuthProblem TENANT_ID_REQUIRED = new AuthProblem(7, "TENANT_ID_REQUIRED");
+	public final static AuthProblem TENANT_ID_REQUIRED = new AuthProblem(70, "TENANT_ID_REQUIRED");
 
 	/**
 	 * 无租户访问权限
 	 */
-	public final static AuthProblem TENANT_CHECK_DENIED = new AuthProblem(8, "TENANT_CHECK_DENIED");
+	public final static AuthProblem TENANT_CHECK_DENIED = new AuthProblem(80, "TENANT_CHECK_DENIED");
 
 	/**
 	 * 调用外部服务异常
 	 */
-	public final static AuthProblem RPC_EXCEPTION = new AuthProblem(10, "RPC_EXCEPTION");
+	public final static AuthProblem RPC_EXCEPTION = new AuthProblem(100, "RPC_EXCEPTION");
 
 	/**
 	 * 安全模式放行
 	 */
-	public final static AuthProblem SAFE_MODE_DENIED = new AuthProblem(99, "SAFE_MODE_DENIED");
+	public final static AuthProblem SAFE_MODE_DENIED = new AuthProblem(999, "SAFE_MODE_DENIED");
 
 	/**
 	 * 认证插件异常

@@ -22,6 +22,7 @@ import com.power4j.fist.boot.common.matcher.PathMatcher;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.DefaultGatewayAuthFilterChain;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.GatewayAuthFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.GatewayAuthFilterChain;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.AuthEndFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.InternalAccessFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.LoadPermissionDefinitionFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.LoginAccessFilter;
@@ -51,6 +52,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -150,6 +152,12 @@ public class GatewayAuthorizationAutoConfiguration {
 		@Order(BASE_ORDER + 1_200)
 		public UserPermissionFilter userPermissionFilter() {
 			return new UserPermissionFilter(authorizationProperties);
+		}
+
+		@Bean
+		@Order(Ordered.LOWEST_PRECEDENCE)
+		public AuthEndFilter authEndFilter() {
+			return new AuthEndFilter();
 		}
 
 		@Bean
