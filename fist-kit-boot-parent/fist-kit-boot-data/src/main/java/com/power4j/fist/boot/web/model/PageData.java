@@ -17,6 +17,7 @@
 package com.power4j.fist.boot.web.model;
 
 import com.power4j.fist.data.domain.Paged;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.util.Assert;
 
 import java.io.Serializable;
@@ -34,28 +35,41 @@ public class PageData<T> implements Serializable {
 
 	private final static long serialVersionUID = 1L;
 
+	@Schema(description = "数据")
 	private final List<T> content;
 
+	@Schema(description = "总行数")
 	private final long total;
 
+	@Schema(description = "是否有下一页")
 	private final boolean hasNext;
 
+	@Schema(description = "页码")
+	private final Integer pageNumber;
+
+	@Schema(description = "页大小")
+	private final Integer pageSize;
+
 	public static <T> PageData<T> empty() {
-		return new PageData<>(Collections.emptyList(), 0L, false);
+		return new PageData<>(Collections.emptyList(), 0L, false, 0, 0);
 	}
 
-	public static <T> PageData<T> of(List<T> content, long total, boolean hasNext) {
-		return new PageData<>(content, total, hasNext);
+	public static <T> PageData<T> of(List<T> content, long total, boolean hasNext, Integer pageNumber,
+			Integer pageSize) {
+		return new PageData<>(content, total, hasNext, pageNumber, pageSize);
 	}
 
 	public static <T> PageData<T> of(Paged<T> paged) {
-		return new PageData<>(paged.getContent(), paged.getTotalElements(), paged.hasNext());
+		return new PageData<>(paged.getContent(), paged.getTotalElements(), paged.hasNext(), paged.getPageNumber(),
+				paged.getPageSize());
 	}
 
-	PageData(List<T> content, long total, boolean hasNext) {
+	public PageData(List<T> content, long total, boolean hasNext, Integer pageNumber, Integer pageSize) {
 		this.content = content;
 		this.total = total;
 		this.hasNext = hasNext;
+		this.pageNumber = pageNumber;
+		this.pageSize = pageSize;
 	}
 
 	public List<T> getContent() {
@@ -70,8 +84,16 @@ public class PageData<T> implements Serializable {
 		return hasNext;
 	}
 
+	public Integer getPageNumber() {
+		return pageNumber;
+	}
+
+	public Integer getPageSize() {
+		return pageSize;
+	}
+
 	public <U> PageData<U> map(Function<? super T, ? extends U> converter) {
-		return new PageData<>(getConvertedContent(converter), total, hasNext);
+		return new PageData<>(getConvertedContent(converter), total, hasNext, pageNumber, pageSize);
 	}
 
 	protected <U> List<U> getConvertedContent(Function<? super T, ? extends U> converter) {
