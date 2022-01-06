@@ -61,4 +61,14 @@ public interface DataConstant {
 	 */
 	String STATUS_VALUE_DISABLED = "1";
 
+	/**
+	 * 是
+	 */
+	String FLAG_YES = "1";
+
+	/**
+	 * 否
+	 */
+	String FLAG_NO = "0";
+
 }
