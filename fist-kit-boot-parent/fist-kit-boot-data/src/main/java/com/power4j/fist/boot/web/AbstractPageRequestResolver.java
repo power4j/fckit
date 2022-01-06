@@ -30,10 +30,10 @@ import java.util.Objects;
 public abstract class AbstractPageRequestResolver implements HandlerMethodArgumentResolver {
 
 	@Getter
-	private String pageNumberKey = "current";
+	private String pageNumberKey = "pageNumber";
 
 	@Getter
-	private String pageSizeKey = "size";
+	private String pageSizeKey = "pageSize";
 
 	public void setPageNumberKey(String pageNumberKey) {
 		this.pageNumberKey = pageNumberKey;
