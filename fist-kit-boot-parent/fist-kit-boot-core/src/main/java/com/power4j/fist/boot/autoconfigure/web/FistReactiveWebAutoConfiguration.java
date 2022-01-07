@@ -17,7 +17,6 @@
 package com.power4j.fist.boot.autoconfigure.web;
 
 import com.power4j.fist.boot.web.reactive.error.GlobalErrorConfigure;
-import com.power4j.fist.boot.web.reactive.log.MdcContextLifterConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -29,7 +28,7 @@ import org.springframework.context.annotation.Import;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-@Import({ MdcContextLifterConfiguration.class, GlobalErrorConfigure.class })
+@Import({ GlobalErrorConfigure.class })
 public class FistReactiveWebAutoConfiguration {
 
 }
