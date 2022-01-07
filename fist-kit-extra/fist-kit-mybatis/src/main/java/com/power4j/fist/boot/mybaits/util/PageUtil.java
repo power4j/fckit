@@ -42,14 +42,14 @@ public class PageUtil {
 	// ===================================================================================================
 
 	public <T> Page<T> toPage(PageParameter parameter) {
-		return new Page<>(parameter.getPageNumber() + 1, parameter.getPageSize());
+		return new Page<>(parameter.getPageNumber(), parameter.getPageSize());
 	}
 
 	// ~ Domain
 	// ===================================================================================================
 
 	public <T> Page<T> toPage(Pageable pageable) {
-		Page<T> page = new Page<>(pageable.getPageNumber() + 1, pageable.getPageSize());
+		Page<T> page = new Page<>(pageable.getPageNumber(), pageable.getPageSize());
 		pageable.getSort().getOrders().forEach(order -> {
 			page.addOrder(toOrderItem(order));
 		});
@@ -62,7 +62,7 @@ public class PageUtil {
 
 	public PageRequest toPageRequest(IPage<?> page) {
 		List<Sort.Order> orders = page.orders().stream().map(PageUtil::toOrder).collect(Collectors.toList());
-		int pageNum = (int) (page.getCurrent() - 1);
+		int pageNum = (int) (page.getCurrent());
 		int size = (int) (page.getSize());
 		return PageRequest.of(pageNum, size, Sort.of(orders));
 	}

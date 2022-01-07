@@ -25,7 +25,7 @@ public class PageRequest extends AbstractPageRequest {
 
 	public final static int DEFAULT_PAGE_SIZE = 20;
 
-	public final static int FIRST_PAGE = 0;
+	public final static int FIRST_PAGE = 1;
 
 	private final Sort sort;
 
@@ -72,7 +72,7 @@ public class PageRequest extends AbstractPageRequest {
 
 	@Override
 	public PageRequest previous() {
-		return getPageNumber() == 0 ? this : new PageRequest(getPageNumber() - 1, getPageSize(), getSort());
+		return getPageNumber() == FIRST_PAGE ? this : new PageRequest(getPageNumber() - 1, getPageSize(), getSort());
 	}
 
 }

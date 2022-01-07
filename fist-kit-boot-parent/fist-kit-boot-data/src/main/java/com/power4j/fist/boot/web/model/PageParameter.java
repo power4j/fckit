@@ -34,7 +34,7 @@ public class PageParameter implements Serializable {
 
 	public final static int DEFAULT_PAGE_SIZE = 20;
 
-	public final static int FIRST_PAGE = 0;
+	public final static int FIRST_PAGE = 1;
 
 	@Schema(description = "页码", defaultValue = "0")
 	private Integer pageNumber;

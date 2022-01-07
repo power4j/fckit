@@ -17,7 +17,6 @@
 package com.power4j.fist.boot.web;
 
 import com.power4j.fist.boot.web.model.PageParameter;
-import com.power4j.fist.data.domain.PageRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -47,8 +46,8 @@ public class PageParameterResolver extends AbstractPageRequestResolver {
 		if (Objects.isNull(request)) {
 			return null;
 		}
-		int page = parseInt(request.getParameter(getPageNumberKey()), PageRequest.FIRST_PAGE);
-		int size = parseInt(request.getParameter(getPageSizeKey()), PageRequest.DEFAULT_PAGE_SIZE);
+		int page = parseInt(request.getParameter(getPageNumberKey()), PageParameter.FIRST_PAGE);
+		int size = parseInt(request.getParameter(getPageSizeKey()), PageParameter.DEFAULT_PAGE_SIZE);
 
 		return PageParameter.of(page, size);
 	}
