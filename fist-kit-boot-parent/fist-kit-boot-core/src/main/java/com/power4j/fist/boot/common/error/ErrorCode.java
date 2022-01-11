@@ -58,11 +58,6 @@ public interface ErrorCode {
 	String A0111 = "A0111";
 
 	/**
-	 * 用户名包含敏感词
-	 */
-	String A0112 = "A0112";
-
-	/**
 	 * 用户名包含特殊字符
 	 */
 	String A0113 = "A0113";

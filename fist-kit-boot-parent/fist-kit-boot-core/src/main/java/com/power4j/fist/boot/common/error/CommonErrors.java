@@ -26,23 +26,54 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class CommonErrors {
 
+	/**
+	 * A0400 参数错误
+	 * @param msgKey 消息key
+	 * @param msgArg 参数
+	 * @return MsgBundleRejectedException
+	 */
 	public MsgBundleRejectedException requestParameterError(String msgKey, Object... msgArg) {
 		return new MsgBundleRejectedException(ErrorCode.A0400, msgKey, msgArg);
 	}
 
+	/**
+	 * A0400 参数错误
+	 * @return MsgBundleRejectedException
+	 */
 	public MsgBundleRejectedException requestParameterError() {
 		return new MsgBundleRejectedException(ErrorCode.A0400, "common.bad-parameter");
 	}
 
-	public MsgBundleRejectedException resourceNotExistsError() throws RejectedException {
+	/**
+	 * A0400 某个字段的值无效
+	 * @param fieldName 字段名称
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException invalidFieldValueError(String fieldName) {
+		return new MsgBundleRejectedException(ErrorCode.A0400, "common.invalid-field-value", fieldName);
+	}
+
+	/**
+	 * 资源不存在
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException resourceNotExistsError() {
 		return new MsgBundleRejectedException(ErrorCode.A0400, "common.resource.not-found");
 	}
 
-	public MsgBundleRejectedException permissionDeniedError() throws RejectedException {
+	/**
+	 * A0301 权限不足
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException permissionDeniedError() {
 		return new MsgBundleRejectedException(ErrorCode.A0301, "common.permission.denied");
 	}
 
-	public MsgBundleRejectedException authRequiredError() throws RejectedException {
+	/**
+	 * A0401 未认证
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException authRequiredError() {
 		return new MsgBundleRejectedException(ErrorCode.A0401, "common.permission.no-auth-denied");
 	}
 
