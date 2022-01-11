@@ -57,6 +57,11 @@
       <artifactId>spring-aop</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>com.pig4cloud.excel</groupId>
+      <artifactId>excel-spring-boot-starter</artifactId>
+      <optional>true</optional>
+    </dependency>
     <!-- Test -->
     <dependency>
       <groupId>com.power4j.fist</groupId>
