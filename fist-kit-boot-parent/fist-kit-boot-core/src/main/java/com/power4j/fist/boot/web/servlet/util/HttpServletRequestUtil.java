@@ -25,7 +25,10 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Optional;
@@ -56,9 +59,24 @@ public class HttpServletRequestUtil {
 	public final static String HTTP_X_FORWARDED_FOR = "HTTP_X_FORWARDED_FOR";
 
 	/**
+	 * 获取输入流
+	 * @param request ServletRequest
+	 * @return Optional
+	 */
+	public Optional<ServletInputStream> getInputStreamIfAvailable(ServletRequest request) {
+		try {
+			return Optional.of(request.getInputStream());
+		}
+		catch (IOException e) {
+			log.warn(e.getMessage(), e);
+			return Optional.empty();
+		}
+	}
+
+	/**
 	 * 获取当前请求
 	 * @see RequestContextListener
-	 * @return
+	 * @return Optional
 	 */
 	public Optional<HttpServletRequest> getCurrentRequestIfAvailable() {
 		return Optional.ofNullable(RequestContextHolder.getRequestAttributes()).map(x -> (ServletRequestAttributes) x)
@@ -68,7 +86,7 @@ public class HttpServletRequestUtil {
 	/**
 	 * 获取当前请求
 	 * @see RequestContextListener
-	 * @return
+	 * @return HttpServletRequest
 	 */
 	public HttpServletRequest getCurrentRequest() {
 		return getCurrentRequestIfAvailable()
