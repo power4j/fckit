@@ -14,13 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.data.crud.service.validator;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/12
+ * @date 2021/6/2
  * @since 1.0
  */
-public interface Validator<T, ID> extends CreationValidator<T>, UpdateValidator<T>, DeleteValidator<ID> {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.data.crud.service.validator;
 
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;
