@@ -21,6 +21,6 @@ package com.power4j.fist.data.crud.service.validator;
  * @date 2022/1/12
  * @since 1.0
  */
-public interface CudValidator<T, ID> extends CreationValidator<T>, UpdateValidator<T>, DeleteValidator<ID> {
+public interface CudValidator<T> extends CreationValidator<T>, UpdateValidator<T>, DeleteValidator<T> {
 
 }
