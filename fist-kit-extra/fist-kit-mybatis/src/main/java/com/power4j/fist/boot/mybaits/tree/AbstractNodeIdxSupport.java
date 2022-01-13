@@ -65,13 +65,17 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 		return createObject(id, id, 0);
 	}
 
-	/**
-	 * 查询下级节点关系
-	 * @param id 起始节点
-	 * @param distanceMin 最小层距离(包含)
-	 * @param distanceMax 最大层距离(包含)
-	 * @return 返回 id 为祖先的所有节点路径
-	 */
+	@Override
+	public long countAllDescendant(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax) {
+		// @formatter:off
+		LambdaQueryWrapper<T> wrapper = getRepository().lambdaWrapper()
+				.eq(T::getAncestor,id)
+				.ge(Objects.nonNull(distanceMin), T::getDistance,  distanceMin)
+				.le(Objects.nonNull(distanceMax), T::getDistance,  distanceMax);
+		return getRepository().countBy(wrapper);
+		// @formatter:on
+	}
+
 	@Override
 	public List<T> findAllDescendant(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax) {
 		// @formatter:off
@@ -83,13 +87,17 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 		// @formatter:on
 	}
 
-	/**
-	 * 查询上级节点关系
-	 * @param id 起始节点
-	 * @param distanceMin 最小层距离(包含)
-	 * @param distanceMax 最大层距离(包含)
-	 * @return 返回 id 的所有祖先节点路径
-	 */
+	@Override
+	public long countAllAncestor(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax) {
+		// @formatter:off
+		LambdaQueryWrapper<T> wrapper = getRepository().lambdaWrapper()
+				.eq(T::getAncestor,id)
+				.ge(Objects.nonNull(distanceMin), T::getDistance,  distanceMin)
+				.le(Objects.nonNull(distanceMax), T::getDistance,  distanceMax);
+		return getRepository().countBy(wrapper);
+		// @formatter:on
+	}
+
 	@Override
 	public List<T> findAllAncestor(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax) {
 		// @formatter:off

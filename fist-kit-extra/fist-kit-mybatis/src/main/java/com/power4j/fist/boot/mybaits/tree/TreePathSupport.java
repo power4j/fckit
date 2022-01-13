@@ -38,6 +38,15 @@ public interface TreePathSupport<T extends NodeIdx<ID, T>, ID> {
 	List<T> findAllDescendant(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
 
 	/**
+	 * 统计下级节点数量
+	 * @param id 起始节点
+	 * @param distanceMin 最小层距离(包含)
+	 * @param distanceMax 最大层距离(包含)
+	 * @return 返回 id 为祖先的所有节点路径
+	 */
+	long countAllDescendant(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
+
+	/**
 	 * 查询上级节点关系
 	 * @param id 起始节点
 	 * @param distanceMin 最小层距离(包含)
@@ -45,6 +54,15 @@ public interface TreePathSupport<T extends NodeIdx<ID, T>, ID> {
 	 * @return 返回 id 的所有祖先节点路径
 	 */
 	List<T> findAllAncestor(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
+
+	/**
+	 * 统计上级节点数量
+	 * @param id 起始节点
+	 * @param distanceMin 最小层距离(包含)
+	 * @param distanceMax 最大层距离(包含)
+	 * @return 返回 id 的所有祖先节点路径
+	 */
+	long countAllAncestor(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
 
 	/**
 	 * 查询全部关系
