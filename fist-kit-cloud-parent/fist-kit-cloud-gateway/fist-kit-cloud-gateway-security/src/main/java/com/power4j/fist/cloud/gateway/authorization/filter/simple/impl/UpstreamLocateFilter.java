@@ -86,13 +86,8 @@ public class UpstreamLocateFilter extends AbstractAuthFilter {
 	}
 
 	ApiProxy getApiProxy(@Nullable Route route, AuthContext context) {
-		if (route == null) {
-			return makeDefaultApiProxy(context);
-		}
-		else {
-			return proxyResolver.resolve(RouteInfo.from(route), context.getExchange().getRequest())
-					.orElseGet(() -> makeDefaultApiProxy(context));
-		}
+		RouteInfo routeInfo = Optional.ofNullable(route).map(RouteInfo::from).orElse(null);
+		return proxyResolver.resolve(routeInfo, context.getExchange()).orElseGet(() -> makeDefaultApiProxy(context));
 	}
 
 	ApiProxy makeDefaultApiProxy(AuthContext context) {

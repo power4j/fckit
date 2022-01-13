@@ -14,27 +14,22 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.proxy;
+package com.power4j.fist.cloud.gateway.authorization.domain;
 
-import com.power4j.fist.cloud.gateway.authorization.domain.ApiProxy;
-import org.springframework.lang.Nullable;
-import org.springframework.web.server.ServerWebExchange;
-
-import java.util.Optional;
+import lombok.Getter;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2022/1/13
  * @since 1.0
  */
-public interface ProxyResolver {
+@Getter
+public class RouteTarget {
 
-	/**
-	 * 解析代理
-	 * @param routeInfo 路由
-	 * @param exchange ServerWebExchange
-	 * @return 无解析结果返回empty
-	 */
-	Optional<ApiProxy> resolve(@Nullable RouteInfo routeInfo, ServerWebExchange exchange);
+	private final String serviceName;
+
+	public RouteTarget(String serviceName) {
+		this.serviceName = serviceName;
+	}
 
 }

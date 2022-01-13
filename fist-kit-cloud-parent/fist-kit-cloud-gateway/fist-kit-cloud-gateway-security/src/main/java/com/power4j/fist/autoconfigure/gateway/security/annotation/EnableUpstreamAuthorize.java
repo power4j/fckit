@@ -14,27 +14,27 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.proxy;
+package com.power4j.fist.autoconfigure.gateway.security.annotation;
 
-import com.power4j.fist.cloud.gateway.authorization.domain.ApiProxy;
-import org.springframework.lang.Nullable;
-import org.springframework.web.server.ServerWebExchange;
+import com.power4j.fist.autoconfigure.gateway.security.UpstreamAuthFilterConfigure;
+import com.power4j.fist.autoconfigure.gateway.security.UpstreamAuthorizeConfigure;
+import org.springframework.context.annotation.Import;
 
-import java.util.Optional;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2021/12/1
  * @since 1.0
  */
-public interface ProxyResolver {
-
-	/**
-	 * 解析代理
-	 * @param routeInfo 路由
-	 * @param exchange ServerWebExchange
-	 * @return 无解析结果返回empty
-	 */
-	Optional<ApiProxy> resolve(@Nullable RouteInfo routeInfo, ServerWebExchange exchange);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Documented
+@Import({ UpstreamAuthFilterConfigure.class, UpstreamAuthorizeConfigure.class })
+public @interface EnableUpstreamAuthorize {
 
 }

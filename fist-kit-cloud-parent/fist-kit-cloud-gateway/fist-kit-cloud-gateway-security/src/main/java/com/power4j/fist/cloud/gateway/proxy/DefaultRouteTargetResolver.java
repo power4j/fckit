@@ -16,25 +16,38 @@
 
 package com.power4j.fist.cloud.gateway.proxy;
 
-import com.power4j.fist.cloud.gateway.authorization.domain.ApiProxy;
+import com.power4j.fist.cloud.gateway.authorization.domain.RouteTarget;
+import lombok.Setter;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 
-import java.util.Optional;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2022/1/13
  * @since 1.0
  */
-public interface ProxyResolver {
+public class DefaultRouteTargetResolver implements RouteTargetResolver {
 
-	/**
-	 * 解析代理
-	 * @param routeInfo 路由
-	 * @param exchange ServerWebExchange
-	 * @return 无解析结果返回empty
-	 */
-	Optional<ApiProxy> resolve(@Nullable RouteInfo routeInfo, ServerWebExchange exchange);
+	private final static String LB = "lb";
+
+	@Setter
+	private String serviceIdKey = "serviceId";
+
+	@Override
+	public RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange) {
+		if (null == route) {
+			return null;
+		}
+		String serviceId = MapUtils.getString(route.getMetadata(), serviceIdKey);
+		if (ObjectUtils.isEmpty(serviceId) && LB.equalsIgnoreCase(route.getUri().getScheme())) {
+			serviceId = route.getUri().getHost();
+		}
+		if (ObjectUtils.isEmpty(serviceId)) {
+			serviceId = route.getId();
+		}
+		return new RouteTarget(serviceId);
+	}
 
 }

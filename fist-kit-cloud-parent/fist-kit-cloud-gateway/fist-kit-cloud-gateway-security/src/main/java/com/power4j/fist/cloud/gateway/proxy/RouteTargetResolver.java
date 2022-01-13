@@ -14,28 +14,26 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.autoconfigure.security.annotation;
+package com.power4j.fist.cloud.gateway.proxy;
 
-import com.power4j.fist.autoconfigure.security.oauth2.server.resource.GatewayAuthorizationAutoConfiguration;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.power4j.fist.cloud.gateway.authorization.domain.RouteTarget;
+import org.springframework.lang.Nullable;
+import org.springframework.web.server.ServerWebExchange;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/12/1
+ * @date 2022/1/13
  * @since 1.0
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@Documented
-@Import({ GatewayAuthorizationAutoConfiguration.class })
-@Configuration
-public @interface EnableGatewayAuth {
+public interface RouteTargetResolver {
+
+	/**
+	 * 解析路由
+	 * @param route 与当前请求匹配的路由
+	 * @param exchange ServerWebExchange
+	 * @return 返回路由目标
+	 */
+	@Nullable
+	RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange);
 
 }

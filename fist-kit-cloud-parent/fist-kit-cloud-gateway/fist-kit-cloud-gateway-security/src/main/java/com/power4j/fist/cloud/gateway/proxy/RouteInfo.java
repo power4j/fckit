@@ -16,13 +16,16 @@
 
 package com.power4j.fist.cloud.gateway.proxy;
 
+import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.cloud.gateway.route.Route;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -30,6 +33,7 @@ import java.util.Map;
  * @since 1.0
  */
 @Getter
+@Builder
 public class RouteInfo {
 
 	private final String id;
@@ -40,15 +44,22 @@ public class RouteInfo {
 
 	private final Map<String, Object> metadata;
 
-	public RouteInfo(String id, URI uri, int order, Map<String, Object> metadata) {
-		this.id = id;
-		this.uri = uri;
-		this.order = order;
-		this.metadata = ObjectUtils.defaultIfNull(metadata, Collections.emptyMap());
-	}
+	private final List<String> filters;
 
 	public static RouteInfo from(Route route) {
-		return new RouteInfo(route.getId(), route.getUri(), route.getOrder(), route.getMetadata());
+		List<String> filters = Collections.emptyList();
+		if (ObjectUtils.isNotEmpty(route.getFilters())) {
+			filters = route.getFilters().stream().map(o -> o.getClass().getName()).collect(Collectors.toList());
+		}
+		// @formatter:off
+		return RouteInfo.builder()
+				.id(route.getId())
+				.uri(route.getUri())
+				.order(route.getOrder())
+				.metadata(route.getMetadata())
+				.filters(filters)
+				.build();
+		// @formatter:on
 	}
 
 }

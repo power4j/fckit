@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.oauth2.server.resource.reactive;
+package com.power4j.fist.security.gateway;
 
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
@@ -35,12 +35,12 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/29
+ * @date 2022/1/13
  * @since 1.0
  */
 @Slf4j
 @RequiredArgsConstructor
-public class GatewayAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
+public class UpstreamAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 
 	private final static AuthorizationDecision GRANTED = new AuthorizationDecision(true);
 
