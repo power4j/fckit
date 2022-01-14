@@ -21,10 +21,12 @@ import cn.hutool.core.lang.tree.TreeNodeConfig
 import cn.hutool.core.util.RandomUtil
 import cn.hutool.json.JSONUtil
 import com.power4j.fist.data.tree.domain.Org
+import org.springframework.lang.Nullable
 import org.tools4j.groovytables.GroovyTables
 import spock.lang.Specification
 
 import java.util.function.Function
+import java.util.function.Predicate
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -48,22 +50,18 @@ class AdjacencyTreeBuilderTest extends Specification {
 		102L       | 1L            | "org-102"
 	}
 
-	TreeCustomizer<Long> customizer = new TreeCustomizer<Long>(){
-
-		void customize(Tree<Long> tree) {
-			tree.setName(String.format("ORG-%04d",tree.getId()));
-			tree.setWeight(tree.getId());
-			tree.putExtra("hot", RandomUtil.randomInt())
-		}
+	TreeNodeCustomizer<Long,Org> customizer = new TreeNodeCustomizer<Long,Org>(){
 
 		@Override
-		void customize(Collection<? extends Tree<Long>> elements) {
-			for(Tree<Long> tree : elements){
-				customize(tree)
+		void customize(Tree<Long> node, @Nullable Org meta) {
+			if(null == meta){
+				return;
 			}
+			node.setName(String.format("ORG-%04d",node.getId()));
+			node.setWeight(node.getId());
+			node.putExtra("hot", RandomUtil.randomInt())
 		}
 	}
-
 	Function<Org,Long> idFunc = new Function<Org,Long>() {
 		@Override
 		Long apply(Org org) {
@@ -82,13 +80,37 @@ class AdjacencyTreeBuilderTest extends Specification {
 
 	def "Test Make Tree"() {
 		given:
-		TreeBuilder builder = new TreeBuilder().nodeConfig(config).customizer(customizer).nodes(orgList,idFunc,pidFunc);
+		TreeBuilder builder = TreeBuilder.use(orgList,idFunc,pidFunc).nodeConfig(config).customizer(customizer);
+		List<Tree<Long>> roots;
 
 		when:
-		Tree<Long> root = builder.build(0L)
+		Predicate<Tree<Long>> underZero = new Predicate<Tree<Long>>(){
+			@Override
+			boolean test(Tree<Long> tree) {
+				return Objects.equals(0L,tree.getParentId());
+			}
+		}
+		roots = builder.build(underZero);
 
 		then:
-		root != null
+		// 选择 0 下面的节点做作为根节点 那么得到的一级节点是 1和2
+		roots.size() == 2
+		roots.get(0).getId() == 1L
+		roots.get(1).getId() == 2L
+
+		when:
+		Predicate<Tree<Long>> useZero = new Predicate<Tree<Long>>(){
+			@Override
+			boolean test(Tree<Long> tree) {
+				return Objects.equals(0L,tree.getId());
+			}
+		}
+		roots = builder.build(useZero);
+
+		then:
+		// 选择 0 点做作为根节点,那么得到的一级节点是 0
+		roots.size() == 1
+		def root = roots.get(0)
 		System.out.println(JSONUtil.toJsonPrettyStr(root))
 
 		then:

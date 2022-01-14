@@ -16,21 +16,23 @@
 
 package com.power4j.fist.data.tree;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.lang.tree.TreeNodeConfig;
 import cn.hutool.core.map.MapUtil;
-import cn.hutool.core.util.ObjectUtil;
 import com.power4j.fist.data.tree.domain.NodeIdx;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.lang.Nullable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -40,97 +42,129 @@ import java.util.stream.Collectors;
  * @date 2021/9/27
  * @since 1.0
  * @param <ID> ID 类型
+ * @param <T> T 业务对象类型
  */
-public class TreeBuilder<ID> {
+public class TreeBuilder<ID, T> {
 
 	@Nullable
 	private TreeNodeConfig config;
 
 	@Nullable
-	private TreeCustomizer<ID> customizer;
+	private TreeNodeCustomizer<ID, T> customizer;
 
 	@Nullable
-	private Map<ID, List<ID>> nodeMap;
+	private Map<ID, List<Pair<ID, T>>> dataMap;
 
-	public TreeBuilder<ID> nodeConfig(TreeNodeConfig config) {
+	TreeBuilder(Map<ID, List<Pair<ID, T>>> dataMap) {
+		this.dataMap = dataMap;
+	}
+
+	/**
+	 * 构造方法
+	 * @param data 业务数据
+	 * @param idFunc 提取ID的函数
+	 * @param pidFunc 提取父级ID函数
+	 * @param <ID> ID 类型
+	 * @param <T> 业务树类型
+	 * @return 返回实例
+	 */
+	public static <ID, T> TreeBuilder<ID, T> use(Collection<T> data, Function<? super T, ID> idFunc,
+			Function<? super T, ID> pidFunc) {
+		return new TreeBuilder<>(buildIdMap(data, idFunc, pidFunc));
+	}
+
+	/**
+	 * 构造方法
+	 * @param nodes 树形节点索引
+	 * @param <ID> ID 类型
+	 * @return 返回实例
+	 */
+	public static <ID> TreeBuilder<ID, ?> use(Collection<? extends NodeIdx<ID, ?>> nodes) {
+		return new TreeBuilder<>(buildIdMap(nodes, Function.identity()));
+	}
+
+	public TreeBuilder<ID, T> nodeConfig(TreeNodeConfig config) {
 		this.config = config;
 		return this;
 	}
 
-	public TreeBuilder<ID> customizer(TreeCustomizer<ID> customizer) {
+	public TreeBuilder<ID, T> customizer(TreeNodeCustomizer<ID, T> customizer) {
 		this.customizer = customizer;
-		return this;
-	}
-
-	public TreeBuilder<ID> nodeMap(Map<ID, List<ID>> nodeMap) {
-		this.nodeMap = nodeMap;
-		return this;
-	}
-
-	public <U> TreeBuilder<ID> nodes(Collection<U> nodes, Function<? super U, ? extends ID> idFunc,
-			Function<? super U, ? extends ID> pidFunc) {
-		this.nodeMap = buildIdMap(nodes, idFunc, pidFunc);
-		return this;
-	}
-
-	public TreeBuilder<ID> nodes(Collection<? extends NodeIdx<ID, ?>> nodes) {
-		this.nodeMap = buildIdMap(nodes);
 		return this;
 	}
 
 	/**
 	 * 构建树形结构
-	 * @param vId 挂载节点ID,用于构造树的根
-	 * @return 返回树形结构
+	 * @param id 根点ID,必须存在于数据源中,并且不是顶层节点
+	 * @return 返回树形结构,如果数据源不包含根节点数据则返回empty
 	 */
-	public Tree<ID> build(ID vId) {
-		// 根节点
-		Tree<ID> root = makeNode(vId, null, config);
-		if (ObjectUtils.isEmpty(nodeMap)) {
-			return root;
-		}
-		Map<ID, Tree<ID>> map = new HashMap<>(16);
-		nodeMap.forEach((key, value) -> value.forEach(id -> map.put(id, makeNode(id, key, config))));
-		map.put(vId, root);
-		if (Objects.nonNull(customizer)) {
-			customizer.customize(map.values());
-		}
-		return makeTree(root, map);
+	public Optional<Tree<ID>> build(ID id) {
+		List<Tree<ID>> roots = build(o -> Objects.equals(o.getId(), id));
+		return roots.stream().findFirst();
 	}
 
-	private Tree<ID> makeTree(Tree<ID> root, @Nullable Map<ID, Tree<ID>> source) {
-		if (ObjectUtils.isEmpty(source)) {
-			return root;
+	/**
+	 * 构建树形结构 支持多个根节点
+	 * @param isRootNode 根节点断言
+	 * @return 返回根节点列表,如果数据源不包含根节点数据则返回empty
+	 */
+	public List<Tree<ID>> build(Predicate<Tree<ID>> isRootNode) {
+		if (ObjectUtils.isEmpty(dataMap)) {
+			return Collections.emptyList();
 		}
-		fetch(root, source);
-		return root;
+		Map<ID, Tree<ID>> map = new HashMap<>(16);
+		dataMap.forEach((key, value) -> {
+			value.forEach(pair -> map.put(pair.getKey(), makeNode(pair.getKey(), key, config)));
+		});
+		dataMap.keySet().forEach(key -> map.putIfAbsent(key, makeNode(key, null, config)));
+		if (Objects.nonNull(customizer)) {
+			// @formatter:off
+			Map<ID,T> metaMap = dataMap.values()
+					.stream()
+					.flatMap(Collection::stream).collect(Collectors.toMap(Pair::getKey,Pair::getValue));
+			map.values().forEach(node -> {
+				customizer.customize(node,metaMap.get(node.getId()));
+			});
+			// @formatter:on
+		}
+		// 根节点列表
+		Map<ID, Tree<ID>> roots = fetch(map, isRootNode);
+		return roots.values().stream().sorted().collect(Collectors.toList());
 	}
 
 	/**
 	 * 填充子级
-	 * @param root 根节点
-	 * @param source 节点MAP
+	 * @param data 节点数据
+	 * @param rootCheck 判断节点是不是根节点
+	 * @return 根节点Map,没有找到根节点返回empty
 	 */
-	private void fetch(Tree<ID> root, Map<ID, Tree<ID>> source) {
-		final Map<ID, Tree<ID>> eTreeMap = MapUtil.sortByValue(source, false);
-		List<Tree<ID>> rootTreeList = CollUtil.newArrayList();
-		ID parentId;
+	private Map<ID, Tree<ID>> fetch(Map<ID, Tree<ID>> data, Predicate<Tree<ID>> rootCheck) {
+		final Map<ID, Tree<ID>> eTreeMap = MapUtil.sortByValue(data, false);
+		// @formatter:off
+		final Map<ID,Tree<ID>> roots = eTreeMap.entrySet()
+				.stream()
+				.filter(et -> rootCheck.test(et.getValue()))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+		// @formatter:on
+		if (roots.isEmpty()) {
+			return roots;
+		}
 		for (Tree<ID> node : eTreeMap.values()) {
 			if (null == node) {
 				continue;
 			}
-			parentId = node.getParentId();
-			if (ObjectUtil.equals(root.getId(), parentId)) {
-				root.addChildren(node);
-				rootTreeList.add(node);
+			ID parentId = node.getParentId();
+			if (rootCheck.test(node)) {
 				continue;
 			}
 
-			final Tree<ID> parentNode = eTreeMap.get(parentId);
+			final Tree<ID> parentNode = Optional.ofNullable(eTreeMap.get(parentId))
+					.orElseGet(() -> roots.get(parentId));
 			if (null != parentNode) {
 				parentNode.addChildren(node);
 			}
 		}
+		return roots;
 	}
 
 	protected static <ID> Tree<ID> makeNode(ID id, @Nullable ID pid, @Nullable TreeNodeConfig treeNodeConfig) {
@@ -140,26 +174,36 @@ public class TreeBuilder<ID> {
 		return tree;
 	}
 
-	protected static <U, ID> Map<ID, List<ID>> buildIdMap(Collection<U> nodes,
-			Function<? super U, ? extends ID> idExtractor, Function<? super U, ? extends ID> pidExtractor) {
-		Map<ID, List<ID>> map = new HashMap<>(16);
+	protected static <U, ID> Map<ID, List<Pair<ID, U>>> buildIdMap(Collection<U> nodes,
+			Function<? super U, ID> idExtractor, Function<? super U, ID> pidExtractor) {
+		Map<ID, List<Pair<ID, U>>> map = new HashMap<>(16);
 		// @formatter:off
 		nodes.stream()
 				.filter(o -> Objects.nonNull(pidExtractor.apply(o)))
 				.collect(Collectors.groupingBy(pidExtractor))
-				.forEach((k,v) -> map.put(k,v.stream().map(idExtractor).collect(Collectors.toList())));
+				.forEach((k,v) -> map.put(k,convertToPair(v,idExtractor,Function.identity())));
 		// @formatter:on
 		return map;
 	}
 
-	protected static <ID> Map<ID, List<ID>> buildIdMap(Collection<? extends NodeIdx<ID, ?>> nodes) {
-		Map<ID, List<ID>> map = new HashMap<>(16);
+	protected static <ID, U> Map<ID, List<Pair<ID, U>>> buildIdMap(Collection<? extends NodeIdx<ID, ?>> nodes,
+			Function<? super NodeIdx<ID, ?>, U> dataConverter) {
+		Map<ID, List<Pair<ID, U>>> map = new HashMap<>(16);
 		// @formatter:off
 		nodes.stream().filter(o -> o.getDistance() == 1)
 				.collect(Collectors.groupingBy(NodeIdx::getAncestor))
-				.forEach((k,v) -> map.put(k,v.stream().map(NodeIdx::getDescendant).collect(Collectors.toList())));
+				.forEach((k,v) -> map.put(k,convertToPair(v,NodeIdx::getDescendant, dataConverter)));
 		// @formatter:on
 		return map;
+	}
+
+	protected static <ID, T, U> List<Pair<ID, U>> convertToPair(Collection<T> src, Function<? super T, ID> idExtractor,
+			Function<? super T, U> dataConverter) {
+		// @formatter:off
+		return src.stream()
+				.map(o -> Pair.of(idExtractor.apply(o),Objects.requireNonNull(dataConverter.apply(o))))
+				.collect(Collectors.toList());
+		// @formatter:on
 	}
 
 }

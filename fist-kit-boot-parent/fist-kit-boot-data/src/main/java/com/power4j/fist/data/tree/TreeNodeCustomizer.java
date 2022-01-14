@@ -17,21 +17,20 @@
 package com.power4j.fist.data.tree;
 
 import cn.hutool.core.lang.tree.Tree;
-
-import java.util.Collection;
+import org.springframework.lang.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/9/27
+ * @date 2022/1/14
  * @since 1.0
- * @param <ID> ID 类型
  */
-public interface TreeCustomizer<ID> {
+public interface TreeNodeCustomizer<ID, T> {
 
 	/**
 	 * 进行个性化处理
-	 * @param elements 需要个性化的Tree对象
+	 * @param node 需要定制属性的Tree节点
+	 * @param meta 该节点关联的业务数据,有可能为null
 	 */
-	void customize(Collection<? extends Tree<ID>> elements);
+	void customize(Tree<ID> node, @Nullable T meta);
 
 }

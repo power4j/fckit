@@ -21,8 +21,11 @@ import cn.hutool.core.lang.tree.TreeNodeConfig
 import cn.hutool.core.util.RandomUtil
 import cn.hutool.json.JSONUtil
 import com.power4j.fist.data.tree.domain.OrgNodeIdx
+import org.springframework.lang.Nullable
 import org.tools4j.groovytables.GroovyTables
 import spock.lang.Specification
+
+import java.util.function.Predicate
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -53,19 +56,15 @@ class NodeIdxTreeBuilderTest extends Specification {
 		0L         | 102L          | 2
 	}
 
-	TreeCustomizer<Long> customizer = new TreeCustomizer<Long>(){
-
-		void customize(Tree<Long> tree) {
-			tree.setName(String.format("ORG-%04d",tree.getId()));
-			tree.setWeight(tree.getId());
-			tree.putExtra("hot", RandomUtil.randomInt())
-		}
-
+	TreeNodeCustomizer<Long,?> customizer = new TreeNodeCustomizer<Long,Object>(){
 		@Override
-		void customize(Collection<? extends Tree<Long>> elements) {
-			for(Tree<Long> tree : elements){
-				customize(tree)
+		void customize(Tree<Long> node, @Nullable Object meta) {
+			if(null == meta){
+				return;
 			}
+			node.setName(String.format("ORG-%04d",node.getId()));
+			node.setWeight(node.getId());
+			node.putExtra("hot", RandomUtil.randomInt())
 		}
 	}
 
@@ -73,31 +72,29 @@ class NodeIdxTreeBuilderTest extends Specification {
 
     def "Test Make Tree"() {
 		given:
-		TreeBuilder<Long> maker = new TreeBuilder().nodeConfig(config).customizer(customizer).nodes(links);
+		TreeBuilder<Long,?> maker = TreeBuilder.use(links).nodeConfig(config).customizer(customizer);
 
 		when:
-		Tree<Long> root = maker.build(0L)
+		Predicate<Tree<Long>> underZero = new Predicate<Tree<Long>>(){
+			@Override
+			boolean test(Tree<Long> tree) {
+				return Objects.equals(0L,tree.getParentId());
+			}
+		}
+		Tree<Long> root = maker.build(0L).orElse(null)
 
 		then:
-		root != null
-		System.out.println(JSONUtil.toJsonPrettyStr(root))
+		//选择0作为根节点,那么一级节点的为1 和2
+		root.getChildren().get(0).getId() == 1L
+		root.getChildren().get(1).getId() == 2L
+
+		when:
+		Tree<Long> lv1 = maker.build(1L).orElse(null)
 
 		then:
-		root.getId() == 0
-
-		then:
-		List<Tree<Long>> lv1 = root.getChildren()
-		Tree<Long> org1 = lv1.get(0)
-
-		org1.getWeight() == 1
-		org1.getId() == 1
-
-		Tree<Long> org2 = lv1.get(1)
-		org2.getWeight() == 2
-		org2.getId() == 2
-
-		then:
-		List<Tree<Long>> lv2 = org1.getChildren()
+		//选择1作为根节点,那么一级节点的为101 和102
+		System.out.println(JSONUtil.toJsonPrettyStr(lv1))
+		List<Tree<Long>> lv2 = lv1.getChildren()
 		Tree<Long> org101 = lv2.get(0)
 
 		org101.getWeight() == 101
