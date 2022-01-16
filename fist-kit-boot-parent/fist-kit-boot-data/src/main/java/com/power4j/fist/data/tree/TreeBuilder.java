@@ -50,16 +50,19 @@ public class TreeBuilder<ID, T> {
 	@Nullable
 	private TreeNodeConfig config;
 
-	@Nullable
-	private TreeNodeCustomizer<ID, T> customizer;
+	private final Function<? super T, ID> idFunc;
 
-	final Map<ID, List<Pair<ID, T>>> childrenData;
+	private final Function<? super T, ID> pidFunc;
 
 	private final Map<ID, T> sourceData;
 
-	TreeBuilder(Map<ID, T> sourceData, Map<ID, List<Pair<ID, T>>> childrenData) {
+	@Nullable
+	private TreeNodeCustomizer<ID, ? super T> customizer;
+
+	TreeBuilder(Map<ID, T> sourceData, Function<? super T, ID> idFunc, Function<? super T, ID> pidFunc) {
 		this.sourceData = sourceData;
-		this.childrenData = childrenData;
+		this.pidFunc = pidFunc;
+		this.idFunc = idFunc;
 	}
 
 	/**
@@ -74,7 +77,7 @@ public class TreeBuilder<ID, T> {
 	public static <ID, T> TreeBuilder<ID, T> use(Collection<T> data, Function<? super T, ID> idFunc,
 			Function<? super T, ID> pidFunc) {
 		Map<ID, T> sourceData = data.stream().collect(Collectors.toMap(idFunc, Function.identity()));
-		return new TreeBuilder<>(sourceData, buildIdMap(data, idFunc, pidFunc));
+		return new TreeBuilder<>(sourceData, idFunc, pidFunc);
 	}
 
 	/**
@@ -83,10 +86,18 @@ public class TreeBuilder<ID, T> {
 	 * @param <ID> ID 类型
 	 * @return 返回实例
 	 */
-	public static <ID, T extends NodeIdx<ID, T>> TreeBuilder<ID, T> use(Collection<T> nodes) {
-		Map<ID, T> sourceData = nodes.stream().filter(o -> (0 == o.getDistance()))
-				.collect(Collectors.toMap(NodeIdx::getDescendant, Function.identity()));
-		return new TreeBuilder<>(sourceData, buildIdMap(nodes, Function.identity()));
+	public static <ID> TreeBuilder<ID, Tree<ID>> use(Collection<? extends NodeIdx<ID, ?>> nodes) {
+		Function<ID, Tree<ID>> treeMapper = id -> {
+			Tree<ID> tree = new Tree<>();
+			tree.setId(id);
+			return tree;
+		};
+		Map<ID, ID> parentMap = nodes.stream().filter(o -> (1 == o.getDistance()))
+				.collect(Collectors.toMap(NodeIdx::getDescendant, NodeIdx::getAncestor));
+		Map<ID, Tree<ID>> data = nodes.stream().filter(o -> (0 == o.getDistance())).map(NodeIdx::getAncestor)
+				.map(treeMapper).collect(Collectors.toMap(Tree::getId, Function.identity()));
+		data.values().forEach(o -> o.setParentId(parentMap.get(o.getId())));
+		return new TreeBuilder<>(data, Tree::getId, Tree::getParentId);
 	}
 
 	public TreeBuilder<ID, T> nodeConfig(TreeNodeConfig config) {
@@ -94,7 +105,7 @@ public class TreeBuilder<ID, T> {
 		return this;
 	}
 
-	public TreeBuilder<ID, T> customizer(@Nullable TreeNodeCustomizer<ID, T> customizer) {
+	public TreeBuilder<ID, T> customizer(@Nullable TreeNodeCustomizer<ID, ? super T> customizer) {
 		this.customizer = customizer;
 		return this;
 	}
@@ -119,14 +130,12 @@ public class TreeBuilder<ID, T> {
 		if (ObjectUtils.isEmpty(sourceData)) {
 			return Collections.emptyList();
 		}
-
-		final Map<ID, Tree<ID>> nodeMap = new HashMap<>(16);
-
-		childrenData.forEach((key, value) -> {
-			value.forEach(pair -> nodeMap.putIfAbsent(pair.getKey(), makeNode(pair.getKey(), key, config)));
-		});
-		childrenData.keySet().forEach(key -> nodeMap.putIfAbsent(key, makeNode(key, null, config)));
-
+		// @formatter:off
+		final Map<ID, Tree<ID>> nodeMap = sourceData.values()
+				.stream()
+				.map(o -> makeNode(idFunc.apply(o), pidFunc.apply(o), config))
+				.collect(Collectors.toMap(Tree::getId,Function.identity()));
+		// @formatter:on
 		// 根节点
 		List<Tree<ID>> rootList = fetch(nodeMap, isRootNode).values().stream().sorted().collect(Collectors.toList());
 		if (Objects.nonNull(customizer) && !rootList.isEmpty()) {
@@ -134,6 +143,9 @@ public class TreeBuilder<ID, T> {
 		}
 		return rootList;
 	}
+
+	// ~ Utils
+	// ===================================================================================================
 
 	void treeIteration(Collection<Tree<ID>> list, Consumer<Tree<ID>> consumer) {
 		for (Tree<ID> node : list) {
@@ -147,14 +159,14 @@ public class TreeBuilder<ID, T> {
 
 	/**
 	 * 填充子级
-	 * @param data 节点数据
+	 * @param nodeMap 节点数据
 	 * @param rootCheck 判断节点是不是根节点
-	 * @return 根节点Map,没有找到根节点返回empty
+	 * @return 返回根节点
 	 */
-	private Map<ID, Tree<ID>> fetch(Map<ID, Tree<ID>> data, Predicate<Tree<ID>> rootCheck) {
-		final Map<ID, Tree<ID>> eTreeMap = MapUtil.sortByValue(data, false);
+	private Map<ID, Tree<ID>> fetch(Map<ID, Tree<ID>> nodeMap, Predicate<Tree<ID>> rootCheck) {
+		final Map<ID, Tree<ID>> sortedMap = MapUtil.sortByValue(nodeMap, false);
 		// @formatter:off
-		final Map<ID,Tree<ID>> roots = eTreeMap.entrySet()
+		final Map<ID,Tree<ID>> roots = sortedMap.entrySet()
 				.stream()
 				.filter(et -> rootCheck.test(et.getValue()))
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -162,7 +174,7 @@ public class TreeBuilder<ID, T> {
 		if (roots.isEmpty()) {
 			return roots;
 		}
-		for (Tree<ID> node : eTreeMap.values()) {
+		for (Tree<ID> node : sortedMap.values()) {
 			if (null == node) {
 				continue;
 			}
@@ -171,7 +183,7 @@ public class TreeBuilder<ID, T> {
 				continue;
 			}
 
-			final Tree<ID> parentNode = Optional.ofNullable(eTreeMap.get(parentId))
+			final Tree<ID> parentNode = Optional.ofNullable(sortedMap.get(parentId))
 					.orElseGet(() -> roots.get(parentId));
 			if (null != parentNode) {
 				parentNode.addChildren(node);

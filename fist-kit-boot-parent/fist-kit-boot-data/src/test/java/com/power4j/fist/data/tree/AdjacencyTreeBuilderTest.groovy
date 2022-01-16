@@ -93,37 +93,19 @@ class AdjacencyTreeBuilderTest extends Specification {
 		roots = builder.build(underZero);
 
 		then:
+		System.out.println(JSONUtil.toJsonPrettyStr(roots))
 		// 选择 0 下面的节点做作为根节点 那么得到的一级节点是 1和2
 		roots.size() == 2
 		roots.get(0).getId() == 1L
 		roots.get(1).getId() == 2L
 
-		when:
-		Predicate<Tree<Long>> useZero = new Predicate<Tree<Long>>(){
-			@Override
-			boolean test(Tree<Long> tree) {
-				return Objects.equals(0L,tree.getId());
-			}
-		}
-		roots = builder.build(useZero);
-
 		then:
-		// 选择 0 点做作为根节点,那么得到的一级节点是 0
-		roots.size() == 1
-		def root = roots.get(0)
-		System.out.println(JSONUtil.toJsonPrettyStr(root))
-
-		then:
-		root.getId() == 0
-
-		then:
-		List<Tree<Long>> lv1 = root.getChildren()
-		Tree<Long> org1 = lv1.get(0)
+		Tree<Long> org1 = roots.get(0)
+		Tree<Long> org2 = roots.get(1)
 
 		org1.getWeight() == 1
 		org1.getId() == 1
 
-		Tree<Long> org2 = lv1.get(1)
 		org2.getWeight() == 2
 		org2.getId() == 2
 
@@ -137,5 +119,19 @@ class AdjacencyTreeBuilderTest extends Specification {
 		Tree<Long> org102 = lv2.get(1)
 		org102.getWeight() == 102
 		org102.getId() == 102
+
+		when:
+		Predicate<Tree<Long>> useZero = new Predicate<Tree<Long>>(){
+			@Override
+			boolean test(Tree<Long> tree) {
+				return Objects.equals(0L,tree.getId());
+			}
+		}
+		roots = builder.build(useZero);
+
+		then:
+		// 选择 0 点做作为根节点,但是数据源中没有ID为0的数据
+		roots.size() == 0
+
 	}
 }
