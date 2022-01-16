@@ -36,7 +36,7 @@ public interface SecurityConstant {
 	/**
 	 * 零号租户的ID
 	 */
-	String TENANT_ZERO = "f06c2084-821b-4daf-96ab-d68ce88e0ec9";
+	String TENANT_ZERO = "f06c2084821b4daf96abd68ce88e0ec9";
 
 	/**
 	 * 租户ID
