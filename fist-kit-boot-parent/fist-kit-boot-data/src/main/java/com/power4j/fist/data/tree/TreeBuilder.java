@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -52,11 +53,13 @@ public class TreeBuilder<ID, T> {
 	@Nullable
 	private TreeNodeCustomizer<ID, T> customizer;
 
-	@Nullable
-	private Map<ID, List<Pair<ID, T>>> dataMap;
+	final Map<ID, List<Pair<ID, T>>> childrenData;
 
-	TreeBuilder(Map<ID, List<Pair<ID, T>>> dataMap) {
-		this.dataMap = dataMap;
+	private final Map<ID, T> sourceData;
+
+	TreeBuilder(Map<ID, T> sourceData, Map<ID, List<Pair<ID, T>>> childrenData) {
+		this.sourceData = sourceData;
+		this.childrenData = childrenData;
 	}
 
 	/**
@@ -70,7 +73,8 @@ public class TreeBuilder<ID, T> {
 	 */
 	public static <ID, T> TreeBuilder<ID, T> use(Collection<T> data, Function<? super T, ID> idFunc,
 			Function<? super T, ID> pidFunc) {
-		return new TreeBuilder<>(buildIdMap(data, idFunc, pidFunc));
+		Map<ID, T> sourceData = data.stream().collect(Collectors.toMap(idFunc, Function.identity()));
+		return new TreeBuilder<>(sourceData, buildIdMap(data, idFunc, pidFunc));
 	}
 
 	/**
@@ -79,8 +83,10 @@ public class TreeBuilder<ID, T> {
 	 * @param <ID> ID 类型
 	 * @return 返回实例
 	 */
-	public static <ID> TreeBuilder<ID, ?> use(Collection<? extends NodeIdx<ID, ?>> nodes) {
-		return new TreeBuilder<>(buildIdMap(nodes, Function.identity()));
+	public static <ID, T extends NodeIdx<ID, T>> TreeBuilder<ID, T> use(Collection<T> nodes) {
+		Map<ID, T> sourceData = nodes.stream().filter(o -> (0 == o.getDistance()))
+				.collect(Collectors.toMap(NodeIdx::getDescendant, Function.identity()));
+		return new TreeBuilder<>(sourceData, buildIdMap(nodes, Function.identity()));
 	}
 
 	public TreeBuilder<ID, T> nodeConfig(TreeNodeConfig config) {
@@ -88,7 +94,7 @@ public class TreeBuilder<ID, T> {
 		return this;
 	}
 
-	public TreeBuilder<ID, T> customizer(TreeNodeCustomizer<ID, T> customizer) {
+	public TreeBuilder<ID, T> customizer(@Nullable TreeNodeCustomizer<ID, T> customizer) {
 		this.customizer = customizer;
 		return this;
 	}
@@ -109,27 +115,34 @@ public class TreeBuilder<ID, T> {
 	 * @return 返回根节点列表,如果数据源不包含根节点数据则返回empty
 	 */
 	public List<Tree<ID>> build(Predicate<Tree<ID>> isRootNode) {
-		if (ObjectUtils.isEmpty(dataMap)) {
+
+		if (ObjectUtils.isEmpty(sourceData)) {
 			return Collections.emptyList();
 		}
-		Map<ID, Tree<ID>> map = new HashMap<>(16);
-		dataMap.forEach((key, value) -> {
-			value.forEach(pair -> map.put(pair.getKey(), makeNode(pair.getKey(), key, config)));
+
+		final Map<ID, Tree<ID>> nodeMap = new HashMap<>(16);
+
+		childrenData.forEach((key, value) -> {
+			value.forEach(pair -> nodeMap.putIfAbsent(pair.getKey(), makeNode(pair.getKey(), key, config)));
 		});
-		dataMap.keySet().forEach(key -> map.putIfAbsent(key, makeNode(key, null, config)));
-		if (Objects.nonNull(customizer)) {
-			// @formatter:off
-			Map<ID,T> metaMap = dataMap.values()
-					.stream()
-					.flatMap(Collection::stream).collect(Collectors.toMap(Pair::getKey,Pair::getValue));
-			map.values().forEach(node -> {
-				customizer.customize(node,metaMap.get(node.getId()));
-			});
-			// @formatter:on
+		childrenData.keySet().forEach(key -> nodeMap.putIfAbsent(key, makeNode(key, null, config)));
+
+		// 根节点
+		List<Tree<ID>> rootList = fetch(nodeMap, isRootNode).values().stream().sorted().collect(Collectors.toList());
+		if (Objects.nonNull(customizer) && !rootList.isEmpty()) {
+			treeIteration(rootList, node -> customizer.customize(node, sourceData.get(node.getId())));
 		}
-		// 根节点列表
-		Map<ID, Tree<ID>> roots = fetch(map, isRootNode);
-		return roots.values().stream().sorted().collect(Collectors.toList());
+		return rootList;
+	}
+
+	void treeIteration(Collection<Tree<ID>> list, Consumer<Tree<ID>> consumer) {
+		for (Tree<ID> node : list) {
+			final List<Tree<ID>> children = node.getChildren();
+			if (ObjectUtils.isNotEmpty(children)) {
+				treeIteration(children, consumer);
+			}
+			consumer.accept(node);
+		}
 	}
 
 	/**
@@ -186,8 +199,8 @@ public class TreeBuilder<ID, T> {
 		return map;
 	}
 
-	protected static <ID, U> Map<ID, List<Pair<ID, U>>> buildIdMap(Collection<? extends NodeIdx<ID, ?>> nodes,
-			Function<? super NodeIdx<ID, ?>, U> dataConverter) {
+	protected static <ID, T extends NodeIdx<ID, T>, U> Map<ID, List<Pair<ID, U>>> buildIdMap(Collection<T> nodes,
+			Function<? super T, U> dataConverter) {
 		Map<ID, List<Pair<ID, U>>> map = new HashMap<>(16);
 		// @formatter:off
 		nodes.stream().filter(o -> o.getDistance() == 1)
