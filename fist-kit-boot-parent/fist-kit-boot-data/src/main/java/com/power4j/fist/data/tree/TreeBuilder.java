@@ -24,13 +24,16 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.lang.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -121,27 +124,48 @@ public class TreeBuilder<ID, T> {
 	}
 
 	/**
-	 * 构建树形结构 支持多个根节点
-	 * @param isRootNode 根节点断言
+	 * 构建树形结构,自动推测根节点
+	 * @return 返回根节点列表
+	 */
+	public List<Tree<ID>> build() {
+		return makeTree(TreeBuilder::findTopNodes);
+	}
+
+	/**
+	 * 构建树形结构
+	 * @param rootPred 根节点断言
 	 * @return 返回根节点列表,如果数据源不包含根节点数据则返回empty
 	 */
-	public List<Tree<ID>> build(Predicate<Tree<ID>> isRootNode) {
+	public List<Tree<ID>> build(Predicate<Tree<ID>> rootPred) {
+		// @formatter:off
+		Function<Map<ID, Tree<ID>>,Map<ID, Tree<ID>>> rootSelect = map -> map.entrySet()
+				.stream()
+				.filter(et -> rootPred.test(et.getValue()))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+		// @formatter:on
+		return makeTree(rootSelect);
+	}
 
+	/**
+	 * 构建树形结构 支持多个根节点
+	 * @param rootSelect 根节选择器
+	 * @return 返回根节点列表,如果数据源不包含根节点数据则返回empty
+	 */
+	protected List<Tree<ID>> makeTree(Function<Map<ID, Tree<ID>>, Map<ID, Tree<ID>>> rootSelect) {
 		if (ObjectUtils.isEmpty(sourceData)) {
 			return Collections.emptyList();
 		}
-		// @formatter:off
-		final Map<ID, Tree<ID>> nodeMap = sourceData.values()
-				.stream()
-				.map(o -> makeNode(idFunc.apply(o), pidFunc.apply(o), config))
-				.collect(Collectors.toMap(Tree::getId,Function.identity()));
-		// @formatter:on
+		Map<ID, Tree<ID>> nodeMap = makeNodeMap();
 		// 根节点
-		List<Tree<ID>> rootList = fetch(nodeMap, isRootNode).values().stream().sorted().collect(Collectors.toList());
-		if (Objects.nonNull(customizer) && !rootList.isEmpty()) {
-			treeIteration(rootList, node -> customizer.customize(node, sourceData.get(node.getId())));
+		final Map<ID, Tree<ID>> roots = rootSelect.apply(nodeMap);
+		if (ObjectUtils.isEmpty(roots)) {
+			return Collections.emptyList();
 		}
-		return rootList;
+		fetch(nodeMap, roots);
+		if (Objects.nonNull(customizer) && !roots.isEmpty()) {
+			treeIteration(roots.values(), node -> customizer.customize(node, sourceData.get(node.getId())));
+		}
+		return new ArrayList<>(roots.values());
 	}
 
 	// ~ Utils
@@ -157,39 +181,60 @@ public class TreeBuilder<ID, T> {
 		}
 	}
 
+	protected Map<ID, Tree<ID>> makeNodeMap() {
+		// @formatter:off
+		Map<ID, Tree<ID>> nodeMap = sourceData.values()
+				.stream()
+				.map(o -> makeNode(idFunc.apply(o), pidFunc.apply(o), config))
+				.collect(Collectors.toMap(Tree::getId,Function.identity()));
+		// @formatter:on
+		return MapUtil.sortByValue(nodeMap, false);
+	}
+
 	/**
 	 * 填充子级
 	 * @param nodeMap 节点数据
-	 * @param rootCheck 判断节点是不是根节点
-	 * @return 返回根节点
+	 * @param roots 根节点
 	 */
-	private Map<ID, Tree<ID>> fetch(Map<ID, Tree<ID>> nodeMap, Predicate<Tree<ID>> rootCheck) {
-		final Map<ID, Tree<ID>> sortedMap = MapUtil.sortByValue(nodeMap, false);
-		// @formatter:off
-		final Map<ID,Tree<ID>> roots = sortedMap.entrySet()
-				.stream()
-				.filter(et -> rootCheck.test(et.getValue()))
-				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-		// @formatter:on
+	private void fetch(Map<ID, Tree<ID>> nodeMap, Map<ID, Tree<ID>> roots) {
 		if (roots.isEmpty()) {
-			return roots;
+			return;
 		}
-		for (Tree<ID> node : sortedMap.values()) {
+		for (Tree<ID> node : nodeMap.values()) {
 			if (null == node) {
 				continue;
 			}
-			ID parentId = node.getParentId();
-			if (rootCheck.test(node)) {
+			if (roots.containsKey(node.getId())) {
 				continue;
 			}
-
-			final Tree<ID> parentNode = Optional.ofNullable(sortedMap.get(parentId))
-					.orElseGet(() -> roots.get(parentId));
+			ID parentId = node.getParentId();
+			final Tree<ID> parentNode = Optional.ofNullable(nodeMap.get(parentId)).orElseGet(() -> roots.get(parentId));
 			if (null != parentNode) {
 				parentNode.addChildren(node);
 			}
 		}
-		return roots;
+	}
+
+	protected static <ID> Map<ID, Tree<ID>> findTopNodes(Map<ID, Tree<ID>> input) {
+		Map<ID, Tree<ID>> output = new HashMap<>(8);
+		Set<ID> skipSet = new HashSet<>(8);
+		for (Tree<ID> node : input.values()) {
+			if (skipSet.contains(node.getId())) {
+				continue;
+			}
+			Tree<ID> ancestor = findAncestor(input, node, skipSet);
+			output.put(ancestor.getId(), ancestor);
+		}
+		return output;
+	}
+
+	protected static <ID> Tree<ID> findAncestor(Map<ID, Tree<ID>> source, Tree<ID> child, Set<ID> skipSet) {
+		Tree<ID> parent = source.get(child.getParentId());
+		if (Objects.nonNull(parent)) {
+			skipSet.add(child.getId());
+			return findAncestor(source, parent, skipSet);
+		}
+		return child;
 	}
 
 	protected static <ID> Tree<ID> makeNode(ID id, @Nullable ID pid, @Nullable TreeNodeConfig treeNodeConfig) {

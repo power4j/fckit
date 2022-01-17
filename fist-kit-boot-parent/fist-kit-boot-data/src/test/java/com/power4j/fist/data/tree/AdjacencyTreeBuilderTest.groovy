@@ -133,5 +133,15 @@ class AdjacencyTreeBuilderTest extends Specification {
 		// 选择 0 点做作为根节点,但是数据源中没有ID为0的数据
 		roots.size() == 0
 
+
+		when:
+		roots = builder.build();
+
+		then:
+		// 推出出来的根节点是 1 和 2
+		roots.size() == 2
+		// 选择 0 点做作为根节点,但是数据源中没有ID为0的数据
+		roots.get(0).getId() == 1
+		roots.get(1).getId() == 2
 	}
 }
