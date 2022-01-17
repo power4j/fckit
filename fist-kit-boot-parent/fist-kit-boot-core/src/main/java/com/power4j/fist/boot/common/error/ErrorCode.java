@@ -48,35 +48,9 @@ public interface ErrorCode {
 	String A0001 = "A0001";
 
 	/**
-	 * 用户名校验失败
-	 */
-	String A0110 = "A0110";
-
-	/**
 	 * 用户名已存在
 	 */
 	String A0111 = "A0111";
-
-	/**
-	 * 用户名包含特殊字符
-	 */
-	String A0113 = "A0113";
-
-	/**
-	 * 密码校验失败
-	 */
-	String A0120 = "A0120";
-
-	/**
-	 * 密码长度不够
-	 */
-	String A0121 = "A0121";
-
-	/**
-	 * 用户登录异常 <br/>
-	 * <b>二级宏观错误码</b>
-	 */
-	String A0200 = "A0200";
 
 	/**
 	 * 访问权限异常 <br/>
@@ -95,7 +69,7 @@ public interface ErrorCode {
 	String A0311 = "A0311";
 
 	/**
-	 * API Token 无效
+	 * Token 无效
 	 */
 	String A0321 = "A0321";
 
@@ -198,36 +172,6 @@ public interface ErrorCode {
 	 * RPC 服务未注册
 	 */
 	String C0112 = "C0112";
-
-	/**
-	 * 接口不存在
-	 */
-	String C0113 = "C0113";
-
-	/**
-	 * 消息服务出错
-	 */
-	String C0120 = "C0120";
-
-	/**
-	 * 消息投递出错
-	 */
-	String C0121 = "C0121";
-
-	/**
-	 * 消息消费出错
-	 */
-	String C0122 = "C0122";
-
-	/**
-	 * 消息订阅出错
-	 */
-	String C0123 = "C0123";
-
-	/**
-	 * 消息分组未查到
-	 */
-	String C0124 = "C0124";
 
 	/**
 	 * 第三方系统执行超时 <br/>
