@@ -45,7 +45,7 @@ public class DocUtil {
 
 	public ApiDetails createDetails(ApiTrait apiTrait) {
 		ApiDetails apiDetails = new ApiDetails();
-		apiDetails.setResourceName(apiTrait.resourceId());
+		apiDetails.setResourceId(apiTrait.resourceId());
 		apiDetails.setLevel(apiTrait.level().getValue());
 		apiDetails.setExpose(apiTrait.access().getValue());
 		apiDetails.setSign(apiTrait.sign());

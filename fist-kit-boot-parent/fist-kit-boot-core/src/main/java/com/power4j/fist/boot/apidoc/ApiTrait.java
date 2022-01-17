@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
 public @interface ApiTrait {
 
 	/**
-	 * 唯一资源ID(服务级) <b>默认自动分配</b>
+	 * 唯一资源ID(服务级) <b>留空自动计算</b>
 	 */
 	String resourceId() default "";
 

@@ -26,6 +26,8 @@ import lombok.Data;
 @Data
 public class ApiDetails {
 
+	private String resourceId;
+
 	private String resourceName;
 
 	private String level;
