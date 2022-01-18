@@ -27,21 +27,21 @@ import java.util.Objects;
  */
 public abstract class AbstractOpTemplateRegistry<T> {
 
-	private final Map<TemplateId, OpTemplate<T>> definitions;
+	private final Map<String, OpTemplate<T>> definitions;
 
 	public AbstractOpTemplateRegistry(List<OpHandler<T>> handlers,
 			List<OpTemplateConfigure<T, OpTemplateBuilder<T>>> configures) {
 		this.definitions = buildMap(handlers, configures);
 	}
 
-	public OpTemplate<T> use(TemplateId id) {
+	public OpTemplate<T> use(String id) {
 		if (!definitions.containsKey(id)) {
-			throw new OpTemplateException("Not defined :" + id.getId());
+			throw new OpTemplateException("OpTemplate not defined :" + id);
 		}
 		return definitions.get(id);
 	}
 
-	private Map<TemplateId, OpTemplate<T>> buildMap(List<OpHandler<T>> handlers,
+	private Map<String, OpTemplate<T>> buildMap(List<OpHandler<T>> handlers,
 			List<OpTemplateConfigure<T, OpTemplateBuilder<T>>> configures) {
 		Objects.requireNonNull(handlers);
 		OpTemplateBuilder<T> builder = new OpTemplateBuilder<>(handlers);

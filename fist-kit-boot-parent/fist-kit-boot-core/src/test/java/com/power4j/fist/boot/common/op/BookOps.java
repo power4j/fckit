@@ -21,7 +21,7 @@ package com.power4j.fist.boot.common.op;
  * @date 2021/10/12
  * @since 1.0
  */
-public enum BookOps implements TemplateId {
+public enum BookOps {
 
 	SoldOut("售罄"), Promo50("半价促销");
 
@@ -31,7 +31,6 @@ public enum BookOps implements TemplateId {
 		this.id = id;
 	}
 
-	@Override
 	public String getId() {
 		return id;
 	}

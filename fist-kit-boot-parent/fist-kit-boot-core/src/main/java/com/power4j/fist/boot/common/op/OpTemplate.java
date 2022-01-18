@@ -25,13 +25,13 @@ import java.util.function.Consumer;
  */
 public class OpTemplate<T> implements OpInvoker<T> {
 
-	private final TemplateId id;
+	private final String id;
 
 	private final OpHandler<T> preHandler;
 
 	private final OpHandler<T> opHandler;
 
-	OpTemplate(TemplateId id, OpHandler<T> preHandler, OpHandler<T> opHandler) {
+	OpTemplate(String id, OpHandler<T> preHandler, OpHandler<T> opHandler) {
 		this.id = id;
 		this.preHandler = preHandler;
 		this.opHandler = opHandler;
@@ -44,7 +44,7 @@ public class OpTemplate<T> implements OpInvoker<T> {
 		opHandler.handle(context);
 	}
 
-	public TemplateId getId() {
+	public String getId() {
 		return id;
 	}
 

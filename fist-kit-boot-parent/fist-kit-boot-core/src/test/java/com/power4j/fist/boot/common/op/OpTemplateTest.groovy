@@ -94,7 +94,7 @@ class OpTemplateTest extends Specification {
 	def "OpTemplate Test"(){
 		given:
 		HandlerCompose<Book> pre = new HandlerCompose<>(Arrays.asList(checkBan,checkStock))
-		OpTemplate<Book> template = new OpTemplate<>(BookOps.Promo50,pre,notify)
+		OpTemplate<Book> template = new OpTemplate<>(BookOps.Promo50.getId(),pre,notify)
 
 		when:
 		checkBan.reset()
@@ -113,7 +113,7 @@ class OpTemplateTest extends Specification {
 	def "Skip invoke on exception"(){
 		given:
 		HandlerCompose<Book> pre = new HandlerCompose<>(Arrays.asList(checkBan,checkStock))
-		OpTemplate<Book> template = new OpTemplate<>(BookOps.Promo50,pre,notify)
+		OpTemplate<Book> template = new OpTemplate<>(BookOps.Promo50.getId(),pre,notify)
 
 		when:
 		checkBan.reset()
@@ -146,7 +146,7 @@ class OpTemplateTest extends Specification {
 
 		given:
 		HandlerCompose<Book> pre = new HandlerCompose<>(Arrays.asList(checkBan,checkStock))
-		OpTemplate<Book> template = new OpTemplate<>(BookOps.Promo50,pre,notify)
+		OpTemplate<Book> template = new OpTemplate<>(BookOps.Promo50.getId(),pre,notify)
 
 		when:
 		checkBan.reset()

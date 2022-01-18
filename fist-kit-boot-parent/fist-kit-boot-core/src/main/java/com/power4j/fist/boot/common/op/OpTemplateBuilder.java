@@ -17,6 +17,7 @@
 package com.power4j.fist.boot.common.op;
 
 import cn.hutool.core.thread.ThreadUtil;
+import org.apache.commons.lang3.Validate;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -41,15 +43,15 @@ public class OpTemplateBuilder<T> {
 
 	private final List<OpHandler<T>> knownHandlers;
 
-	private final Map<TemplateId, List<HandlerInfo<T>>> preHandlerMap = new ConcurrentHashMap<>(2);
+	private final Map<String, List<HandlerInfo<T>>> preHandlerMap = new ConcurrentHashMap<>(2);
 
-	private final Map<TemplateId, List<HandlerInfo<T>>> postHandlerMap = new ConcurrentHashMap<>(2);
+	private final Map<String, List<HandlerInfo<T>>> postHandlerMap = new ConcurrentHashMap<>(2);
 
 	@Nullable
 	private List<HandlerInfo<T>> entry;
 
 	@Nullable
-	private TemplateId currentId;
+	private String currentId;
 
 	/**
 	 * 建议根据实际情况使用自定义ExecutorService
@@ -58,6 +60,10 @@ public class OpTemplateBuilder<T> {
 
 	public OpTemplateBuilder(List<OpHandler<T>> knownHandlers) {
 		this.knownHandlers = Objects.requireNonNull(knownHandlers);
+	}
+
+	public OpTemplateBuilder() {
+		this(Collections.emptyList());
 	}
 
 	public OpTemplateBuilder<T> asyncExecutor(ExecutorService executorService) {
@@ -75,17 +81,31 @@ public class OpTemplateBuilder<T> {
 		return this;
 	}
 
+	public OpTemplateBuilder<T> add(OpHandler<T> handler) {
+		Validate.notNull(handler);
+		checkoutCurrentEntry().add(HandlerInfo.of(handler, false));
+		return this;
+	}
+
+	public OpTemplateBuilder<T> addAsync(OpHandler<T> handler) {
+		Validate.notNull(handler);
+		checkoutCurrentEntry().add(HandlerInfo.of(handler, true));
+		return this;
+	}
+
 	public OpTemplateBuilder<T> add(Class<? extends OpHandler<T>> clazz) {
+		Validate.notNull(clazz);
 		checkoutCurrentEntry().add(HandlerInfo.of(clazz, false));
 		return this;
 	}
 
 	public OpTemplateBuilder<T> addAsync(Class<? extends OpHandler<T>> clazz) {
+		Validate.notNull(clazz);
 		checkoutCurrentEntry().add(HandlerInfo.of(clazz, true));
 		return this;
 	}
 
-	public OpTemplateBuilder<T> define(TemplateId id) {
+	public OpTemplateBuilder<T> define(String id) {
 		this.currentId = id;
 		this.entry = null;
 		preHandlerMap.putIfAbsent(id, new ArrayList<>(2));
@@ -93,15 +113,15 @@ public class OpTemplateBuilder<T> {
 		return this;
 	}
 
-	public Map<TemplateId, OpTemplate<T>> build() {
+	public Map<String, OpTemplate<T>> build() {
 		entry = null;
 		currentId = null;
-		Set<TemplateId> idSet = new HashSet<>(preHandlerMap.keySet());
+		Set<String> idSet = new HashSet<>(preHandlerMap.keySet());
 		idSet.addAll(postHandlerMap.keySet());
 		return idSet.stream().collect(Collectors.toMap(o -> o, this::buildTemplate));
 	}
 
-	private OpTemplate<T> buildTemplate(TemplateId id) {
+	private OpTemplate<T> buildTemplate(String id) {
 		HandlerCompose<T> pre = new HandlerCompose<>(
 				prepareHandlerList(preHandlerMap.getOrDefault(id, Collections.emptyList())));
 		HandlerCompose<T> post = new HandlerCompose<>(
@@ -116,7 +136,7 @@ public class OpTemplateBuilder<T> {
 		return entry;
 	}
 
-	private TemplateId checkoutCurrentId() {
+	private String checkoutCurrentId() {
 		if (Objects.isNull(currentId)) {
 			throw new IllegalStateException("Please call define() first");
 		}
@@ -125,9 +145,11 @@ public class OpTemplateBuilder<T> {
 
 	private List<OpHandler<T>> prepareHandlerList(List<HandlerInfo<T>> infoList) {
 		return infoList.stream().map(info -> {
-			final Class<? extends OpHandler<T>> target = info.getHandlerClass();
-			OpHandler<T> handler = knownHandlers.stream().filter(h -> target.isAssignableFrom(h.getClass())).findFirst()
-					.orElseThrow(() -> new OpTemplateException("No instance for " + info.getHandlerClass()));
+			OpHandler<T> handler = Optional.ofNullable(info.getHandler())
+					.orElseGet(() -> findHandler(info.getHandlerClass()));
+			if (null == handler) {
+				throw new OpTemplateException("No handler of " + info.getHandlerClass());
+			}
 			if (info.isAsync()) {
 				return (OpHandler<T>) (context) -> {
 					asyncExecutor.execute(() -> handler.handle(context));
@@ -137,9 +159,21 @@ public class OpTemplateBuilder<T> {
 		}).collect(Collectors.toList());
 	}
 
+	@Nullable
+	private OpHandler<T> findHandler(@Nullable Class<? extends OpHandler<T>> clazz) {
+		if (null == clazz) {
+			return null;
+		}
+		return knownHandlers.stream().filter(h -> clazz.isAssignableFrom(h.getClass())).findFirst().orElse(null);
+	}
+
 	static class HandlerInfo<T> {
 
+		@Nullable
 		private final Class<? extends OpHandler<T>> handlerClass;
+
+		@Nullable
+		private final OpHandler<T> handler;
 
 		private final boolean async;
 
@@ -147,11 +181,28 @@ public class OpTemplateBuilder<T> {
 			return new HandlerInfo<>(handlerClass, async);
 		}
 
+		static <T> HandlerInfo<T> of(OpHandler<T> handler, boolean async) {
+			return new HandlerInfo<>(handler, async);
+		}
+
 		HandlerInfo(Class<? extends OpHandler<T>> handlerClass, boolean async) {
 			this.handlerClass = handlerClass;
+			this.handler = null;
 			this.async = async;
 		}
 
+		HandlerInfo(OpHandler<T> handler, boolean async) {
+			this.handlerClass = null;
+			this.handler = handler;
+			this.async = async;
+		}
+
+		@Nullable
+		public OpHandler<T> getHandler() {
+			return handler;
+		}
+
+		@Nullable
 		public Class<? extends OpHandler<T>> getHandlerClass() {
 			return handlerClass;
 		}
