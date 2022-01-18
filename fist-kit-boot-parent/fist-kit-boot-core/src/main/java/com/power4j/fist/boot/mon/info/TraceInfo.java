@@ -14,23 +14,31 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.autoconfigure.common;
+package com.power4j.fist.boot.mon.info;
 
-import com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration;
-import com.power4j.fist.boot.autoconfigure.mon.AppMonConfiguration;
-import com.power4j.fist.boot.common.jackson.JacksonConfig;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.lang.Nullable;
+
+import java.io.Serializable;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2021/10/14
  * @since 1.0
  */
-@Slf4j
-@Configuration(proxyBeanMethods = false)
-@Import({ MessageConfiguration.class, JacksonConfig.class, AppMonConfiguration.class })
-public class CommonConfiguration {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class TraceInfo implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	@Nullable
+	private String requestId;
+
+	@Nullable
+	private String userId;
 
 }

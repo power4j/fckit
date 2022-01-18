@@ -14,42 +14,36 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.web.event.error;
+package com.power4j.fist.boot.mon.listener;
 
-import lombok.Data;
-import org.springframework.lang.Nullable;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.scheduling.annotation.Async;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/10/14
+ * @date 2022/1/18
  * @since 1.0
  */
-@Data
-public class ErrorEvent implements Serializable {
+@Slf4j
+public abstract class AbstractEventListener<T> implements ApplicationListener<PayloadApplicationEvent<T>> {
 
-	private static final long serialVersionUID = 1L;
-
-	private String appName;
+	@Async
+	@Override
+	public void onApplicationEvent(PayloadApplicationEvent<T> event) {
+		try {
+			handeEvent(event.getPayload());
+		}
+		catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+	}
 
 	/**
-	 * UTC
+	 * 处理事件消息
+	 * @param event 事件对象
 	 */
-	private LocalDateTime time;
-
-	private TraceInfo traceInfo;
-
-	private RequestInfo requestInfo;
-
-	private EnvInfo envInfo;
-
-	@Nullable
-	private ExceptionInfo error;
-
-	private Map<String, Object> extraInfo = new HashMap<>();
+	protected abstract void handeEvent(T event);
 
 }

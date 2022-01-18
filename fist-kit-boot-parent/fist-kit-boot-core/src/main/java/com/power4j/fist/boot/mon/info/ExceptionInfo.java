@@ -14,9 +14,13 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.web.event.error;
+package com.power4j.fist.boot.mon.info;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.lang.Nullable;
 
 import java.io.Serializable;
@@ -27,14 +31,29 @@ import java.io.Serializable;
  * @since 1.0
  */
 @Data
-public class TraceInfo implements Serializable {
+@NoArgsConstructor
+@AllArgsConstructor
+public class ExceptionInfo implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	@Nullable
-	private String requestId;
+	private String ex;
 
 	@Nullable
-	private String userId;
+	private String exMsg;
+
+	private String exStack;
+
+	public static ExceptionInfo from(Throwable e, int stacktraceLimit) {
+		ExceptionInfo info = new ExceptionInfo();
+		info.setEx(e.getClass().getName());
+		info.setExMsg(e.getMessage());
+		info.setExStack(StringUtils.truncate(ExceptionUtils.getStackTrace(e), stacktraceLimit));
+		return info;
+	}
+
+	public static ExceptionInfo from(Throwable e) {
+		return from(e, 5000);
+	}
 
 }

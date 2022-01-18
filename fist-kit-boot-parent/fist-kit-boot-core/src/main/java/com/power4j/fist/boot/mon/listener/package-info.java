@@ -14,37 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.web.event.error;
-
-import lombok.Data;
-
-import java.io.Serializable;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/10/14
+ * @date 2021/6/2
  * @since 1.0
  */
-@Data
-public class EnvInfo implements Serializable {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.boot.mon.listener;
 
-	private static final long serialVersionUID = 1L;
-
-	private String osName;
-
-	private String osVersion;
-
-	private String jvmName;
-
-	private String jvmVersion;
-
-	public static EnvInfo resolve() {
-		EnvInfo info = new EnvInfo();
-		info.setJvmName(System.getProperty("java.vm.name"));
-		info.setJvmVersion(System.getProperty("java.vm.version"));
-		info.setOsName(System.getProperty("os.name"));
-		info.setOsVersion(System.getProperty("os.version"));
-		return info;
-	}
-
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;

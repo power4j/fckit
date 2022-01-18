@@ -20,12 +20,12 @@ import com.power4j.coca.kit.common.datetime.DateTimeKit;
 import com.power4j.coca.kit.common.lang.Obj;
 import com.power4j.fist.boot.util.ApplicationContextHolder;
 import com.power4j.fist.boot.util.SpringEventUtil;
-import com.power4j.fist.boot.web.event.error.EnvInfo;
-import com.power4j.fist.boot.web.event.error.ErrorEvent;
-import com.power4j.fist.boot.web.event.error.ExceptionInfo;
+import com.power4j.fist.boot.mon.info.EnvInfo;
+import com.power4j.fist.boot.web.event.error.HandlerErrorEvent;
+import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.web.event.error.RequestInfo;
-import com.power4j.fist.boot.web.event.error.TraceInfo;
-import com.power4j.fist.boot.web.event.error.TraceInfoResolver;
+import com.power4j.fist.boot.mon.info.TraceInfo;
+import com.power4j.fist.boot.mon.info.TraceInfoResolver;
 import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -55,34 +55,34 @@ public class AbstractExceptionHandler {
 	 * @param e 异常
 	 */
 	protected void doNotify(Throwable e) {
-		ErrorEvent event = createErrorEvent(e);
+		HandlerErrorEvent event = createErrorEvent(e);
 		if (filterErrorEvent(event)) {
 			SpringEventUtil.publishEvent(event);
 		}
 	}
 
-	protected ErrorEvent createErrorEvent(Throwable e) {
+	protected HandlerErrorEvent createErrorEvent(Throwable e) {
 		String appName = ApplicationContextHolder.getContextOptional().map(ApplicationContext::getApplicationName)
 				.orElse("未知应用");
 		TraceInfo traceInfo = HttpServletRequestUtil.getCurrentRequestIfAvailable()
 				.flatMap(o -> traceInfoResolver.resolve(o)).orElse(new TraceInfo());
-		ErrorEvent errorEvent = new ErrorEvent();
-		errorEvent.setAppName(appName);
-		errorEvent.setTime(DateTimeKit.utcNow());
-		errorEvent.setEnvInfo(getEnvInfo());
-		errorEvent.setError(ExceptionInfo.from(e));
-		errorEvent.setRequestInfo(RequestInfo.from(HttpServletRequestUtil.getCurrentRequest()));
-		errorEvent.setTraceInfo(traceInfo);
+		HandlerErrorEvent handlerErrorEvent = new HandlerErrorEvent();
+		handlerErrorEvent.setAppName(appName);
+		handlerErrorEvent.setTime(DateTimeKit.utcNow());
+		handlerErrorEvent.setEnvInfo(getEnvInfo());
+		handlerErrorEvent.setError(ExceptionInfo.from(e));
+		handlerErrorEvent.setRequestInfo(RequestInfo.from(HttpServletRequestUtil.getCurrentRequest()));
+		handlerErrorEvent.setTraceInfo(traceInfo);
 
-		return errorEvent;
+		return handlerErrorEvent;
 	}
 
 	/**
 	 * 过滤ErrorEvent
-	 * @param errorEvent 原始信息
+	 * @param handlerErrorEvent 原始信息
 	 * @return 返回 false 表示终止发送事件
 	 */
-	protected boolean filterErrorEvent(ErrorEvent errorEvent) {
+	protected boolean filterErrorEvent(HandlerErrorEvent handlerErrorEvent) {
 		return true;
 	}
 

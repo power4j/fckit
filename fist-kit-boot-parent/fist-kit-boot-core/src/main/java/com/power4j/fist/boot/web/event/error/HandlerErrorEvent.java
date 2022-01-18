@@ -16,20 +16,43 @@
 
 package com.power4j.fist.boot.web.event.error;
 
-import java.util.Optional;
+import com.power4j.fist.boot.mon.info.EnvInfo;
+import com.power4j.fist.boot.mon.info.ExceptionInfo;
+import com.power4j.fist.boot.mon.info.TraceInfo;
+import lombok.Data;
+import org.springframework.lang.Nullable;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2021/10/14
  * @since 1.0
  */
-public interface TraceInfoResolver<C> {
+@Data
+public class HandlerErrorEvent implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	private String appName;
 
 	/**
-	 * 解析TraceInfo
-	 * @param request 当前请求
-	 * @return 解析失败返回empty
+	 * UTC
 	 */
-	Optional<TraceInfo> resolve(C request);
+	private LocalDateTime time;
+
+	private TraceInfo traceInfo;
+
+	private EnvInfo envInfo;
+
+	private RequestInfo requestInfo;
+
+	@Nullable
+	private ExceptionInfo error;
+
+	private Map<String, Object> extraInfo = new HashMap<>();
 
 }

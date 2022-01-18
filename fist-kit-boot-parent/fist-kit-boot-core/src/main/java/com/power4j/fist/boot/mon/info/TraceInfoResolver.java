@@ -14,41 +14,22 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.web.event.error;
+package com.power4j.fist.boot.mon.info;
 
-import cn.hutool.core.exceptions.ExceptionUtil;
-import lombok.Data;
-import org.springframework.lang.Nullable;
-
-import java.io.Serializable;
+import java.util.Optional;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2021/10/14
  * @since 1.0
  */
-@Data
-public class ExceptionInfo implements Serializable {
+public interface TraceInfoResolver<C> {
 
-	private static final long serialVersionUID = 1L;
-
-	private String ex;
-
-	@Nullable
-	private String exMsg;
-
-	private String exStack;
-
-	public static ExceptionInfo from(Throwable e, int stacktraceLimit) {
-		ExceptionInfo info = new ExceptionInfo();
-		info.setEx(e.getClass().getName());
-		info.setExMsg(e.getMessage());
-		info.setExStack(ExceptionUtil.stacktraceToString(e, stacktraceLimit));
-		return info;
-	}
-
-	public static ExceptionInfo from(Throwable e) {
-		return from(e, 5000);
-	}
+	/**
+	 * 解析TraceInfo
+	 * @param request 当前请求
+	 * @return 解析失败返回empty
+	 */
+	Optional<TraceInfo> resolve(C request);
 
 }
