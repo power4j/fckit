@@ -23,7 +23,9 @@ import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.mon.info.TraceInfo;
 import com.power4j.fist.boot.util.ApplicationContextHolder;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.lang.Nullable;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -37,11 +39,12 @@ public class EventUtils {
 
 	private final static AtomicReference<EnvInfo> ENV_INFO_CACHE = new AtomicReference<>(EnvInfo.resolve());
 
-	public ServerErrorEvent createServerErrorEvent(Throwable e) {
+	public ServerErrorEvent createServerErrorEvent(@Nullable String description, Throwable e) {
 		String appName = ApplicationContextHolder.getContextOptional().map(ApplicationContext::getApplicationName)
 				.orElse("Unknown");
 		ServerErrorEvent errorEvent = new ServerErrorEvent();
 		errorEvent.setAppName(appName);
+		errorEvent.setDescription(ObjectUtils.defaultIfNull(description, ""));
 		errorEvent.setTime(DateTimeKit.utcNow());
 		errorEvent.setEnvInfo(ENV_INFO_CACHE.get());
 		errorEvent.setError(ExceptionInfo.from(e));

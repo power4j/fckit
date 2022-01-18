@@ -36,13 +36,12 @@ public class ReportErrorAspect {
 
 	@Around("@annotation(reportError)")
 	public Object around(ProceedingJoinPoint point, ReportError reportError) throws Throwable {
-		Class<? extends Exception>[] exceptions = reportError.errors();
 		try {
 			return point.proceed();
 		}
 		catch (Exception e) {
 			try {
-				handleError(e, exceptions);
+				handleError(e, reportError);
 			}
 			catch (Throwable any) {
 				log.error(e.getMessage(), e);
@@ -51,13 +50,15 @@ public class ReportErrorAspect {
 		}
 	}
 
-	void handleError(Exception e, Class<? extends Exception>[] targets) {
+	void handleError(Exception e, ReportError annotation) {
+		final String description = annotation.description();
+		final Class<? extends Exception>[] targets = annotation.errors();
 		if (ObjectUtils.isEmpty(targets)) {
 			return;
 		}
 		for (Class<? extends Exception> clazz : targets) {
 			if (clazz.isAssignableFrom(e.getClass())) {
-				SpringEventUtil.publishEvent(EventUtils.createServerErrorEvent(e));
+				SpringEventUtil.publishEvent(EventUtils.createServerErrorEvent(description, e));
 				return;
 			}
 		}

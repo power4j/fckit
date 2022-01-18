@@ -37,6 +37,8 @@ public class ServerErrorEvent implements Serializable {
 
 	private String appName;
 
+	private String description;
+
 	/**
 	 * UTC
 	 */

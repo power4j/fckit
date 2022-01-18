@@ -32,6 +32,16 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD })
 public @interface ReportError {
 
+	/**
+	 * 捕获的异常类型
+	 * @return 返回的依赖类型列表会被处理
+	 */
 	Class<? extends Exception>[] errors() default Exception.class;
+
+	/**
+	 * 场景描述
+	 * @return 返回描述信息
+	 */
+	String description() default "";
 
 }
