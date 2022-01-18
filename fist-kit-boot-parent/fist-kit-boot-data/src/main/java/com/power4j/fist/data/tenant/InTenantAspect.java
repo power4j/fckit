@@ -16,6 +16,9 @@
 
 package com.power4j.fist.data.tenant;
 
+import com.power4j.fist.boot.common.aop.AopUtil;
+import com.power4j.fist.boot.common.spel.MethodParameterResolver;
+import com.power4j.fist.boot.common.spel.SpringElUtil;
 import com.power4j.fist.data.tenant.annotation.InTenant;
 import com.power4j.fist.data.tenant.isolation.TenantBroker;
 import lombok.Data;
@@ -24,12 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.DefaultParameterNameDiscoverer;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -50,8 +49,9 @@ public class InTenantAspect {
 	@Around("@annotation(inTenant)")
 	public Object around(ProceedingJoinPoint point, InTenant inTenant) throws Throwable {
 		Object[] arguments = point.getArgs();
-		Method method = getMethod(point);
-		final String tenant = evaluationExpr(method, arguments, inTenant.value(), String.class, null);
+		Method method = AopUtil.getMethod(point);
+		final String tenant = SpringElUtil.eval(MethodParameterResolver.of(method, arguments), inTenant.value(),
+				String.class, null);
 		Ret ret = TenantBroker.applyAs(tenant, () -> {
 			try {
 				Object object = point.proceed();
@@ -65,48 +65,6 @@ public class InTenantAspect {
 			throw ret.getThrowable();
 		}
 		return ret.getObject();
-	}
-
-	/**
-	 * 表达式求值
-	 * @param method 方法
-	 * @param arguments 参数
-	 * @param expr 表达式
-	 * @param clazz 返回结果的类型
-	 * @param defVal 默认值
-	 * @return 执行表达式后的结果
-	 */
-	<T> T evaluationExpr(Method method, Object[] arguments, String expr, Class<T> clazz, T defVal) {
-		EvaluationContext context = new StandardEvaluationContext();
-		String[] params = discoverer.getParameterNames(method);
-		if (null != params) {
-			for (int len = 0; len < params.length; len++) {
-				context.setVariable(params[len], arguments[len]);
-			}
-		}
-		try {
-			Expression expression = parser.parseExpression(expr);
-			return expression.getValue(context, clazz);
-		}
-		catch (Exception e) {
-			log.warn(e.getMessage(), e);
-			return defVal;
-		}
-	}
-
-	private Method getMethod(ProceedingJoinPoint joinPoint) {
-		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-		Method method = signature.getMethod();
-		if (method.getDeclaringClass().isInterface()) {
-			try {
-				method = joinPoint.getTarget().getClass().getDeclaredMethod(joinPoint.getSignature().getName(),
-						method.getParameterTypes());
-			}
-			catch (SecurityException | NoSuchMethodException e) {
-				throw new IllegalStateException(e);
-			}
-		}
-		return method;
 	}
 
 	@Data

@@ -16,6 +16,10 @@
 
 package com.power4j.fist.boot.mon.aspect;
 
+import com.power4j.coca.kit.common.text.StringPool;
+import com.power4j.fist.boot.common.aop.AopUtil;
+import com.power4j.fist.boot.common.spel.MethodParameterResolver;
+import com.power4j.fist.boot.common.spel.SpringElUtil;
 import com.power4j.fist.boot.mon.EventUtils;
 import com.power4j.fist.boot.mon.annotation.ReportError;
 import com.power4j.fist.boot.util.SpringEventUtil;
@@ -24,6 +28,10 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+
+import java.lang.reflect.Method;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -34,6 +42,10 @@ import org.aspectj.lang.annotation.Aspect;
 @Aspect
 public class ReportErrorAspect {
 
+	private final SpelExpressionParser parser = new SpelExpressionParser();
+
+	private final DefaultParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
+
 	@Around("@annotation(reportError)")
 	public Object around(ProceedingJoinPoint point, ReportError reportError) throws Throwable {
 		try {
@@ -41,7 +53,7 @@ public class ReportErrorAspect {
 		}
 		catch (Exception e) {
 			try {
-				handleError(e, reportError);
+				handleError(point, e, reportError);
 			}
 			catch (Throwable any) {
 				log.error(e.getMessage(), e);
@@ -50,11 +62,17 @@ public class ReportErrorAspect {
 		}
 	}
 
-	void handleError(Exception e, ReportError annotation) {
-		final String description = annotation.description();
+	void handleError(ProceedingJoinPoint point, Exception e, ReportError annotation) {
 		final Class<? extends Exception>[] targets = annotation.errors();
 		if (ObjectUtils.isEmpty(targets)) {
 			return;
+		}
+		String description = annotation.description();
+		if (ObjectUtils.isNotEmpty(annotation)) {
+			Object[] arguments = point.getArgs();
+			Method method = AopUtil.getMethod(point);
+			description = SpringElUtil.eval(MethodParameterResolver.of(method, arguments), description, String.class,
+					StringPool.EMPTY);
 		}
 		for (Class<? extends Exception> clazz : targets) {
 			if (clazz.isAssignableFrom(e.getClass())) {

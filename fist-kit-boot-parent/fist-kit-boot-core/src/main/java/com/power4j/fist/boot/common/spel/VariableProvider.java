@@ -14,34 +14,21 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.mon.annotation;
+package com.power4j.fist.boot.common.spel;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.Map;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2022/1/18
  * @since 1.0
  */
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD })
-public @interface ReportError {
+public interface VariableProvider {
 
 	/**
-	 * 捕获的异常类型
-	 * @return 返回的依赖类型列表会被处理
+	 * 上下文变量
+	 * @return 返回名称和值的键值对
 	 */
-	Class<? extends Exception>[] errors() default Exception.class;
-
-	/**
-	 * 场景描述，支持EL
-	 * @return 返回描述信息
-	 */
-	String description() default "";
+	Map<String, Object> getVariables();
 
 }

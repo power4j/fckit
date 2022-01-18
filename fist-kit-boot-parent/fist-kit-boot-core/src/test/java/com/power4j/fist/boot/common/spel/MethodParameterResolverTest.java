@@ -14,36 +14,38 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.data.tenant;
+package com.power4j.fist.boot.common.spel;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/12
+ * @date 2022/1/18
  * @since 1.0
  */
-public class InTenantAspectTest {
+class MethodParameterResolverTest {
 
-	static class Demo {
+	static class Hello {
 
 		public void hello(String name) {
-			//
+			// Nothing
 		}
 
 	}
 
 	@Test
-	public void evaluationExprTest() throws NoSuchMethodException {
-		InTenantAspect aspectTest = new InTenantAspect();
+	void getVariables() throws NoSuchMethodException {
 		String expr = "#name";
-		Method method = Demo.class.getMethod("hello", String.class);
+		Method method = Hello.class.getMethod("hello", String.class);
 		Object[] argv = new Object[] { "fist" };
-		String value = aspectTest.evaluationExpr(method, argv, expr, String.class, null);
-		Assertions.assertEquals("fist", value);
+		Map<String, Object> variables = MethodParameterResolver.of(method, argv).getVariables();
+		Assertions.assertEquals("fist", variables.get("name"));
 	}
 
 }

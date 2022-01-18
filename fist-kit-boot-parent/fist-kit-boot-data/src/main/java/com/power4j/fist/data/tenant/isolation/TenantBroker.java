@@ -22,6 +22,7 @@ import com.power4j.coca.kit.common.exception.WrappedException;
 import com.power4j.coca.kit.common.util.function.RunAny;
 import com.power4j.coca.kit.common.util.function.SupplyAny;
 import lombok.experimental.UtilityClass;
+import org.springframework.lang.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -41,7 +42,7 @@ public class TenantBroker {
 		}
 	};
 
-	public void runAs(String tenant, RunAny runnable) throws WrappedException {
+	public void runAs(@Nullable String tenant, RunAny runnable) throws WrappedException {
 		String pre = TenantHolder.getTenant().orElse(null);
 		try {
 			TenantHolder.setTenant(tenant);
@@ -57,7 +58,7 @@ public class TenantBroker {
 		}
 	}
 
-	public <T> T applyAs(String tenant, SupplyAny<T> supplier) throws WrappedException {
+	public <T> T applyAs(@Nullable String tenant, SupplyAny<T> supplier) throws WrappedException {
 		String pre = TenantHolder.getTenant().orElse(null);
 		try {
 			TenantHolder.setTenant(tenant);

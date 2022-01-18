@@ -14,34 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.mon.annotation;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/18
+ * @date 2021/6/2
  * @since 1.0
  */
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD })
-public @interface ReportError {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.boot.common.spel;
 
-	/**
-	 * 捕获的异常类型
-	 * @return 返回的依赖类型列表会被处理
-	 */
-	Class<? extends Exception>[] errors() default Exception.class;
-
-	/**
-	 * 场景描述，支持EL
-	 * @return 返回描述信息
-	 */
-	String description() default "";
-
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;
