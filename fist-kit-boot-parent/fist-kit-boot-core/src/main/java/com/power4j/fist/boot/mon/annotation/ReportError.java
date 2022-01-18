@@ -39,9 +39,19 @@ public @interface ReportError {
 	Class<? extends Exception>[] errors() default Exception.class;
 
 	/**
-	 * 场景描述，支持EL
+	 * 场景描述,优先级高于 {@code descriptionExpr}
 	 * @return 返回描述信息
 	 */
 	String description() default "";
+
+	/**
+	 * 场景描述,支持EL,比如
+	 * <ul>
+	 * <li>{@code "'新增用户:' + #变量名称"}</li>
+	 * <li>{@code "'新增用户'"}</li>
+	 * </ul>
+	 * @return 返回描述信息
+	 */
+	String descriptionExpr() default "";
 
 }

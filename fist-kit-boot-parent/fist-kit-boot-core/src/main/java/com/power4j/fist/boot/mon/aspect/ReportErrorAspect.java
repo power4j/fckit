@@ -67,19 +67,27 @@ public class ReportErrorAspect {
 		if (ObjectUtils.isEmpty(targets)) {
 			return;
 		}
-		String description = annotation.description();
-		if (ObjectUtils.isNotEmpty(annotation)) {
-			Object[] arguments = point.getArgs();
-			Method method = AopUtil.getMethod(point);
-			description = SpringElUtil.eval(MethodParameterResolver.of(method, arguments), description, String.class,
-					StringPool.EMPTY);
-		}
+		String description = getDescription(point, annotation);
 		for (Class<? extends Exception> clazz : targets) {
 			if (clazz.isAssignableFrom(e.getClass())) {
 				SpringEventUtil.publishEvent(EventUtils.createServerErrorEvent(description, e));
 				return;
 			}
 		}
+	}
+
+	String getDescription(ProceedingJoinPoint point, ReportError annotation) {
+		if (ObjectUtils.isNotEmpty(annotation.description())) {
+			return annotation.description();
+		}
+		final String expr = annotation.descriptionExpr();
+		if (ObjectUtils.isNotEmpty(expr)) {
+			Object[] arguments = point.getArgs();
+			Method method = AopUtil.getMethod(point);
+			return SpringElUtil.eval(MethodParameterResolver.of(method, arguments), expr, String.class,
+					StringPool.EMPTY);
+		}
+		return StringPool.EMPTY;
 	}
 
 }
