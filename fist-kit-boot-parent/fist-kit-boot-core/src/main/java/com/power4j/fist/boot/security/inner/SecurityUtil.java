@@ -17,12 +17,12 @@
 package com.power4j.fist.boot.security.inner;
 
 import com.power4j.coca.kit.common.exception.WrappedException;
-import com.power4j.coca.kit.common.util.function.RunAny;
 import com.power4j.fist.boot.common.error.CommonErrors;
 import com.power4j.fist.boot.security.context.UserContextHolder;
 import com.power4j.fist.boot.security.core.UserInfo;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.function.FailableRunnable;
 import org.springframework.lang.Nullable;
 
 import java.util.Collections;
@@ -94,15 +94,15 @@ public class SecurityUtil {
 	 * @param user 用户
 	 * @param runnable 业务逻辑
 	 */
-	public static void act(@Nullable UserInfo user, RunAny runnable) throws WrappedException {
+	public static void act(@Nullable UserInfo user, FailableRunnable<Exception> runnable) throws WrappedException {
 		final UserInfo pre = getUser().orElse(null);
 		try {
 			UserContextHolder.setUser(user);
 			log.trace("Run as user: {}", user == null ? "null" : user.getUsername());
 			runnable.run();
 		}
-		catch (Throwable throwable) {
-			throw WrappedException.wrap(throwable);
+		catch (Exception e) {
+			throw WrappedException.wrap(e);
 		}
 		finally {
 			UserContextHolder.setUser(pre);
