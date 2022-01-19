@@ -48,35 +48,6 @@ public interface SecurityConstant {
 	 */
 	String[] TENANT_ID_PARAMETER_KEYS = { PARAMETER_KEY_TENANT_ID };
 
-	interface Roles {
-
-		/**
-		 * 角色ID 平台超级管理员
-		 */
-		long ROLE_ID_SITE_SUPER_ADMIN = 991;
-
-		/**
-		 * 角色编码 平台超级管理员
-		 */
-		String ROLE_CODE_SITE_SUPER_ADMIN = "SU_SITE_ADMIN";
-
-		/**
-		 * 角色ID 租户超级管理员
-		 */
-		long ROLE_ID_TENANT_SUPER_ADMIN = 983;
-
-		/**
-		 * 角色编码 租户超级管理员
-		 */
-		String ROLE_CODE_TENANT_SUPER_ADMIN = "SU_TENANT_ADMIN";
-
-		/**
-		 * 角色ID 租户根管理员
-		 */
-		long ROLE_ID_TENANT_ROOT = 983;
-
-	}
-
 	interface Res {
 
 		String LEVEL_SITE = "0";
