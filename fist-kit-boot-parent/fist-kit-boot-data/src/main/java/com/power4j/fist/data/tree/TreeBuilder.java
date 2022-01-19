@@ -28,12 +28,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -49,6 +47,19 @@ import java.util.stream.Collectors;
  * @param <T> T 业务对象类型
  */
 public class TreeBuilder<ID, T> {
+
+	// @formatter:off
+	private final TreeUtil.NodeOp<ID, Tree<ID>> treeNodeOp = TreeUtil.NodeOp.<ID, Tree<ID>>builder()
+			.idGetter(Tree::getId)
+			.pidGetter(Tree::getParentId)
+			.childConsumer(Tree::addChildren)
+			.build();
+	private final TreeUtil.AccessOp<ID, Tree<ID>> nodeAccessOp = TreeUtil.AccessOp.<ID, Tree<ID>>builder()
+			.idGetter(Tree::getId)
+			.pidGetter(Tree::getParentId)
+			.childrenGetter(Tree::getChildren)
+			.build();
+	// @formatter:on
 
 	@Nullable
 	private TreeNodeConfig config;
@@ -172,13 +183,7 @@ public class TreeBuilder<ID, T> {
 	// ===================================================================================================
 
 	void treeIteration(Collection<Tree<ID>> list, Consumer<Tree<ID>> consumer) {
-		for (Tree<ID> node : list) {
-			final List<Tree<ID>> children = node.getChildren();
-			if (ObjectUtils.isNotEmpty(children)) {
-				treeIteration(children, consumer);
-			}
-			consumer.accept(node);
-		}
+		TreeUtil.treeWalk(list, nodeAccessOp, consumer);
 	}
 
 	protected Map<ID, Tree<ID>> makeNodeMap() {
@@ -197,44 +202,11 @@ public class TreeBuilder<ID, T> {
 	 * @param roots 根节点
 	 */
 	private void fetch(Map<ID, Tree<ID>> nodeMap, Map<ID, Tree<ID>> roots) {
-		if (roots.isEmpty()) {
-			return;
-		}
-		for (Tree<ID> node : nodeMap.values()) {
-			if (null == node) {
-				continue;
-			}
-			if (roots.containsKey(node.getId())) {
-				continue;
-			}
-			ID parentId = node.getParentId();
-			final Tree<ID> parentNode = Optional.ofNullable(nodeMap.get(parentId)).orElseGet(() -> roots.get(parentId));
-			if (null != parentNode) {
-				parentNode.addChildren(node);
-			}
-		}
+		TreeUtil.fetch(nodeMap, roots, treeNodeOp);
 	}
 
 	protected static <ID> Map<ID, Tree<ID>> findTopNodes(Map<ID, Tree<ID>> input) {
-		Map<ID, Tree<ID>> output = new HashMap<>(8);
-		Set<ID> skipSet = new HashSet<>(8);
-		for (Tree<ID> node : input.values()) {
-			if (skipSet.contains(node.getId())) {
-				continue;
-			}
-			Tree<ID> ancestor = findAncestor(input, node, skipSet);
-			output.put(ancestor.getId(), ancestor);
-		}
-		return output;
-	}
-
-	protected static <ID> Tree<ID> findAncestor(Map<ID, Tree<ID>> source, Tree<ID> child, Set<ID> skipSet) {
-		Tree<ID> parent = source.get(child.getParentId());
-		if (Objects.nonNull(parent)) {
-			skipSet.add(child.getId());
-			return findAncestor(source, parent, skipSet);
-		}
-		return child;
+		return TreeUtil.findAncestors(input, Tree::getId, Tree::getParentId);
 	}
 
 	protected static <ID> Tree<ID> makeNode(ID id, @Nullable ID pid, @Nullable TreeNodeConfig treeNodeConfig) {
