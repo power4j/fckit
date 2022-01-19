@@ -29,6 +29,7 @@ import java.util.Optional;
  * @author CJ (power4j@outlook.com)
  * @date 2021/10/13
  * @since 1.0
+ * @deprecated
  */
 @UtilityClass
 public class Breaker {
