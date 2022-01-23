@@ -43,4 +43,20 @@ public interface NodeIdx<ID, C extends NodeIdx<ID, C>> {
 	 */
 	int getDistance();
 
+	/**
+	 * 是否表示一个节点
+	 * @return 返回true表示这是一个节点
+	 */
+	default boolean isNode() {
+		return getDistance() == 0;
+	}
+
+	/**
+	 * 是否直父子关系
+	 * @return 返回true表示两个节点是父子关系
+	 */
+	default boolean immediate() {
+		return getDistance() == 1;
+	}
+
 }
