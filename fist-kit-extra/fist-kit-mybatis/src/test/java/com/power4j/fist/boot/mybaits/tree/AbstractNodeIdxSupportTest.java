@@ -18,13 +18,13 @@ package com.power4j.fist.boot.mybaits.tree;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,8 +44,7 @@ class AbstractNodeIdxSupportTest {
 	@Autowired
 	private OrgTreeService orgTreeService;
 
-	@BeforeEach
-	void setUp() {
+	void makeSingleRoot() {
 		// @formatter:off
 
 		//
@@ -69,6 +68,27 @@ class AbstractNodeIdxSupportTest {
 		orgTreeService.generatePath(2012L, 201L);
 	}
 
+	void makeMultiRoot() {
+		// @formatter:off
+
+		//     (10)    (20)     (30)
+		//      /       /
+		//  (101)     (201)
+		//           /   \
+		//      (2011)   (2012)
+		//
+
+		// @formatter:on
+
+		orgTreeService.generatePath(10L, null);
+		orgTreeService.generatePath(20L, null);
+		orgTreeService.generatePath(30L, null);
+		orgTreeService.generatePath(101L, 10L);
+		orgTreeService.generatePath(201L, 20L);
+		orgTreeService.generatePath(2011L, 201L);
+		orgTreeService.generatePath(2012L, 201L);
+	}
+
 	@AfterEach
 	void tearDown() {
 		orgTreeService.getRepository().deleteAll();
@@ -76,12 +96,14 @@ class AbstractNodeIdxSupportTest {
 
 	@Test
 	void getAll() {
+		makeSingleRoot();
 		List<OrgIdx> list = orgTreeService.getAll(0, 0);
 		Assertions.assertEquals(7, list.size());
 	}
 
 	@Test
 	void subTreeNodes() {
+		makeSingleRoot();
 		List<Long> idList1 = Arrays.asList(101L, 201L);
 		Set<Long> sub1 = orgTreeService.subTreeNodes(idList1);
 		Set<Long> expected1 = new HashSet<>(Arrays.asList(101L, 201L, 2011L, 2012L));
@@ -91,6 +113,20 @@ class AbstractNodeIdxSupportTest {
 		Set<Long> sub2 = orgTreeService.subTreeNodes(idList2);
 		Set<Long> expected2 = new HashSet<>(Arrays.asList(20L, 201L, 2011L, 2012L));
 		Assertions.assertEquals(expected2, sub2);
+	}
+
+	@Test
+	void findRootNodes() {
+		makeMultiRoot();
+		List<Long> idList1 = Arrays.asList(101L, 2011L);
+		Set<Long> roots1 = orgTreeService.findRootNodes(idList1);
+		Set<Long> expected1 = new HashSet<>(Arrays.asList(10L, 20L));
+		Assertions.assertEquals(expected1, roots1);
+
+		List<Long> idList2 = Arrays.asList(20L, 2012L);
+		Set<Long> roots2 = orgTreeService.findRootNodes(idList2);
+		Set<Long> expected2 = new HashSet<>(Collections.singletonList(20L));
+		Assertions.assertEquals(expected2, roots2);
 	}
 
 }

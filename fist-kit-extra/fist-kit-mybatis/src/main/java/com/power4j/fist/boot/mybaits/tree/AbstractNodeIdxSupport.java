@@ -17,16 +17,18 @@
 package com.power4j.fist.boot.mybaits.tree;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.power4j.fist.data.tree.domain.NodeIdx;
 import com.power4j.fist.boot.mybaits.crud.repository.Repository;
+import com.power4j.fist.data.tree.domain.NodeIdx;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -124,6 +126,17 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 	}
 
 	@Override
+	public List<T> findAllAncestor(Collection<ID> ids, @Nullable Integer distanceMin, @Nullable Integer distanceMax) {
+		// @formatter:off
+		LambdaQueryWrapper<T> wrapper = getRepository().lambdaWrapper()
+				.in(T::getDescendant,ids)
+				.ge(Objects.nonNull(distanceMin), T::getDistance,  distanceMin)
+				.le(Objects.nonNull(distanceMax), T::getDistance,  distanceMax);
+		return getRepository().findAllBy(wrapper);
+		// @formatter:on
+	}
+
+	@Override
 	public List<T> getAll(@Nullable Integer distanceMin, @Nullable Integer distanceMax) {
 		// @formatter:off
 		LambdaQueryWrapper<T> wrapper = getRepository().lambdaWrapper()
@@ -182,6 +195,20 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 				});
 		// @formatter:on
 		return set;
+	}
+
+	@Override
+	public Set<ID> findRootNodes(Collection<ID> ids) {
+		List<T> paths = findAllAncestor(ids, null, null);
+		Map<ID, List<T>> map = paths.stream().collect(Collectors.groupingBy(NodeIdx::getDescendant));
+		Set<ID> roots = new HashSet<>(8);
+		// @formatter:off
+		map.values().forEach(list -> {
+			list.stream().max(Comparator.comparing(NodeIdx::getDistance))
+					.ifPresent(o -> roots.add(o.getAncestor()));
+		});
+		// @formatter:on
+		return roots;
 	}
 
 	protected LambdaQueryWrapper<T> allEq(@Nullable Long ancestor, @Nullable Long descendant,

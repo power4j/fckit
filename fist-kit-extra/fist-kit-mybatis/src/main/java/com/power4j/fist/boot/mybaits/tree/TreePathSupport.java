@@ -67,6 +67,15 @@ public interface TreePathSupport<T extends NodeIdx<ID, T>, ID> {
 	List<T> findAllAncestor(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
 
 	/**
+	 * 查询上级节点关系
+	 * @param ids 起始节点
+	 * @param distanceMin 最小层距离(包含)
+	 * @param distanceMax 最大层距离(包含)
+	 * @return 返回 id 的所有祖先节点路径
+	 */
+	List<T> findAllAncestor(Collection<ID> ids, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
+
+	/**
 	 * 统计上级节点数量
 	 * @param id 起始节点
 	 * @param distanceMin 最小层距离(包含)
@@ -98,9 +107,16 @@ public interface TreePathSupport<T extends NodeIdx<ID, T>, ID> {
 
 	/**
 	 * 计算构建子树树所需要的节点
-	 * @param ids 已知节点
-	 * @return 返回节点集合,包含输入的节点以及它们的子节点
+	 * @param ids 候选根节点
+	 * @return 返回节点集合,包含候选根节点以及它们的子节点
 	 */
 	Set<ID> subTreeNodes(Collection<ID> ids);
+
+	/**
+	 * 查找根节点
+	 * @param ids 子节点ID
+	 * @return 返回节点集合
+	 */
+	Set<ID> findRootNodes(Collection<ID> ids);
 
 }
