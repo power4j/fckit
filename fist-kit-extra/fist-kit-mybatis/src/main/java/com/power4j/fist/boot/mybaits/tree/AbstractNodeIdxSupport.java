@@ -24,8 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -81,6 +84,17 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 		// @formatter:off
 		LambdaQueryWrapper<T> wrapper = getRepository().lambdaWrapper()
 				.eq(T::getAncestor,id)
+				.ge(Objects.nonNull(distanceMin), T::getDistance,  distanceMin)
+				.le(Objects.nonNull(distanceMax), T::getDistance,  distanceMax);
+		return getRepository().findAllBy(wrapper);
+		// @formatter:on
+	}
+
+	@Override
+	public List<T> findAllDescendant(Collection<ID> ids, @Nullable Integer distanceMin, @Nullable Integer distanceMax) {
+		// @formatter:off
+		LambdaQueryWrapper<T> wrapper = getRepository().lambdaWrapper()
+				.in(T::getAncestor,ids)
 				.ge(Objects.nonNull(distanceMin), T::getDistance,  distanceMin)
 				.le(Objects.nonNull(distanceMax), T::getDistance,  distanceMax);
 		return getRepository().findAllBy(wrapper);
@@ -153,6 +167,21 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 		}
 		// @formatter:on
 		getRepository().saveOne(createObject(newNode));
+	}
+
+	@Override
+	public Set<ID> subTreeNodes(Collection<ID> ids) {
+		List<T> paths = findAllDescendant(ids, null, null);
+		Set<ID> set = new HashSet<>(ids.size());
+		// @formatter:off
+		paths.stream().filter(NodeIdx::isNodeOrImmediate)
+				.collect(Collectors.toList())
+				.forEach(o -> {
+					set.add(o.getAncestor());
+					set.add(o.getDescendant());
+				});
+		// @formatter:on
+		return set;
 	}
 
 	protected LambdaQueryWrapper<T> allEq(@Nullable Long ancestor, @Nullable Long descendant,

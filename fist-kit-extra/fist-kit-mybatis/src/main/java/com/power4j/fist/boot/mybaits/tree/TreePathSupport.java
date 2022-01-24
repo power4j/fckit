@@ -19,7 +19,9 @@ package com.power4j.fist.boot.mybaits.tree;
 import com.power4j.fist.data.tree.domain.NodeIdx;
 import org.springframework.lang.Nullable;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -36,6 +38,15 @@ public interface TreePathSupport<T extends NodeIdx<ID, T>, ID> {
 	 * @return 返回 id 为祖先的所有节点路径
 	 */
 	List<T> findAllDescendant(ID id, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
+
+	/**
+	 * 查询下级节点关系
+	 * @param ids 起始节点
+	 * @param distanceMin 最小层距离(包含)
+	 * @param distanceMax 最大层距离(包含)
+	 * @return 返回 id 为祖先的所有节点路径
+	 */
+	List<T> findAllDescendant(Collection<ID> ids, @Nullable Integer distanceMin, @Nullable Integer distanceMax);
 
 	/**
 	 * 统计下级节点数量
@@ -84,5 +95,12 @@ public interface TreePathSupport<T extends NodeIdx<ID, T>, ID> {
 	 * @param parent 父节点
 	 */
 	void generatePath(ID newNode, ID parent);
+
+	/**
+	 * 计算构建子树树所需要的节点
+	 * @param ids 已知节点
+	 * @return 返回节点集合,包含输入的节点以及它们的子节点
+	 */
+	Set<ID> subTreeNodes(Collection<ID> ids);
 
 }
