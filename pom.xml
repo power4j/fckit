@@ -287,6 +287,11 @@
         <version>${mybatis-plus.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.baomidou</groupId>
+        <artifactId>mybatis-plus-boot-starter-test</artifactId>
+        <version>${mybatis-plus.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.github.xiaoymin</groupId>
         <artifactId>knife4j-spring-boot-starter</artifactId>
         <version>${knife4j.version}</version>

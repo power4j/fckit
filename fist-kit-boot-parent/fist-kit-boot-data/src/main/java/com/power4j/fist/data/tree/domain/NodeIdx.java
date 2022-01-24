@@ -52,11 +52,19 @@ public interface NodeIdx<ID, C extends NodeIdx<ID, C>> {
 	}
 
 	/**
-	 * 是否直父子关系
+	 * 是否父子关系
 	 * @return 返回true表示两个节点是父子关系
 	 */
 	default boolean immediate() {
 		return getDistance() == 1;
+	}
+
+	/**
+	 * 是否一个节点或者父子关系
+	 * @return 返回true表示两个节点是父子关系
+	 */
+	default boolean isNodeOrImmediate() {
+		return isNode() || immediate();
 	}
 
 }
