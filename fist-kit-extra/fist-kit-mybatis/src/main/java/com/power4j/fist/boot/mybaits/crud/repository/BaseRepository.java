@@ -29,12 +29,13 @@ import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapp
 import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.power4j.fist.data.domain.Pageable;
-import com.power4j.fist.data.domain.Paged;
-import com.power4j.fist.data.domain.Sort;
 import com.power4j.fist.boot.mybaits.crud.repository.matcher.Eq;
 import com.power4j.fist.boot.mybaits.util.LambdaHelper;
 import com.power4j.fist.boot.mybaits.util.PageUtil;
+import com.power4j.fist.data.domain.Pageable;
+import com.power4j.fist.data.domain.Paged;
+import com.power4j.fist.data.domain.Sort;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,6 +105,9 @@ public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable>
 
 	@Override
 	public List<T> findAllById(Iterable<ID> ids) {
+		if (ObjectUtils.isEmpty(ids)) {
+			return Collections.emptyList();
+		}
 		return listByIds(toList(ids));
 	}
 
@@ -124,6 +128,9 @@ public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable>
 
 	@Override
 	public void deleteAllById(Iterable<? extends ID> ids) {
+		if (ObjectUtils.isEmpty(ids)) {
+			return;
+		}
 		removeByIds(toList(ids));
 	}
 
