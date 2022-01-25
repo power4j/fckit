@@ -80,20 +80,20 @@ public class ClientErrorHandler {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public Result<Object> handleException(MethodArgumentNotValidException e) {
 		Optional<FieldError> error = Optional.ofNullable(e.getBindingResult().getFieldError());
-		String hint = String.format("%s: %s", error.map(FieldError::getField).orElse(null),
-				error.map(FieldError::getDefaultMessage).orElse(null));
-		log.warn("请求参数校验失败:{}", hint);
-		return Results.requestParameterError("请求参数校验失败", hint);
+		String errField = error.map(FieldError::getField).orElse(null);
+		String msg = error.map(FieldError::getDefaultMessage).orElse("请求参数校验失败");
+		log.warn("请求参数校验失败:{}", errField);
+		return Results.requestParameterError(msg, errField);
 	}
 
 	@ExceptionHandler(BindException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public Result<Object> handleException(BindException e) {
 		Optional<FieldError> error = Optional.ofNullable(e.getBindingResult().getFieldError());
-		String hint = String.format("%s: %s", error.map(FieldError::getField).orElse(null),
-				error.map(FieldError::getDefaultMessage).orElse(null));
-		log.warn("请求参数绑定失败:{}", hint);
-		return Results.requestParameterError("请求参数绑定失败", hint);
+		String errField = error.map(FieldError::getField).orElse(null);
+		String msg = error.map(FieldError::getDefaultMessage).orElse("请求参数校验失败");
+		log.warn("请求参数绑定失败:{}", errField);
+		return Results.requestParameterError(msg, errField);
 	}
 
 	@ExceptionHandler(ConstraintViolationException.class)
@@ -101,9 +101,8 @@ public class ClientErrorHandler {
 	public Result<Object> handleException(ConstraintViolationException e) {
 		ConstraintViolation<?> violation = e.getConstraintViolations().iterator().next();
 		String path = ((PathImpl) violation.getPropertyPath()).getLeafNode().getName();
-		String hint = String.format("%s: %s", path, violation.getMessage());
-		log.warn("请求参数校验失败:{}", hint);
-		return Results.requestParameterError("请求参数校验失败", hint);
+		log.warn("请求参数校验失败:{}", path);
+		return Results.requestParameterError(violation.getMessage(), path);
 	}
 
 	@ExceptionHandler(ValidationException.class)
