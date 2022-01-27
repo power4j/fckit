@@ -14,11 +14,16 @@
  *  limitations under the License.
  */
 
-drop table if exists org_idx;
-create table if not exists org_idx
-(
-    id bigint ,
-    ancestor bigint ,
-    descendant bigint ,
-    distance int
-);
+package com.power4j.fist.boot.mybaits;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+/**
+ * @author CJ (power4j@outlook.com)
+ * @date 2022/1/24
+ * @since 1.0
+ */
+@SpringBootApplication
+public class MpTestApplication {
+
+}

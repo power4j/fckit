@@ -14,16 +14,13 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.mybaits.tree;
-
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+package com.power4j.fist.boot.mybaits.crud.repository;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/24
+ * @date 2022/1/27
  * @since 1.0
  */
-@SpringBootApplication
-public class NodeIdxTestApplication {
+public interface BookRepository extends Repository<Book, Long> {
 
 }

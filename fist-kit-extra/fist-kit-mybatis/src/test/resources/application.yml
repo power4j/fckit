@@ -1,8 +1,9 @@
 spring:
   datasource:
-    schema: classpath:schema-org-idx.sql
+    schema: classpath:schema-test.sql
 
 logging:
   level:
     org.springframework.jdbc: debug
     com.baomidou.mybatisplus.test.autoconfigure: debug
+    com.power4j.fist.boot.mybaits: debug
