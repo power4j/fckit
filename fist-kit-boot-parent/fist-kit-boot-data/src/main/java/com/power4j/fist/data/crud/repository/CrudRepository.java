@@ -96,12 +96,6 @@ public interface CrudRepository<T, ID> {
 	void deleteOneById(ID id);
 
 	/**
-	 * 条件删除,传入的实体做为查询条件
-	 * @param entity 查询参数
-	 */
-	void deleteOne(T entity);
-
-	/**
 	 * 批量删除(根据ID)
 	 * @param ids ID集合
 	 */

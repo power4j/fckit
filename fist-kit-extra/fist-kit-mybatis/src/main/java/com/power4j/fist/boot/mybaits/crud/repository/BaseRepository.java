@@ -122,11 +122,6 @@ public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable>
 	}
 
 	@Override
-	public void deleteOne(T entity) {
-		remove(new QueryWrapper<>(entity));
-	}
-
-	@Override
 	public void deleteAllById(Iterable<? extends ID> ids) {
 		if (ObjectUtils.isEmpty(ids)) {
 			return;
