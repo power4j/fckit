@@ -39,7 +39,7 @@ public class PageData<T> implements Serializable {
 	private final List<T> content;
 
 	@Schema(description = "总行数")
-	private final long total;
+	private final int total;
 
 	@Schema(description = "是否有下一页")
 	private final boolean hasNext;
@@ -51,20 +51,24 @@ public class PageData<T> implements Serializable {
 	private final Integer pageSize;
 
 	public static <T> PageData<T> empty() {
-		return new PageData<>(Collections.emptyList(), 0L, false, 0, 0);
+		return new PageData<>(Collections.emptyList(), 0, false, 0, 0);
 	}
 
-	public static <T> PageData<T> of(List<T> content, long total, boolean hasNext, Integer pageNumber,
+	public static <T> PageData<T> of(List<T> content, int total, boolean hasNext, Integer pageNumber,
 			Integer pageSize) {
 		return new PageData<>(content, total, hasNext, pageNumber, pageSize);
 	}
 
 	public static <T> PageData<T> of(Paged<T> paged) {
-		return new PageData<>(paged.getContent(), paged.getTotalElements(), paged.hasNext(), paged.getPageNumber(),
+		long total = paged.getTotalElements();
+		if (total < Integer.MIN_VALUE || total > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException(total + " cannot be cast to int value.");
+		}
+		return new PageData<>(paged.getContent(), (int) total, paged.hasNext(), paged.getPageNumber(),
 				paged.getPageSize());
 	}
 
-	public PageData(List<T> content, long total, boolean hasNext, Integer pageNumber, Integer pageSize) {
+	public PageData(List<T> content, int total, boolean hasNext, Integer pageNumber, Integer pageSize) {
 		this.content = content;
 		this.total = total;
 		this.hasNext = hasNext;
@@ -76,7 +80,7 @@ public class PageData<T> implements Serializable {
 		return content;
 	}
 
-	public long getTotal() {
+	public int getTotal() {
 		return total;
 	}
 
