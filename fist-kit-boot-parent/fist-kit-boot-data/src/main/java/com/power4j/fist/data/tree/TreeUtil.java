@@ -84,6 +84,20 @@ public class TreeUtil {
 	 * @param <ID> ID 类型
 	 * @param <T> 节点类型
 	 */
+	public <ID, T> void fetch(Collection<T> source, Collection<T> roots, NodeOp<ID, T> nodeOp) {
+		Map<ID, T> sourceMap = source.stream().collect(Collectors.toMap(nodeOp.idGetter, Function.identity()));
+		Map<ID, T> rootMap = roots.stream().collect(Collectors.toMap(nodeOp.idGetter, Function.identity()));
+		fetch(sourceMap, rootMap, nodeOp);
+	}
+
+	/**
+	 * 填充子级
+	 * @param source 数据源
+	 * @param roots 根节点
+	 * @param nodeOp 各种操作函数
+	 * @param <ID> ID 类型
+	 * @param <T> 节点类型
+	 */
 	public <ID, T> void fetch(Map<ID, T> source, Map<ID, T> roots, NodeOp<ID, T> nodeOp) {
 		if (roots.isEmpty()) {
 			return;
