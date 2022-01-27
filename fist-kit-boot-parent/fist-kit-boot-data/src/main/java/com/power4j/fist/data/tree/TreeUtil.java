@@ -111,7 +111,7 @@ public class TreeUtil {
 				continue;
 			}
 			final ID parentId = nodeOp.pidGetter.apply(node);
-			final T parentNode = Optional.ofNullable(source.get(parentId)).orElseGet(() -> roots.get(parentId));
+			final T parentNode = Optional.ofNullable(roots.get(parentId)).orElseGet(() -> source.get(parentId));
 			if (null != parentNode) {
 				nodeOp.childConsumer.accept(parentNode, node);
 			}
