@@ -17,7 +17,9 @@
 package com.power4j.fist.boot.mybaits.crud.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -39,6 +41,17 @@ public class QueryTest {
 
 	@Autowired
 	private BookRepository bookRepository;
+
+	@BeforeEach
+	void setUp() {
+		List<Book> books = BookUtils.createEntity(ID90001, 5);
+		bookRepository.saveAll(books);
+	}
+
+	@AfterEach
+	void tearDown() {
+		bookRepository.deleteAll();
+	}
 
 	@Test
 	void findOneById() {

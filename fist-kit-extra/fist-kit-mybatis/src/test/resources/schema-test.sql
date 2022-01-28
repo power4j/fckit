@@ -29,8 +29,3 @@ create table if not exists book
     id bigint identity primary key,
     title varchar
 );
-insert into book (id, title) values (90001, 'BOOK-900001');
-insert into book (id, title) values (90002, 'BOOK-900002');
-insert into book (id, title) values (90003, 'BOOK-900003');
-insert into book (id, title) values (90004, 'BOOK-900004');
-insert into book (id, title) values (90005, 'BOOK-900005');

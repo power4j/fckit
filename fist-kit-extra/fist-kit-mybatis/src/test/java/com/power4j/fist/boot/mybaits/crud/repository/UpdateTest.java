@@ -50,11 +50,9 @@ class UpdateTest {
 		List<Long> ids = Arrays.asList(1L, 2L, 3L, 4L, 5L);
 		List<Book> books = BookUtils.createEntity(ids);
 		bookRepository.saveAll(books);
-		long count1 = bookRepository.countBy(null);
-		Assertions.assertEquals(5L, count1);
 
 		bookRepository.deleteAllById(ids);
-		long count2 = bookRepository.countBy(null);
+		long count2 = bookRepository.findAllById(ids).size();
 		Assertions.assertEquals(0L, count2);
 	}
 

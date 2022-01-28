@@ -31,7 +31,7 @@ import java.util.stream.LongStream;
 @UtilityClass
 public class BookUtils {
 
-	List<Book> createEntity(int idStart, int size) {
+	List<Book> createEntity(long idStart, int size) {
 		List<Long> idList = LongStream.range(idStart, idStart + size).boxed().collect(Collectors.toList());
 		return createEntity(idList);
 	}
