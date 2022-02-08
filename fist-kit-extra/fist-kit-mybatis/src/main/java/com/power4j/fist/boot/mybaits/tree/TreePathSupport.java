@@ -107,16 +107,16 @@ public interface TreePathSupport<T extends NodeIdx<ID, T>, ID> {
 
 	/**
 	 * 计算构建子树树所需要的节点
-	 * @param ids 候选根节点
-	 * @return 返回节点集合,包含候选根节点以及它们的子节点
+	 * @param ids 候选根节点,它们的上下级关系不确定
+	 * @return 返回节点集合,包含候选根节点以及它们的子节点,输入为空则返回空集
 	 */
 	Set<ID> subTreeNodes(Collection<ID> ids);
 
 	/**
-	 * 查找根节点
+	 * 根据传入的节点,查找它们的公共根节点,如果数据源只有一个根节点,那么总是返回根节点
 	 * @param ids 子节点ID
-	 * @return 返回节点集合
+	 * @return 返回根节点集合,输入为空则返回空集
 	 */
-	Set<ID> findRootNodes(Collection<ID> ids);
+	Set<ID> findSharedRoot(Collection<ID> ids);
 
 }

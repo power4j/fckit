@@ -68,4 +68,9 @@ public abstract class BaseNodeIdx<ID, C extends BaseNodeIdx<ID, C>> implements N
 		return distance;
 	}
 
+	@Override
+	public String toString() {
+		return ancestor + " - " + descendant + "(" + distance + ")";
+	}
+
 }

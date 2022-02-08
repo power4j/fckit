@@ -41,4 +41,9 @@ public class OrgIdx extends BaseNodeIdx<Long, OrgIdx> {
 		super(ancestor, descendant, distance);
 	}
 
+	@Override
+	public String toString() {
+		return "id=" + id + ", " + super.toString();
+	}
+
 }

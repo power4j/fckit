@@ -116,17 +116,22 @@ class AbstractNodeIdxSupportTest {
 	}
 
 	@Test
-	void findRootNodes() {
+	void findSharedRoot() {
 		makeMultiRoot();
 		List<Long> idList1 = Arrays.asList(101L, 2011L);
-		Set<Long> roots1 = orgTreeService.findRootNodes(idList1);
+		Set<Long> roots1 = orgTreeService.findSharedRoot(idList1);
 		Set<Long> expected1 = new HashSet<>(Arrays.asList(10L, 20L));
 		Assertions.assertEquals(expected1, roots1);
 
 		List<Long> idList2 = Arrays.asList(20L, 2012L);
-		Set<Long> roots2 = orgTreeService.findRootNodes(idList2);
-		Set<Long> expected2 = new HashSet<>(Collections.singletonList(20L));
-		Assertions.assertEquals(expected2, roots2);
+		Set<Long> roots21 = orgTreeService.findSharedRoot(idList2);
+		Set<Long> expected21 = new HashSet<>(Collections.singletonList(20L));
+		Assertions.assertEquals(expected21, roots21);
+
+		List<Long> idList3 = Arrays.asList(201L, 2011L, 2012L);
+		Set<Long> roots3 = orgTreeService.findSharedRoot(idList3);
+		Set<Long> expected3 = new HashSet<>(Collections.singletonList(20L));
+		Assertions.assertEquals(expected3, roots3);
 	}
 
 }
