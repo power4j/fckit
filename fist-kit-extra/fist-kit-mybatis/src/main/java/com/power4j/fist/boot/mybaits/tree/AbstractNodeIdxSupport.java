@@ -190,16 +190,11 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 			return Collections.emptySet();
 		}
 		List<T> paths = findAllDescendant(ids, null, null);
-		Set<ID> set = new HashSet<>(ids.size());
 		// @formatter:off
-		paths.stream().filter(NodeIdx::isNodeOrImmediate)
-				.collect(Collectors.toList())
-				.forEach(o -> {
-					set.add(o.getAncestor());
-					set.add(o.getDescendant());
-				});
+		return paths.stream()
+				.map(NodeIdx::getDescendant)
+				.collect(Collectors.toSet());
 		// @formatter:on
-		return set;
 	}
 
 	@Override
