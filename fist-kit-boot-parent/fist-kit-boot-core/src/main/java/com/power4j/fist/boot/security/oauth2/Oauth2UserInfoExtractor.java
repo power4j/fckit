@@ -55,7 +55,7 @@ public class Oauth2UserInfoExtractor extends DefaultUserInfoExtractor {
 		}
 		UserInfo info = extractFromMap(userInfoMap);
 		if (Objects.nonNull(info)) {
-			info.setClientId(clientId);
+			info.putMetaProp(SecurityConstant.UserProp.KEY_CLIENT_ID, clientId);
 		}
 		return Optional.ofNullable(info);
 	}

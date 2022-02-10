@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.springframework.security.jwt.JwtHelper;
 import org.springframework.security.jwt.crypto.sign.MacSigner;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,16 +39,14 @@ public class EncodeUserTest {
 
 	@Before
 	public void init() {
-		Map<String, Object> info = new HashMap<>(2);
-		info.put("age", 23);
-		info.put("source", "delta");
+		Map<String, Object> meta = new HashMap<>(2);
+		meta.put("age", 23);
+		meta.put("source", "delta");
 		user = new UserInfo();
 		user.setUsername("admin");
 		user.setUserId(1L);
-		user.setTenantId("23041");
 		user.setNickName("coco");
-		user.setAdditionalInfo(info);
-		user.setAuthorities(Collections.emptySet());
+		user.setMeta(meta);
 	}
 
 	@Test

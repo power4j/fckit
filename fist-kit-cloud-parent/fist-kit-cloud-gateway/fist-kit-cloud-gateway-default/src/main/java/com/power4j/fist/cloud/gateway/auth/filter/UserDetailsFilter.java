@@ -51,8 +51,8 @@ public class UserDetailsFilter extends AbstractAuthFilter {
 
 		if (Objects.nonNull(authUser)) {
 			if (log.isDebugEnabled()) {
-				log.debug("loadUserDetails successfully,tenant ID = {},user id = {},username = {}",
-						authUser.getTenantId(), authUser.getUserId(), authUser.getUsername());
+				log.debug("loadUserDetails successfully,user id = {},username = {}", authUser.getUserId(),
+						authUser.getUsername());
 			}
 			context.setAuthUser(authUser);
 		}

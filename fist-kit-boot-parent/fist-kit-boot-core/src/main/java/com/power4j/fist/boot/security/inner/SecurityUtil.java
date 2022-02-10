@@ -16,16 +16,19 @@
 
 package com.power4j.fist.boot.security.inner;
 
+import cn.hutool.core.lang.TypeReference;
 import com.power4j.coca.kit.common.exception.WrappedException;
 import com.power4j.fist.boot.common.error.CommonErrors;
 import com.power4j.fist.boot.security.context.UserContextHolder;
+import com.power4j.fist.boot.security.core.SecurityConstant;
 import com.power4j.fist.boot.security.core.UserInfo;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.function.FailableRunnable;
 import org.springframework.lang.Nullable;
 
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -53,7 +56,7 @@ public class SecurityUtil {
 	 * 当前登录用户的租户ID
 	 */
 	public Optional<String> getTenantId() {
-		return getUser().map(UserInfo::getTenantId);
+		return getUser().flatMap(u -> u.getMetaProp(SecurityConstant.UserProp.KEY_TENANT_ID, String.class));
 	}
 
 	public String requireTenantId() {
@@ -83,10 +86,17 @@ public class SecurityUtil {
 	}
 
 	/**
-	 * 当前登录用户的权限列表，用户会话不存在或者无权限返回空集合
+	 * 当前登录用户的角色列表，用户会话不存在或者无权限返回空集合
 	 */
-	public Set<String> getAuthorities() {
-		return getUser().map(UserInfo::getAuthorities).orElse(Collections.emptySet());
+	public Set<String> getRoles() {
+		TypeReference<List<String>> type = new TypeReference<List<String>>() {
+		};
+		// @formatter:off
+		return getUser()
+				.flatMap(u -> u.getMetaProp(SecurityConstant.UserProp.KEY_ROLE_LIST,type))
+				.map(HashSet::new)
+				.orElse(new HashSet<>());
+		// @formatter:on
 	}
 
 	/**

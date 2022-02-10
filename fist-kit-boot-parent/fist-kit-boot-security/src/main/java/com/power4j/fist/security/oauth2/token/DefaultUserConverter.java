@@ -16,6 +16,9 @@
 
 package com.power4j.fist.security.oauth2.token;
 
+import cn.hutool.core.lang.TypeReference;
+import com.power4j.coca.kit.common.text.StringPool;
+import com.power4j.fist.boot.security.core.SecurityConstant;
 import com.power4j.fist.boot.security.core.UserInfo;
 import com.power4j.fist.boot.security.core.UserInfoExtractor;
 import com.power4j.fist.boot.security.oauth2.Oauth2UserInfoExtractor;
@@ -28,7 +31,10 @@ import lombok.Setter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -72,18 +78,24 @@ public class DefaultUserConverter implements UserConverter<AuthenticatedUser> {
 
 		@Override
 		public String getTenantId() {
-			return userInfo.getTenantId();
+			return userInfo.getMetaProp(SecurityConstant.UserProp.KEY_TENANT_ID, String.class).orElse(StringPool.N_A);
 		}
 
 		@Override
 		public Map<String, GrantedPermission> getPermissions() {
-			return userInfo.getPermissionList().stream()
+			TypeReference<Collection<String>> type = new TypeReference<Collection<String>>() {
+			};
+			// @formatter:off
+			return userInfo.getMetaProp(SecurityConstant.UserProp.KEY_PERMISSION_LIST,type)
+					.orElse(Collections.emptyList())
+					.stream()
 					.collect(Collectors.toMap(Function.identity(), SimpleGrantedPermission::new));
+			// @formatter:on
 		}
 
 		@Override
 		public Map<String, Object> getAdditionalInfo() {
-			return userInfo.getAdditionalInfo();
+			return Objects.requireNonNull(userInfo.getMeta());
 		}
 
 	}
