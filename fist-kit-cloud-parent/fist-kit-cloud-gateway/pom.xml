@@ -29,8 +29,6 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>fist-kit-cloud-gateway-api</module>
-    <module>fist-kit-cloud-gateway-default</module>
     <module>fist-kit-cloud-gateway-security</module>
   </modules>
 </project>

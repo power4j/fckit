@@ -14,19 +14,9 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.autoconfigure.gateway.auth;
-
-import com.power4j.fist.cloud.gateway.auth.configure.FistGatewayProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/6/5
+ * @date 2022/2/17
  * @since 1.0
  */
-@Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(FistGatewayProperties.class)
-public class FistGatewayAutoconfigure {
-
-}
+package com.power4j.fist.cloud.core.constant;

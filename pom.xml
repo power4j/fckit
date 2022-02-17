@@ -193,16 +193,6 @@
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-kit-cloud-gateway-api</artifactId>
-        <version>${revision}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-kit-cloud-gateway-default</artifactId>
-        <version>${revision}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.power4j.fist</groupId>
         <artifactId>fist-kit-cloud-rpc-feign</artifactId>
         <version>${revision}</version>
       </dependency>
