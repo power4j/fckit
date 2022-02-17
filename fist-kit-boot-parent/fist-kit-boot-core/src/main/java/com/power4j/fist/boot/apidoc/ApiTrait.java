@@ -40,6 +40,11 @@ public @interface ApiTrait {
 	String resourceId() default "";
 
 	/**
+	 * 鉴权编码,格式 {@code '服务/模块/资源'},最大64位
+	 */
+	String code() default "";
+
+	/**
 	 * 管理级别,仅对SASS环境有效
 	 */
 	ApiLevel level() default ApiLevel.TN;
@@ -80,7 +85,7 @@ public @interface ApiTrait {
 	enum Access {
 
 		/**
-		 * 默认
+		 * 默认,按照鉴权编码匹配
 		 */
 		DEFAULT("0"),
 		/**

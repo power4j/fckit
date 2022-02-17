@@ -18,6 +18,7 @@ package com.power4j.fist.boot.apidoc;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -45,7 +46,8 @@ public class DocUtil {
 
 	public ApiDetails createDetails(ApiTrait apiTrait) {
 		ApiDetails apiDetails = new ApiDetails();
-		apiDetails.setResourceId(apiTrait.resourceId());
+		apiDetails.setResourceId(StringUtils.trimToNull(apiTrait.resourceId()));
+		apiDetails.setCode(StringUtils.trimToNull(apiTrait.code()));
 		apiDetails.setLevel(apiTrait.level().getValue());
 		apiDetails.setExpose(apiTrait.access().getValue());
 		apiDetails.setSign(apiTrait.sign());
