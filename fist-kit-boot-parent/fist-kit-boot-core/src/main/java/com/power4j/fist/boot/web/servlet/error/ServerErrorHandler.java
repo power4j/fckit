@@ -27,6 +27,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -71,15 +72,13 @@ public class ServerErrorHandler extends AbstractExceptionHandler {
 	}
 
 	@ExceptionHandler(MsgBundleRejectedException.class)
-	@ResponseStatus(HttpStatus.OK)
-	public Result<?> handleException(MsgBundleRejectedException e) {
-		return makeResult(e);
+	public ResponseEntity<Result<?>> handleException(MsgBundleRejectedException e) {
+		return ResponseEntity.status(e.getStatus()).body(makeResult(e));
 	}
 
 	@ExceptionHandler(RejectedException.class)
-	@ResponseStatus(HttpStatus.OK)
-	public Result<?> handleException(RejectedException e) {
-		return Results.fromError(e);
+	public ResponseEntity<Result<?>> handleException(RejectedException e) {
+		return ResponseEntity.status(e.getStatus()).body(Results.fromError(e));
 	}
 
 	@ExceptionHandler(SQLException.class)

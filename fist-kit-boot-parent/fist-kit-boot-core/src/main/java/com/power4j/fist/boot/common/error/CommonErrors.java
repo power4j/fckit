@@ -17,6 +17,7 @@
 package com.power4j.fist.boot.common.error;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.http.HttpStatus;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -33,7 +34,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException requestParameterError(String msgKey, Object... msgArg) {
-		return new MsgBundleRejectedException(ErrorCode.A0400, msgKey, msgArg);
+		return new MsgBundleRejectedException(HttpStatus.BAD_REQUEST, ErrorCode.A0400, msgKey, msgArg);
 	}
 
 	/**
@@ -41,7 +42,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException requestParameterError() {
-		return new MsgBundleRejectedException(ErrorCode.A0400, "common.bad-parameter");
+		return new MsgBundleRejectedException(HttpStatus.BAD_REQUEST, ErrorCode.A0400, "common.bad-parameter");
 	}
 
 	/**
@@ -50,7 +51,8 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException invalidFieldValueError(String fieldName) {
-		return new MsgBundleRejectedException(ErrorCode.A0400, "common.invalid-field-value", fieldName);
+		return new MsgBundleRejectedException(HttpStatus.BAD_REQUEST, ErrorCode.A0400, "common.invalid-field-value",
+				fieldName);
 	}
 
 	/**
@@ -58,7 +60,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException resourceNotExistsError() {
-		return new MsgBundleRejectedException(ErrorCode.A0400, "common.resource.not-found");
+		return new MsgBundleRejectedException(HttpStatus.NOT_FOUND, ErrorCode.A0400, "common.resource.not-found");
 	}
 
 	/**
@@ -66,7 +68,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException permissionDeniedError() {
-		return new MsgBundleRejectedException(ErrorCode.A0301, "common.permission.denied");
+		return new MsgBundleRejectedException(HttpStatus.FORBIDDEN, ErrorCode.A0301, "common.permission.denied");
 	}
 
 	/**
@@ -74,7 +76,8 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException authRequiredError() {
-		return new MsgBundleRejectedException(ErrorCode.A0401, "common.permission.no-auth-denied");
+		return new MsgBundleRejectedException(HttpStatus.UNAUTHORIZED, ErrorCode.A0401,
+				"common.permission.no-auth-denied");
 	}
 
 }

@@ -16,7 +16,10 @@
 
 package com.power4j.fist.boot.common.error;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
+
+import java.util.Objects;
 
 /**
  * 表示业务处理被终止,此异常及其子类会被全局异常处理器捕获
@@ -33,6 +36,8 @@ public class RejectedException extends RuntimeException {
 	@Nullable
 	private final String hint;
 
+	private HttpStatus status = HttpStatus.OK;
+
 	/**
 	 * 构造函数，不会进行国际化处理
 	 * @param code 错误代码
@@ -40,9 +45,21 @@ public class RejectedException extends RuntimeException {
 	 * @param hint 错误提示
 	 */
 	RejectedException(String code, String message, @Nullable String hint) {
+		this(HttpStatus.OK, code, message, hint);
+	}
+
+	/**
+	 * 构造函数，不会进行国际化处理
+	 * @param status HTTP 响应码
+	 * @param code 错误代码
+	 * @param message 错误消息
+	 * @param hint 错误提示
+	 */
+	RejectedException(HttpStatus status, String code, String message, @Nullable String hint) {
 		super(message);
 		this.code = code;
 		this.hint = hint;
+		this.status = status;
 	}
 
 	public String getCode() {
@@ -52,6 +69,14 @@ public class RejectedException extends RuntimeException {
 	@Nullable
 	public String getHint() {
 		return hint;
+	}
+
+	public HttpStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(HttpStatus status) {
+		this.status = Objects.requireNonNull(status);
 	}
 
 }
