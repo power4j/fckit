@@ -114,11 +114,12 @@ public class OpTemplateBuilder<T> {
 	}
 
 	public Map<String, OpTemplate<T>> build() {
-		entry = null;
-		currentId = null;
 		Set<String> idSet = new HashSet<>(preHandlerMap.keySet());
 		idSet.addAll(postHandlerMap.keySet());
-		return idSet.stream().collect(Collectors.toMap(o -> o, this::buildTemplate));
+		Map<String, OpTemplate<T>> map = idSet.stream().collect(Collectors.toMap(o -> o, this::buildTemplate));
+		entry = null;
+		currentId = null;
+		return map;
 	}
 
 	private OpTemplate<T> buildTemplate(String id) {

@@ -44,7 +44,7 @@ public class RejectedException extends RuntimeException {
 	 * @param message 错误消息
 	 * @param hint 错误提示
 	 */
-	RejectedException(String code, String message, @Nullable String hint) {
+	public RejectedException(String code, String message, @Nullable String hint) {
 		this(HttpStatus.OK, code, message, hint);
 	}
 
@@ -55,7 +55,7 @@ public class RejectedException extends RuntimeException {
 	 * @param message 错误消息
 	 * @param hint 错误提示
 	 */
-	RejectedException(HttpStatus status, String code, String message, @Nullable String hint) {
+	public RejectedException(HttpStatus status, String code, String message, @Nullable String hint) {
 		super(message);
 		this.code = code;
 		this.hint = hint;
