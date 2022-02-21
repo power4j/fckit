@@ -16,7 +16,7 @@
 
 package com.power4j.fist.boot.web.reactive.log;
 
-import com.power4j.fist.boot.common.log.LogConstant;
+import com.power4j.fist.boot.common.logging.LogConstant;
 import com.power4j.fist.boot.web.reactive.constant.ContextConstant;
 import org.reactivestreams.Subscription;
 import org.slf4j.MDC;

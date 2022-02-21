@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.common.log;
+package com.power4j.fist.boot.common.logging;
 
 /**
  * @author CJ (power4j@outlook.com)
