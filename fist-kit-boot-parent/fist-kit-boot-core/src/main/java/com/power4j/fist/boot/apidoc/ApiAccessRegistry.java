@@ -14,10 +14,9 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.security.authorization;
+package com.power4j.fist.boot.apidoc;
 
 import com.power4j.coca.kit.common.text.StringPool;
-import com.power4j.fist.boot.apidoc.ApiTrait;
 import com.power4j.fist.boot.util.ReflectUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +24,9 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
@@ -45,7 +44,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ApiAccessRegistry implements InitializingBean {
 
-	private final WebApplicationContext applicationContext;
+	private final ApplicationContext applicationContext;
 
 	private final MultiValuedMap<String, HttpMethod> pubAccess = new HashSetValuedHashMap<>(16);
 
@@ -107,7 +106,7 @@ public class ApiAccessRegistry implements InitializingBean {
 					.collect(Collectors.toSet());
 			for(String pattern: patterns){
 				if(log.isDebugEnabled()){
-					log.debug("{}: pattern = {},method = {}",
+					log.debug("[access = {}] pattern = {},method = {}",
 							apiTrait.access().name(),
 							pattern,
 							StringUtils.join(methods, StringPool.COMMA));
