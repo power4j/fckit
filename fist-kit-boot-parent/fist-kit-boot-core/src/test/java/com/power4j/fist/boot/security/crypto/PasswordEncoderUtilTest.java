@@ -29,13 +29,20 @@ class PasswordEncoderUtilTest {
 
 	PasswordEncoder encoder = PasswordEncoderUtil.createDelegatingPasswordEncoder();
 
+	String rawPwd1 = "123";
+
+	String rawPwd2 = "root";
+
 	@Test
 	public void testEncode() {
-		final String raw = "123";
-		String encoded = encoder.encode(raw);
-		Assertions.assertTrue(encoded.startsWith("{" + Sm3PasswordEncoder.ID + "}"));
-		boolean matched = encoder.matches(raw, encoded);
-		Assertions.assertTrue(matched);
+		String encoded1 = encoder.encode(rawPwd1);
+		System.out.printf("encode: %s -> %s%n", rawPwd1, encoded1);
+		Assertions.assertTrue(encoded1.startsWith("{" + Sm3PasswordEncoder.ID + "}"));
+		Assertions.assertTrue(encoder.matches(rawPwd1, encoded1));
+
+		String encoded2 = encoder.encode(rawPwd2);
+		System.out.printf("encode: %s -> %s%n", rawPwd2, encoded2);
+		Assertions.assertTrue(encoder.matches(rawPwd2, encoded2));
 	}
 
 	@Test
