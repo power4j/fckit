@@ -135,5 +135,11 @@
       <artifactId>fist-kit-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15to18</artifactId>
+      <version>1.70</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
