@@ -80,4 +80,12 @@ public class CommonErrors {
 				"common.permission.no-auth-denied");
 	}
 
+	/**
+	 * B0001 系统执行出错
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException serverError() {
+		return new MsgBundleRejectedException(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.B0001, "common.rpc.err-retry");
+	}
+
 }
