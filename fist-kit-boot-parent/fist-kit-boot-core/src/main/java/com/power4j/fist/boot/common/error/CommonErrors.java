@@ -28,6 +28,31 @@ import org.springframework.http.HttpStatus;
 public class CommonErrors {
 
 	/**
+	 * <b>一级宏观错误 </b> A0001 + 自定义消息
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException clientError(String msgKey, Object... msgArg) {
+		return new MsgBundleRejectedException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.A0001, msgKey, msgArg);
+	}
+
+	/**
+	 * <b>一级宏观错误 </b> B0001 + 后台处理失败
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException serverError() {
+		return new MsgBundleRejectedException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.B0001,
+				"common.server.fail-retry");
+	}
+
+	/**
+	 * C0110 + RPC调用失败
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException rpcError() {
+		return new MsgBundleRejectedException(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.C0110, "common.rpc.err-retry");
+	}
+
+	/**
 	 * A0400 参数错误
 	 * @param msgKey 消息key
 	 * @param msgArg 参数
@@ -78,14 +103,6 @@ public class CommonErrors {
 	public MsgBundleRejectedException authRequiredError() {
 		return new MsgBundleRejectedException(HttpStatus.UNAUTHORIZED, ErrorCode.A0401,
 				"common.permission.no-auth-denied");
-	}
-
-	/**
-	 * B0001 系统执行出错
-	 * @return MsgBundleRejectedException
-	 */
-	public MsgBundleRejectedException serverError() {
-		return new MsgBundleRejectedException(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.B0001, "common.rpc.err-retry");
 	}
 
 }
