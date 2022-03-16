@@ -22,7 +22,6 @@ import com.power4j.coca.kit.common.lang.Result;
 import com.power4j.fist.boot.common.api.Results;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.internal.engine.path.PathImpl;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -54,7 +53,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 @Slf4j
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(1000)
 @RestControllerAdvice
 public class ClientErrorHandler {
 
