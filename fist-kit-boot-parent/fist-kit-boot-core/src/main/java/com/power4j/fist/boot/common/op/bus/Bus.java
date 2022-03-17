@@ -18,7 +18,7 @@ package com.power4j.fist.boot.common.op.bus;
 
 import org.springframework.lang.Nullable;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,10 +29,19 @@ import java.util.Objects;
  */
 public class Bus<T, E extends OpEvent<T>> implements OpEventSource<T, E> {
 
-	private List<OpEventSubscriber<T, E>> subscribers = Collections.emptyList();
+	private List<OpEventSubscriber<T, E>> subscribers;
 
 	@Nullable
 	private ErrorHandler<E> errorHandler;
+
+	public Bus() {
+		this(new ArrayList<>(4), null);
+	}
+
+	public Bus(List<OpEventSubscriber<T, E>> subscribers, @Nullable ErrorHandler<E> errorHandler) {
+		this.subscribers = Objects.requireNonNull(subscribers);
+		this.errorHandler = errorHandler;
+	}
 
 	protected List<OpEventSubscriber<T, E>> getSubscribers() {
 		return subscribers;
