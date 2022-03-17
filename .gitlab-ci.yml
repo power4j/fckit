@@ -1,0 +1,94 @@
+#  GitLab CI 脚本 (cj 2022-03-17)
+#
+#    此构建脚本实现Maven 项目构建
+#
+# 注意事项: 你可能需要根据项目情况进行适当修改
+
+variables:
+  # This will suppress any download for dependencies and plugins or upload messages which would clutter the console log.
+  # `showDateTime` will show the passed time in milliseconds. You need to specify `--batch-mode` to make this work.
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  # As of Maven 3.3.0 instead of this you may define these options in `.mvn/maven.config` so the same config is used
+  # when running from the command line.
+  # `installAtEnd` and `deployAtEnd` are only effective with recent version of the corresponding plugins.
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true"
+
+# This template uses jdk11
+image: maven:3.6.3-openjdk-11
+
+# Cache downloaded dependencies and plugins between builds.
+# To keep cache across branches add 'key: "$CI_JOB_NAME"'
+cache:
+  paths:
+    - .m2/repository
+    - .m2/wrapper
+
+before_script:
+  - echo ${USER}
+  - echo ${JAVA_HOME}
+  - mvn -version
+  - cp -f /shared/maven/settings.xml  $HOME/.m2/settings.xml
+after_script:
+  - rm -f $HOME/.m2/settings.xml
+
+stages:
+  - compile
+  - verify
+  - test
+  - package
+  - deploy
+
+## Jobs
+
+merge-check:
+  stage: verify
+  script:
+    - 'mvn $MAVEN_CLI_OPTS clean verify -U'
+  tags:
+    - docker
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+mvn-compile:
+  stage: compile
+  script:
+    - 'mvn $MAVEN_CLI_OPTS clean compile -U'
+  tags:
+    - docker
+
+mvn-test:
+  stage: test
+  script:
+    - 'mvn $MAVEN_CLI_OPTS clean test -U'
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true"'
+      when: manual
+      allow_failure: true
+  tags:
+    - docker
+
+mvn-package:
+  stage: package
+  script:
+    - 'mvn $MAVEN_CLI_OPTS clean package -U -DskipTests'
+  artifacts:
+    name: "${CI_BUILD_NAME}_${CI_BUILD_REF_NAME}"
+    paths:
+      - target/*.jar
+    expire_in: 12 hour
+  rules:
+    - if: '$CI_COMMIT_REF_PROTECTED == "true"'
+  tags:
+    - docker
+
+
+# 发布到maven仓库
+push-oss:
+  stage: deploy
+#  dependencies:
+#    - mvn-test
+  script:
+    - "mvn clean deploy -Dgpg.passphrase=${GPG_PWD} -DskipTests=true -P 'oss-release'"
+  when: manual
+  tags:
+    - docker
