@@ -40,4 +40,12 @@ public class OpEvent<T> {
 		this.args = args;
 	}
 
+	/**
+	 * 构造方法
+	 * @param target 业务对象
+	 */
+	public OpEvent(T target) {
+		this(target, new Object[0]);
+	}
+
 }

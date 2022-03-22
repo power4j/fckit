@@ -34,6 +34,11 @@ public interface SecurityConstant {
 	}
 
 	/**
+	 * 匿名用户的用户名
+	 */
+	String ANONYMOUS_USER = "AnonymousUser";
+
+	/**
 	 * 零号租户的ID
 	 */
 	String TENANT_ZERO = "f06c2084821b4daf96abd68ce88e0ec9";
@@ -59,6 +64,32 @@ public interface SecurityConstant {
 	interface Crypto {
 
 		String NO_OP_PREFIX = "{noop}";
+
+	}
+
+	interface UserProp {
+
+		public static String KEY_USER_SOURCE = "userSource";
+
+		public static String KEY_USERNAME = "username";
+
+		public static String KEY_USER_ID = "userId";
+
+		public static String KEY_NICK_NAME = "nickName";
+
+		public static String KEY_AVATAR_URL = "avatarUrl";
+
+		public static String KEY_TENANT_ID = "tenantId";
+
+		public static String KEY_CLIENT_ID = "clientId";
+
+		public static String KEY_DEPT = "dept";
+
+		public static String KEY_ROLE_LIST = "roles";
+
+		public static String KEY_PERMISSION_LIST = "permissions";
+
+		public static String VAL_DEFAULT_USER_SOURCE = "local";
 
 	}
 

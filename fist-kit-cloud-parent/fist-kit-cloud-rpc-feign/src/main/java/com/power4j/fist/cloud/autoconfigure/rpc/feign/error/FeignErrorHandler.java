@@ -14,13 +14,13 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.web.servlet.error;
+package com.power4j.fist.cloud.autoconfigure.rpc.feign.error;
 
 import com.power4j.coca.kit.common.lang.Result;
-import com.power4j.fist.boot.common.api.Results;
-import com.power4j.fist.boot.common.error.MsgBundleRejectedException;
-import com.power4j.fist.boot.common.error.RejectedException;
+import com.power4j.fist.boot.common.error.ErrorCode;
 import com.power4j.fist.boot.i18n.LocaleResolver;
+import com.power4j.fist.boot.web.servlet.error.AbstractExceptionHandler;
+import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -30,23 +30,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/10/14
+ * @date 2022/3/16
  * @since 1.0
  */
 @Slf4j
-@Order
+@Order(5000)
 @RestControllerAdvice
-public class ServerErrorHandler extends AbstractExceptionHandler {
+public class FeignErrorHandler extends AbstractExceptionHandler {
 
 	@Nullable
 	private MessageSourceAccessor messageSourceAccessor;
@@ -64,38 +62,37 @@ public class ServerErrorHandler extends AbstractExceptionHandler {
 		this.localeResolver = localeResolver;
 	}
 
-	protected Result<?> makeResult(MsgBundleRejectedException e) {
+	protected String translateMessage(String msgKey, Object... args) {
 		Locale locale = Optional.ofNullable(localeResolver).map(LocaleResolver::resolve).orElse(Locale.CHINA);
-		String msg = Objects.requireNonNull(messageSourceAccessor).getMessage(e.getMsgKey(), e.getMsgArg(),
-				e.getMsgKey(), locale);
-		return Result.create(e.getCode(), msg, null);
+		if (Objects.nonNull(messageSourceAccessor)) {
+			return messageSourceAccessor.getMessage(msgKey, args, msgKey, locale);
+		}
+		else {
+			return msgKey;
+		}
 	}
 
-	@ExceptionHandler(MsgBundleRejectedException.class)
-	public ResponseEntity<Result<?>> handleException(MsgBundleRejectedException e) {
-		return ResponseEntity.status(e.getStatus()).body(makeResult(e));
+	protected Result<?> translate(FeignException e) {
+		final int status = e.status();
+		if (status >= 400 && status < 500) {
+			return Result.create(ErrorCode.C0110, translateMessage("common.rpc.err-request"), null);
+		}
+		else if (status >= 500 && status <= 599) {
+			return Result.create(ErrorCode.C0110, translateMessage("common.rpc.err-retry"), null);
+		}
+		else {
+			return Result.create(ErrorCode.B0001, translateMessage("common.server.fail-retry"), null);
+		}
 	}
 
-	@ExceptionHandler(RejectedException.class)
-	public ResponseEntity<Result<?>> handleException(RejectedException e) {
-		return ResponseEntity.status(e.getStatus()).body(Results.fromError(e));
-	}
-
-	@ExceptionHandler(SQLException.class)
-	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-	public Result<Object> handleException(SQLException e) {
-		log.error("数据库访问异常,vendorCode = {}", e.getErrorCode(), e);
-		doNotify(e);
-		return Results.serverError(String.format("数据库访问异常(%s),请联系管理员", e.getClass().getSimpleName()),
-				"vendorCode " + e.getErrorCode());
-	}
-
-	@ExceptionHandler(Throwable.class)
-	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-	public Result<Object> handleException(Throwable e) {
-		log.error(String.format("发生未处理异常(%s)", e.getClass().getName()), e);
-		doNotify(e);
-		return Results.serverError(String.format("服务异常(%s),请联系管理员", e.getClass().getSimpleName()), null);
+	@ExceptionHandler(FeignException.class)
+	public ResponseEntity<Result<?>> handleException(FeignException e) {
+		// @formatter:off
+		log.error("接口调用出错({}). {}",
+				e.getClass().getSimpleName(),
+				e.getMessage());
+		// @formatter:on
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(translate(e));
 	}
 
 }

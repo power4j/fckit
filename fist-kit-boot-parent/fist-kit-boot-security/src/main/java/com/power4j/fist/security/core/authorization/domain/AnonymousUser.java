@@ -16,6 +16,7 @@
 
 package com.power4j.fist.security.core.authorization.domain;
 
+import com.power4j.fist.boot.security.core.SecurityConstant;
 import org.springframework.lang.Nullable;
 
 import java.util.Collections;
@@ -29,7 +30,7 @@ import java.util.Map;
  */
 public class AnonymousUser implements AuthenticatedUser {
 
-	private final static String USER_NAME = "AnonymousUser";
+	private final static String USER_NAME = SecurityConstant.ANONYMOUS_USER;
 
 	private final static String TENANT = "Anonymous";
 

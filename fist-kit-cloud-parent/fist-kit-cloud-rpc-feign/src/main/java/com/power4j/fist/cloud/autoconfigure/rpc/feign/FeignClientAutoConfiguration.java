@@ -20,6 +20,7 @@ import com.power4j.fist.cloud.rpc.feign.UserRelayInterceptor;
 import feign.RequestInterceptor;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -29,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableFeignClients(basePackages = "com.power4j.fist")
+@ComponentScan(basePackages = { "com.power4j.fist.cloud.autoconfigure.rpc.feign.error" })
 public class FeignClientAutoConfiguration {
 
 	// TODO: Add Interceptor for Jwt, tenant-id, request-id

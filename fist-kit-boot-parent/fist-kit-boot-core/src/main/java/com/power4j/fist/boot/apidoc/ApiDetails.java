@@ -30,6 +30,8 @@ public class ApiDetails {
 
 	private String resourceName;
 
+	private String code;
+
 	private String level;
 
 	private String expose;

@@ -14,36 +14,27 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.mybaits.tree;
+package com.power4j.fist.boot.security.crypto;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.power4j.fist.data.tree.domain.BaseNodeIdx;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/24
+ * @date 2022/3/7
  * @since 1.0
  */
-@Data
-@EqualsAndHashCode(callSuper = false)
-public class OrgIdx extends BaseNodeIdx<Long, OrgIdx> {
+class Sm3PasswordEncoderTest {
 
-	@TableId(type = IdType.ASSIGN_ID)
-	private Long id;
-
-	public OrgIdx() {
-	}
-
-	public OrgIdx(long ancestor, long descendant, int distance) {
-		super(ancestor, descendant, distance);
-	}
-
-	@Override
-	public String toString() {
-		return "id=" + id + ", " + super.toString();
+	@Test
+	void encode() {
+		final String raw = "123";
+		Sm3PasswordEncoder encoder = new Sm3PasswordEncoder();
+		String encoded = encoder.encode(raw);
+		boolean matched = encoder.matches(raw, encoded);
+		Assertions.assertTrue(matched);
 	}
 
 }

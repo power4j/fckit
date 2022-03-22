@@ -112,17 +112,6 @@ public interface ErrorCode {
 	String B0100 = "B0100";
 
 	/**
-	 * 系统订单处理超时
-	 */
-	String B0101 = "B0101";
-
-	/**
-	 * 系统容灾功能被触发 <br/>
-	 * <b>二级宏观错误码</b>
-	 */
-	String B0200 = "B0200";
-
-	/**
 	 * 系统限流
 	 */
 	String B0210 = "B0210";

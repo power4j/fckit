@@ -20,13 +20,11 @@ import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.power4j.coca.kit.common.text.Chars;
-import com.power4j.coca.kit.common.text.StringPool;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,6 +40,9 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class DefaultUserInfoExtractor implements UserInfoExtractor {
+
+	final TypeReference<List<String>> strListType = new TypeReference<List<String>>() {
+	};
 
 	@Override
 	public Optional<UserInfo> extractAuthUser(@Nullable Map<String, ?> userInfoMap) {
@@ -64,43 +65,26 @@ public class DefaultUserInfoExtractor implements UserInfoExtractor {
 		if (Objects.isNull(userInfoMap)) {
 			return null;
 		}
-		String username = MapUtil.getStr(userInfoMap, "username");
-		String clientId = MapUtil.getStr(userInfoMap, "client_id", StringPool.EMPTY);
-		;
-		boolean enabled = MapUtil.getBool(userInfoMap, "enabled");
-		boolean accountNonExpired = MapUtil.getBool(userInfoMap, "accountNonExpired");
-		boolean credentialsNonExpired = MapUtil.getBool(userInfoMap, "credentialsNonExpired");
-		boolean accountNonLocked = MapUtil.getBool(userInfoMap, "accountNonLocked");
-		List<String> authorities = getAuthorities(userInfoMap);
+		String nickName = MapUtil.getStr(userInfoMap, SecurityConstant.UserProp.KEY_NICK_NAME);
+		String avatarUrl = MapUtil.getStr(userInfoMap, SecurityConstant.UserProp.KEY_AVATAR_URL);
+		String username = MapUtil.getStr(userInfoMap, SecurityConstant.UserProp.KEY_USERNAME);
+		Long userId = MapUtil.getLong(userInfoMap, SecurityConstant.UserProp.KEY_USER_ID);
+		String userSource = MapUtil.getStr(userInfoMap, userInfoMap, SecurityConstant.UserProp.KEY_USER_SOURCE);
+		String dept = MapUtil.getStr(userInfoMap, SecurityConstant.UserProp.KEY_DEPT);
+		List<String> roleList = MapUtil.get(userInfoMap, SecurityConstant.UserProp.KEY_ROLE_LIST, strListType,
+				Collections.emptyList());
+		List<String> permissions = MapUtil.get(userInfoMap, SecurityConstant.UserProp.KEY_PERMISSION_LIST, strListType,
+				Collections.emptyList());
 
 		UserInfo info = new UserInfo();
 		info.setUsername(username);
-		info.setClientId(clientId);
-		info.setEnabled(enabled);
-		info.setAccountNonExpired(accountNonExpired);
-		info.setCredentialsNonExpired(credentialsNonExpired);
-		info.setAccountNonLocked(accountNonLocked);
-		info.setAuthorities(new HashSet<>(authorities));
-
-		Long userId = MapUtil.getLong(userInfoMap, "userId");
-		String tenantId = MapUtil.getStr(userInfoMap, "tenantId");
-		String nickName = MapUtil.getStr(userInfoMap, "nickName");
-		String avatarUrl = MapUtil.getStr(userInfoMap, "avatarUrl");
-		List<Long> roleIdList = MapUtil.get(userInfoMap, "roleIdList", new TypeReference<List<Long>>() {
-		}, Collections.emptyList());
-		List<String> permissionList = MapUtil.get(userInfoMap, "permissionList", new TypeReference<List<String>>() {
-		}, Collections.emptyList());
-		Map<String, Object> additionalInfo = MapUtil.get(userInfoMap, "additionalInfo",
-				new TypeReference<Map<String, Object>>() {
-				}, Collections.emptyMap());
-
 		info.setUserId(userId);
-		info.setTenantId(tenantId);
 		info.setNickName(nickName);
 		info.setAvatarUrl(avatarUrl);
-		info.setRoleIdList(roleIdList);
-		info.setPermissionList(permissionList);
-		info.setAdditionalInfo(additionalInfo);
+		info.putMetaProp(SecurityConstant.UserProp.KEY_ROLE_LIST, roleList);
+		info.putMetaProp(SecurityConstant.UserProp.KEY_PERMISSION_LIST, permissions);
+		info.putMetaProp(SecurityConstant.UserProp.KEY_USER_SOURCE, userSource);
+		info.putMetaProp(SecurityConstant.UserProp.KEY_DEPT, dept);
 		return info;
 	}
 

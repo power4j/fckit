@@ -19,12 +19,14 @@ package com.power4j.fist.boot.mybaits.tree;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.power4j.fist.boot.mybaits.crud.repository.Repository;
 import com.power4j.fist.data.tree.domain.NodeIdx;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -184,21 +186,22 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 
 	@Override
 	public Set<ID> subTreeNodes(Collection<ID> ids) {
+		if (ObjectUtils.isEmpty(ids)) {
+			return Collections.emptySet();
+		}
 		List<T> paths = findAllDescendant(ids, null, null);
-		Set<ID> set = new HashSet<>(ids.size());
 		// @formatter:off
-		paths.stream().filter(NodeIdx::isNodeOrImmediate)
-				.collect(Collectors.toList())
-				.forEach(o -> {
-					set.add(o.getAncestor());
-					set.add(o.getDescendant());
-				});
+		return paths.stream()
+				.map(NodeIdx::getDescendant)
+				.collect(Collectors.toSet());
 		// @formatter:on
-		return set;
 	}
 
 	@Override
-	public Set<ID> findRootNodes(Collection<ID> ids) {
+	public Set<ID> findSharedRoot(Collection<ID> ids) {
+		if (ObjectUtils.isEmpty(ids)) {
+			return Collections.emptySet();
+		}
 		List<T> paths = findAllAncestor(ids, null, null);
 		Map<ID, List<T>> map = paths.stream().collect(Collectors.groupingBy(NodeIdx::getDescendant));
 		Set<ID> roots = new HashSet<>(8);

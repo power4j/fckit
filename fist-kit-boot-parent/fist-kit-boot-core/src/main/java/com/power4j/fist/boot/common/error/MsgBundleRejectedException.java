@@ -16,6 +16,8 @@
 
 package com.power4j.fist.boot.common.error;
 
+import org.springframework.http.HttpStatus;
+
 /**
  * 国际化支持
  *
@@ -37,6 +39,19 @@ public class MsgBundleRejectedException extends RejectedException {
 	 */
 	public MsgBundleRejectedException(String code, String msgKey, Object... msgArg) {
 		super(code, msgKey, null);
+		this.msgKey = msgKey;
+		this.msgArg = msgArg;
+	}
+
+	/**
+	 * 构造函数
+	 * @param status 状态码
+	 * @param code 错误代码
+	 * @param msgKey 错误消息key
+	 * @param msgArg 错误消息参数
+	 */
+	public MsgBundleRejectedException(HttpStatus status, String code, String msgKey, Object... msgArg) {
+		super(status, code, msgKey, null);
 		this.msgKey = msgKey;
 		this.msgArg = msgArg;
 	}

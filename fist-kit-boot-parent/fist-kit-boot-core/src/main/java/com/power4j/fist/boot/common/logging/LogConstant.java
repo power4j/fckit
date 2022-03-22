@@ -14,36 +14,17 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.mybaits.tree;
-
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.power4j.fist.data.tree.domain.BaseNodeIdx;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+package com.power4j.fist.boot.common.logging;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/24
+ * @date 2021/6/18
  * @since 1.0
  */
-@Data
-@EqualsAndHashCode(callSuper = false)
-public class OrgIdx extends BaseNodeIdx<Long, OrgIdx> {
+public interface LogConstant {
 
-	@TableId(type = IdType.ASSIGN_ID)
-	private Long id;
+	String MDC_REQUEST_ID = "requestId";
 
-	public OrgIdx() {
-	}
-
-	public OrgIdx(long ancestor, long descendant, int distance) {
-		super(ancestor, descendant, distance);
-	}
-
-	@Override
-	public String toString() {
-		return "id=" + id + ", " + super.toString();
-	}
+	String MDC_ACCOUNT_ID = "accountId";
 
 }

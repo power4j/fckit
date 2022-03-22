@@ -16,15 +16,17 @@
 
 package com.power4j.fist.boot.security;
 
+import com.power4j.fist.boot.security.core.SecurityConstant;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -40,18 +42,15 @@ public class AuthUser extends User {
 
 	private Long userId;
 
-	private String tenantId;
-
 	@Nullable
 	private String nickName;
 
 	@Nullable
 	private String avatarUrl;
 
-	private List<Long> roleIdList = Collections.emptyList();
-
-	private List<String> permissionList;
-
+	/**
+	 * @see com.power4j.fist.boot.security.core.SecurityConstant.UserProp
+	 */
 	private Map<String, Object> additionInfo = Collections.emptyMap();
 
 	public AuthUser(String username, String password, Collection<? extends GrantedAuthority> authorities) {
@@ -62,6 +61,18 @@ public class AuthUser extends User {
 			boolean credentialsNonExpired, boolean accountNonLocked,
 			Collection<? extends GrantedAuthority> authorities) {
 		super(username, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
+	}
+
+	public Map<String, Object> expose() {
+		Map<String, Object> props = new HashMap<>(8);
+		props.put(SecurityConstant.UserProp.KEY_USERNAME, getUsername());
+		props.put(SecurityConstant.UserProp.KEY_USER_ID, userId);
+		props.put(SecurityConstant.UserProp.KEY_NICK_NAME, nickName);
+		props.put(SecurityConstant.UserProp.KEY_AVATAR_URL, avatarUrl);
+		if (ObjectUtils.isNotEmpty(additionInfo)) {
+			props.putAll(additionInfo);
+		}
+		return props;
 	}
 
 }

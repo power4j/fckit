@@ -16,14 +16,16 @@
 
 package com.power4j.fist.boot.security.core;
 
+import cn.hutool.core.lang.TypeReference;
+import cn.hutool.core.map.MapUtil;
 import lombok.Data;
 import org.springframework.lang.Nullable;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * POJO of AuthUser so we don't have to import Spring Security
@@ -37,21 +39,9 @@ public class UserInfo implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private String username;
-
-	private Set<String> authorities;
-
-	private boolean accountNonExpired;
-
-	private boolean accountNonLocked;
-
-	private boolean credentialsNonExpired;
-
-	private boolean enabled;
-
 	private Long userId;
 
-	private String tenantId;
+	private String username;
 
 	@Nullable
 	private String nickName;
@@ -60,12 +50,66 @@ public class UserInfo implements Serializable {
 	private String avatarUrl;
 
 	@Nullable
-	private String clientId;
+	private Map<String, Object> meta;
 
-	private List<Long> roleIdList = Collections.emptyList();
+	/**
+	 * 获取扩展属性,并进行类型转换
+	 * @param <T> 类型
+	 * @param key 属性的key
+	 * @return 如果Key不存在则返回empty
+	 * @see com.power4j.fist.boot.security.core.SecurityConstant.UserProp
+	 */
+	public <T> Optional<T> getMetaProp(String key, Class<T> clazz) {
+		return getRawMetaProp(key).map(clazz::cast);
+	}
 
-	private List<String> permissionList = Collections.emptyList();
+	/**
+	 * 获取扩展属性,并进行类型转换
+	 * @param <T> 类型
+	 * @param key 属性的key
+	 * @param type Type类型参考
+	 * @return 如果Key不存在则返回empty
+	 * @see com.power4j.fist.boot.security.core.SecurityConstant.UserProp
+	 */
+	public <T> Optional<T> getMetaProp(String key, TypeReference<T> type) {
+		if (Objects.isNull(meta) || !meta.containsKey(key)) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(MapUtil.get(meta, key, type, null));
+	}
 
-	private Map<String, Object> additionalInfo = Collections.emptyMap();
+	/**
+	 * 获取扩展属性
+	 * @param key 属性的key
+	 * @return 如果Key不存在则返回empty
+	 * @see com.power4j.fist.boot.security.core.SecurityConstant.UserProp
+	 */
+	public Optional<Object> getRawMetaProp(String key) {
+		if (Objects.isNull(meta) || !meta.containsKey(key)) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(meta.get(key));
+	}
+
+	@Nullable
+	public Object putMetaProp(String key, Object value) {
+		return useMeta().put(key, value);
+	}
+
+	@Nullable
+	public Object putMetaPropIfAbsent(String key, Object value) {
+		return useMeta().putIfAbsent(key, value);
+	}
+
+	private Map<String, Object> useMeta() {
+		if (Objects.isNull(meta)) {
+			meta = new HashMap<>(8);
+		}
+		return meta;
+	}
+
+	public Map<String, Object> getMeta() {
+		return useMeta();
+	}
 
 }

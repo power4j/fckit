@@ -167,6 +167,9 @@ public class TreeBuilder<ID, T> {
 			return Collections.emptyList();
 		}
 		Map<ID, Tree<ID>> nodeMap = makeNodeMap();
+		if (Objects.nonNull(customizer)) {
+			nodeMap.values().forEach(node -> customizer.customize(node, sourceData.get(node.getId())));
+		}
 		// 根节点
 		final Map<ID, Tree<ID>> roots = rootSelect.apply(nodeMap);
 		if (ObjectUtils.isEmpty(roots)) {

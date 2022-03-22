@@ -17,6 +17,7 @@
 package com.power4j.fist.boot.common.error;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.http.HttpStatus;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -27,13 +28,38 @@ import lombok.experimental.UtilityClass;
 public class CommonErrors {
 
 	/**
+	 * <b>一级宏观错误 </b> A0001 + 自定义消息
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException clientError(String msgKey, Object... msgArg) {
+		return new MsgBundleRejectedException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.A0001, msgKey, msgArg);
+	}
+
+	/**
+	 * <b>一级宏观错误 </b> B0001 + 后台处理失败
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException serverError() {
+		return new MsgBundleRejectedException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.B0001,
+				"common.server.fail-retry");
+	}
+
+	/**
+	 * C0110 + RPC调用失败
+	 * @return MsgBundleRejectedException
+	 */
+	public MsgBundleRejectedException rpcError() {
+		return new MsgBundleRejectedException(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.C0110, "common.rpc.err-retry");
+	}
+
+	/**
 	 * A0400 参数错误
 	 * @param msgKey 消息key
 	 * @param msgArg 参数
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException requestParameterError(String msgKey, Object... msgArg) {
-		return new MsgBundleRejectedException(ErrorCode.A0400, msgKey, msgArg);
+		return new MsgBundleRejectedException(HttpStatus.BAD_REQUEST, ErrorCode.A0400, msgKey, msgArg);
 	}
 
 	/**
@@ -41,7 +67,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException requestParameterError() {
-		return new MsgBundleRejectedException(ErrorCode.A0400, "common.bad-parameter");
+		return new MsgBundleRejectedException(HttpStatus.BAD_REQUEST, ErrorCode.A0400, "common.bad-parameter");
 	}
 
 	/**
@@ -50,7 +76,8 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException invalidFieldValueError(String fieldName) {
-		return new MsgBundleRejectedException(ErrorCode.A0400, "common.invalid-field-value", fieldName);
+		return new MsgBundleRejectedException(HttpStatus.BAD_REQUEST, ErrorCode.A0400, "common.invalid-field-value",
+				fieldName);
 	}
 
 	/**
@@ -58,7 +85,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException resourceNotExistsError() {
-		return new MsgBundleRejectedException(ErrorCode.A0400, "common.resource.not-found");
+		return new MsgBundleRejectedException(HttpStatus.NOT_FOUND, ErrorCode.A0400, "common.resource.not-found");
 	}
 
 	/**
@@ -66,7 +93,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException permissionDeniedError() {
-		return new MsgBundleRejectedException(ErrorCode.A0301, "common.permission.denied");
+		return new MsgBundleRejectedException(HttpStatus.FORBIDDEN, ErrorCode.A0301, "common.permission.denied");
 	}
 
 	/**
@@ -74,7 +101,8 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException authRequiredError() {
-		return new MsgBundleRejectedException(ErrorCode.A0401, "common.permission.no-auth-denied");
+		return new MsgBundleRejectedException(HttpStatus.UNAUTHORIZED, ErrorCode.A0401,
+				"common.permission.no-auth-denied");
 	}
 
 }
