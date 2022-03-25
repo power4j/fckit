@@ -1,5 +1,11 @@
 name: Publish to the Maven Central
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    tags:
+      - '*'
 
 jobs:
   oss-deploy:
