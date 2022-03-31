@@ -16,7 +16,12 @@
 
 package com.power4j.fist.boot.autoconfigure.mon;
 
+import com.power4j.fist.boot.mon.aspect.ApiLogAspect;
 import com.power4j.fist.boot.mon.aspect.ReportErrorAspect;
+import com.power4j.fist.boot.mon.event.ApiLogEvent;
+import com.power4j.fist.boot.mon.event.ServerErrorEvent;
+import com.power4j.fist.boot.mon.listener.AbstractEventListener;
+import com.power4j.fist.boot.mon.listener.DefaultApiLogEventListener;
 import com.power4j.fist.boot.mon.listener.DefaultServerErrorEventListener;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.Aspects;
@@ -41,9 +46,21 @@ public class AppMonConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnMissingBean
+	@ConditionalOnMissingBean(value = ServerErrorEvent.class, parameterizedContainer = AbstractEventListener.class)
 	public DefaultServerErrorEventListener defaultServerErrorEventListener() {
 		return new DefaultServerErrorEventListener();
+	}
+
+	@Bean
+	@ConditionalOnClass(Aspects.class)
+	public ApiLogAspect apiLogAspect() {
+		return new ApiLogAspect();
+	}
+
+	@Bean
+	@ConditionalOnMissingBean(value = ApiLogEvent.class, parameterizedContainer = AbstractEventListener.class)
+	public DefaultApiLogEventListener defaultApiLogEventListener() {
+		return new DefaultApiLogEventListener();
 	}
 
 }
