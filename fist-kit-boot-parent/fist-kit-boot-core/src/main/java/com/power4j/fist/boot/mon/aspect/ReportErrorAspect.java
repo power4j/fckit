@@ -56,7 +56,7 @@ public class ReportErrorAspect {
 				handleError(point, e, reportError);
 			}
 			catch (Throwable any) {
-				log.error(e.getMessage(), e);
+				log.error(any.getMessage(), any);
 			}
 			throw e;
 		}
