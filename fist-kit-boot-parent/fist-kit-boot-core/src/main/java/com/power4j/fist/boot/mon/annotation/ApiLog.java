@@ -16,6 +16,11 @@
 
 package com.power4j.fist.boot.mon.annotation;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import org.springframework.core.annotation.AliasFor;
 
 /**
@@ -23,6 +28,9 @@ import org.springframework.core.annotation.AliasFor;
  * @date 2022/3/31
  * @since 1.0
  */
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.METHOD })
 public @interface ApiLog {
 
 	/**
