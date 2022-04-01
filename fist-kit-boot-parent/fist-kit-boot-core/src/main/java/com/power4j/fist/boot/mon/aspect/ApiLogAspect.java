@@ -35,6 +35,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.context.ApplicationContext;
+import org.springframework.lang.Nullable;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -55,16 +56,13 @@ public class ApiLogAspect {
 	@Around("@annotation(apiLog)")
 	public Object around(ProceedingJoinPoint point, ApiLog apiLog) throws Throwable {
 		final HttpRequestInfo requestInfo = HttpRequestInfo.from(HttpServletRequestUtil.getCurrentRequest());
-		String appName = appNameRef.updateAndGet(v -> {
-			if (Objects.isNull(v)) {
-				return ApplicationContextHolder.getContextOptional().map(ApplicationContext::getApplicationName)
-						.orElse(null);
-			}
-			return v;
-		});
+		if (!apiLog.withQuery()) {
+			requestInfo.setQueryParam(StringPool.EMPTY);
+		}
+
 		// @formatter:off
 		ApiLogEvent event = ApiLogEvent.builder()
-				.appName(ObjectUtils.defaultIfNull(appName, "unknown"))
+				.appName(ObjectUtils.defaultIfNull(getAppName(), "unknown"))
 				.operation(getDescription(point, apiLog))
 				.requestInfo(requestInfo)
 				.time(DateTimeKit.utcNow())
@@ -121,6 +119,17 @@ public class ApiLogAspect {
 			return ObjectUtils.firstNonNull(operation.summary(), operation.description());
 		}
 		return StringPool.EMPTY;
+	}
+
+	@Nullable
+	String getAppName() {
+		String name = appNameRef.get();
+		if (Objects.nonNull(name)) {
+			return name;
+		}
+		ApplicationContextHolder.getContextOptional().map(ApplicationContext::getApplicationName)
+				.ifPresent(v -> appNameRef.compareAndSet(null, v));
+		return appNameRef.get();
 	}
 
 }

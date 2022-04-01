@@ -31,10 +31,13 @@ import java.util.Optional;
 @Slf4j
 public class DefaultServerErrorEventListener extends AbstractEventListener<ServerErrorEvent> {
 
+	private final static String TAG = ServerErrorEvent.class.getSimpleName();
+
 	@Override
 	protected void handeEvent(ServerErrorEvent event) {
 		// @formatter:off
-		log.warn("异常事件:时间(UTC)={},应用={},异常类型 = {},异常信息 = {}",
+		log.warn("[{}]:时间(UTC)={},应用={},异常类型 = {},异常信息 = {}",
+				TAG,
 				DateTimeParser.DEFAULT_DATETIME_FORMATTER.format(event.getTime()),
 				event.getAppName(),
 				Optional.ofNullable(event.getError()).map(ExceptionInfo::getEx).orElse(null),

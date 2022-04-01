@@ -17,11 +17,8 @@
 package com.power4j.fist.boot.mon.listener;
 
 import com.power4j.fist.boot.mon.event.ApiLogEvent;
-import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.web.servlet.mvc.formatter.DateTimeParser;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Optional;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -31,13 +28,16 @@ import java.util.Optional;
 @Slf4j
 public class DefaultApiLogEventListener extends AbstractEventListener<ApiLogEvent> {
 
+	private final static String TAG = ApiLogEvent.class.getSimpleName();
+
 	@Override
 	protected void handeEvent(ApiLogEvent event) {
 		// @formatter:off
-		log.warn("[ApiLog]:{} {},时间(UTC)={},cost = {} MS",
-				DateTimeParser.DEFAULT_DATETIME_FORMATTER.format(event.getTime()),
+		log.debug("[{}]:{} {},请求时间(UTC)={},cost = {} ms",
+				TAG,
 				event.getAppName(),
 				event.getOperation(),
+				DateTimeParser.DEFAULT_DATETIME_FORMATTER.format(event.getTime()),
 				event.getDuration().toMillis()
 		);
 		// @formatter:on
