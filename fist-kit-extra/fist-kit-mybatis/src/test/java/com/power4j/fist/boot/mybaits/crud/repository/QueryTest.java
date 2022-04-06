@@ -17,6 +17,7 @@
 package com.power4j.fist.boot.mybaits.crud.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,25 +27,32 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2022/1/27
  * @since 1.0
  */
+@Slf4j
 @SpringBootTest
 @AutoConfigureTestDatabase
 public class QueryTest {
 
 	long ID90001 = 90001L;
 
+	List<Long> ids = Collections
+			.unmodifiableList(LongStream.range(ID90001, ID90001 + 5).boxed().collect(Collectors.toList()));
+
 	@Autowired
 	private BookRepository bookRepository;
 
 	@BeforeEach
 	void setUp() {
-		List<Book> books = BookUtils.createEntity(ID90001, 5);
+		List<Book> books = BookUtils.createEntity(ids);
 		bookRepository.saveAll(books);
 	}
 
@@ -70,7 +78,10 @@ public class QueryTest {
 	@Test
 	void findAll() {
 		List<Book> list = bookRepository.findAll();
-		Assertions.assertEquals(5, list.size());
+		list.forEach(o -> log.info("findAll => id = {}", o.getId()));
+		for (Book book : list) {
+			Assertions.assertTrue(ids.contains(book.getId()));
+		}
 	}
 
 	@Test
@@ -103,7 +114,7 @@ public class QueryTest {
 	@Test
 	void countAll() {
 		long size = bookRepository.countAll();
-		Assertions.assertEquals(5L, size);
+		Assertions.assertTrue(size >= 5L);
 	}
 
 	@Test
