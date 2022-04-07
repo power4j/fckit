@@ -21,7 +21,6 @@ import cn.hutool.core.util.StrUtil;
 import com.power4j.coca.kit.common.lang.Result;
 import com.power4j.fist.boot.common.api.Results;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +40,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
+import javax.validation.Path;
 import javax.validation.ValidationException;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -99,7 +99,7 @@ public class ClientErrorHandler {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public Result<Object> handleException(ConstraintViolationException e) {
 		ConstraintViolation<?> violation = e.getConstraintViolations().iterator().next();
-		String path = ((PathImpl) violation.getPropertyPath()).getLeafNode().getName();
+		String path = ((Path) violation.getPropertyPath()).toString();
 		log.warn("请求参数校验失败:{}", path);
 		return Results.requestParameterError(violation.getMessage(), path);
 	}
