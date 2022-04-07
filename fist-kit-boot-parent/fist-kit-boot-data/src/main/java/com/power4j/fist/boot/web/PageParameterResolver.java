@@ -17,6 +17,8 @@
 package com.power4j.fist.boot.web;
 
 import com.power4j.fist.boot.web.model.PageParameter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -31,7 +33,14 @@ import java.util.Objects;
  * @date 2021/12/15
  * @since 1.0
  */
+@Slf4j
 public class PageParameterResolver extends AbstractPageRequestResolver {
+
+	@Setter
+	private String orderFieldKey = "field";
+
+	@Setter
+	private String orderKey = "order";
 
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
@@ -48,8 +57,9 @@ public class PageParameterResolver extends AbstractPageRequestResolver {
 		}
 		int page = parseInt(request.getParameter(getPageNumberKey()), PageParameter.FIRST_PAGE);
 		int size = parseInt(request.getParameter(getPageSizeKey()), PageParameter.DEFAULT_PAGE_SIZE);
-
-		return PageParameter.of(page, size);
+		String orderField = filterFieldName(request.getParameter(orderFieldKey));
+		String order = request.getParameter(orderKey);
+		return PageParameter.of(page, size, orderField, order);
 	}
 
 }

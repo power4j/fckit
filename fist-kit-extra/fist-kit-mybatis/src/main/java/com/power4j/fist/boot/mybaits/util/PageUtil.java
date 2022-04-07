@@ -18,6 +18,7 @@ package com.power4j.fist.boot.mybaits.util;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.power4j.fist.boot.web.model.PageParameter;
 import com.power4j.fist.data.domain.PageImpl;
@@ -68,7 +69,8 @@ public class PageUtil {
 	}
 
 	public OrderItem toOrderItem(Sort.Order order) {
-		return order.isAsc() ? OrderItem.asc(order.getProp()) : OrderItem.desc(order.getProp());
+		String column = StringUtils.camelToUnderline(order.getProp());
+		return order.isAsc() ? OrderItem.asc(column) : OrderItem.desc(column);
 	}
 
 	public Sort.Order toOrder(OrderItem item) {

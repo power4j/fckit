@@ -17,6 +17,8 @@
 package com.power4j.fist.boot.web;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
@@ -27,6 +29,7 @@ import java.util.Objects;
  * @date 2021/12/15
  * @since 1.0
  */
+@Slf4j
 public abstract class AbstractPageRequestResolver implements HandlerMethodArgumentResolver {
 
 	@Getter
@@ -35,12 +38,19 @@ public abstract class AbstractPageRequestResolver implements HandlerMethodArgume
 	@Getter
 	private String pageSizeKey = "pageSize";
 
+	@Getter
+	private String filedNamePattern = "[A-Za-z0-9_]+";
+
 	public void setPageNumberKey(String pageNumberKey) {
 		this.pageNumberKey = pageNumberKey;
 	}
 
 	public void setPageSizeKey(String pageSizeKey) {
 		this.pageSizeKey = pageSizeKey;
+	}
+
+	public void setFiledNamePattern(String filedNamePattern) {
+		this.filedNamePattern = filedNamePattern;
 	}
 
 	protected int parseInt(@Nullable String str, int defaultVal) {
@@ -53,6 +63,15 @@ public abstract class AbstractPageRequestResolver implements HandlerMethodArgume
 		catch (NumberFormatException e) {
 			return defaultVal;
 		}
+	}
+
+	@Nullable
+	protected String filterFieldName(@Nullable String value) {
+		if (StringUtils.isNotEmpty(value) && !value.matches(filedNamePattern)) {
+			log.error("拦截非法排序字段名称:{}", value);
+			return null;
+		}
+		return value;
 	}
 
 }
