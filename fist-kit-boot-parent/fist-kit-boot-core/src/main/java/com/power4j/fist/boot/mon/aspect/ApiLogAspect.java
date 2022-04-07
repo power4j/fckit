@@ -20,12 +20,12 @@ import com.power4j.coca.kit.common.datetime.DateTimeKit;
 import com.power4j.coca.kit.common.lang.Result;
 import com.power4j.coca.kit.common.text.StringPool;
 import com.power4j.fist.boot.common.aop.AopUtil;
+import com.power4j.fist.boot.mon.EventUtils;
 import com.power4j.fist.boot.mon.annotation.ApiLog;
 import com.power4j.fist.boot.mon.event.ApiLogEvent;
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.mon.info.HttpRequestInfo;
 import com.power4j.fist.boot.mon.info.HttpResponseInfo;
-import com.power4j.fist.boot.util.ApplicationContextHolder;
 import com.power4j.fist.boot.util.SpringEventUtil;
 import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +34,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.context.ApplicationContext;
 import org.springframework.lang.Nullable;
 
 import java.lang.reflect.Method;
@@ -127,8 +126,7 @@ public class ApiLogAspect {
 		if (Objects.nonNull(name)) {
 			return name;
 		}
-		ApplicationContextHolder.getContextOptional().map(ApplicationContext::getApplicationName)
-				.ifPresent(v -> appNameRef.compareAndSet(null, v));
+		EventUtils.getAppName().ifPresent(v -> appNameRef.compareAndSet(null, v));
 		return appNameRef.get();
 	}
 

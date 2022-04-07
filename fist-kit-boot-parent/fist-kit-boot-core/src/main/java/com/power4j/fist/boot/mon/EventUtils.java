@@ -24,9 +24,9 @@ import com.power4j.fist.boot.mon.info.TraceInfo;
 import com.power4j.fist.boot.util.ApplicationContextHolder;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.context.ApplicationContext;
 import org.springframework.lang.Nullable;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -37,11 +37,12 @@ import java.util.concurrent.atomic.AtomicReference;
 @UtilityClass
 public class EventUtils {
 
+	private final static String KEY_APP_NAME = "spring.application.name";
+
 	private final static AtomicReference<EnvInfo> ENV_INFO_CACHE = new AtomicReference<>(EnvInfo.resolve());
 
 	public ServerErrorEvent createServerErrorEvent(@Nullable String description, Throwable e) {
-		String appName = ApplicationContextHolder.getContextOptional().map(ApplicationContext::getApplicationName)
-				.orElse("Unknown");
+		String appName = getAppName().orElse("Unknown");
 		ServerErrorEvent errorEvent = new ServerErrorEvent();
 		errorEvent.setAppName(appName);
 		errorEvent.setDescription(ObjectUtils.defaultIfNull(description, ""));
@@ -51,6 +52,10 @@ public class EventUtils {
 		errorEvent.setTraceInfo(new TraceInfo());
 
 		return errorEvent;
+	}
+
+	public Optional<String> getAppName() {
+		return ApplicationContextHolder.getContextOptional().map(o -> o.getEnvironment().getProperty(KEY_APP_NAME));
 	}
 
 }
