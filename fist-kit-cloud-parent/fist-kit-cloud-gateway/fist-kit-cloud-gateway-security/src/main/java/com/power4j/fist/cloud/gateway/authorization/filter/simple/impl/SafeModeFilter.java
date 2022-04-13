@@ -19,6 +19,7 @@ package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -29,13 +30,18 @@ import java.util.Optional;
  * @date 2021/12/15
  * @since 1.0
  */
+@Slf4j
 public class SafeModeFilter extends AbstractAuthFilter {
 
 	@Override
 	protected boolean process(AuthContext ctx) {
-		boolean isSafe = Optional.ofNullable(ctx.getExchange().getRequest().getRemoteAddress())
-				.map(InetSocketAddress::getAddress).map(InetAddress::isLoopbackAddress).orElse(false);
+		Optional<InetAddress> address = Optional.ofNullable(ctx.getExchange().getRequest().getRemoteAddress())
+				.map(InetSocketAddress::getAddress);
+		boolean isSafe = address.map(InetAddress::isLoopbackAddress).orElse(false);
 
+		if (log.isDebugEnabled()) {
+			log.debug("safe check = {},address = {} ", isSafe, address.map(InetAddress::getHostAddress).orElse("null"));
+		}
 		return exitChain(ctx, isSafe ? AuthProblem.SAFE_MODE_PASS : AuthProblem.SAFE_MODE_DENIED);
 	}
 
