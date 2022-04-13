@@ -41,7 +41,7 @@ public class ApiPermDefinition implements Serializable, PermissionDefinition {
 
 	public static final String FLAG_NO = "0";
 
-	private Long id;
+	private String id;
 
 	/** 权限编码 */
 	private String code;
