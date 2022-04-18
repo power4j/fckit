@@ -52,7 +52,7 @@ public @interface ApiTrait {
 	/**
 	 * API 访问模式
 	 */
-	Access access() default Access.DEFAULT;
+	Access access() default Access.USER;
 
 	/**
 	 * 签名校验
