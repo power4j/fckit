@@ -32,7 +32,7 @@ public class CommonErrors {
 	 * @return MsgBundleRejectedException
 	 */
 	public MsgBundleRejectedException clientError(String msgKey, Object... msgArg) {
-		return new MsgBundleRejectedException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.A0001, msgKey, msgArg);
+		return new MsgBundleRejectedException(HttpStatus.BAD_REQUEST, ErrorCode.A0001, msgKey, msgArg);
 	}
 
 	/**
