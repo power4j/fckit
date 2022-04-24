@@ -21,6 +21,7 @@ import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -45,7 +46,8 @@ public class SafeModeFilter extends AbstractAuthFilter {
 		boolean isSafe = address.map(s -> matchAny(s, whitelist)).orElse(false);
 
 		if (log.isDebugEnabled()) {
-			log.debug("safe check = {},address = {} ", isSafe, address.orElse("null"));
+			log.debug("safe check = {},address = {}, whitelist = {}", isSafe, address.orElse("null"),
+					StringUtils.join(whitelist, ","));
 		}
 		return exitChain(ctx, isSafe ? AuthProblem.SAFE_MODE_PASS : AuthProblem.SAFE_MODE_DENIED);
 	}

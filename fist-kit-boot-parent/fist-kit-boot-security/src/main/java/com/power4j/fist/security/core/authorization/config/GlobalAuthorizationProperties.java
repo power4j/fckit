@@ -43,13 +43,7 @@ public class GlobalAuthorizationProperties {
 	/**
 	 * 安全模式
 	 */
-	private boolean safeMode = false;
-
-	/**
-	 * 安全模式允许的IP,比如 {@code '192.168.*'}
-	 *
-	 */
-	private List<String> safeModeIpList = Collections.singletonList("127.*");
+	private SafeModeConfig safeMode = new SafeModeConfig();
 
 	/**
 	 * 跳过鉴权的入站地址,支持ANT,比如 {@code '/api/**'}
@@ -69,6 +63,19 @@ public class GlobalAuthorizationProperties {
 		private String apiTokenHeader = "x-api-token";
 
 		private String apiTokenParameter = "apiToken";
+
+	}
+
+	@Data
+	public static class SafeModeConfig {
+
+		private boolean enabled = false;
+
+		/**
+		 * 安全模式允许的IP,比如 {@code '192.168.*'}
+		 *
+		 */
+		private List<String> whitelist = Collections.singletonList("127.*");
 
 	}
 

@@ -86,9 +86,10 @@ public class UpstreamAuthFilterConfigure {
 
 	@Bean
 	@Order(BASE_ORDER + 110)
-	@ConditionalOnProperty(prefix = GlobalAuthorizationProperties.PROP_PREFIX, name = "safe-mode", havingValue = "true")
+	@ConditionalOnProperty(prefix = GlobalAuthorizationProperties.PROP_PREFIX, name = "safe-mode.enabled",
+			havingValue = "true")
 	public SafeModeFilter safeModeFilter() {
-		return new SafeModeFilter(authorizationProperties.getSafeModeIpList());
+		return new SafeModeFilter(authorizationProperties.getSafeMode().getWhitelist());
 	}
 
 	@Bean
