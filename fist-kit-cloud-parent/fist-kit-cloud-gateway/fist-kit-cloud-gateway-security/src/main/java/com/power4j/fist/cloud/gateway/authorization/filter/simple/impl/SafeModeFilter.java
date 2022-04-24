@@ -26,7 +26,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -37,7 +36,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class SafeModeFilter extends AbstractAuthFilter {
 
-	private final Set<String> whitelist;
+	private final Collection<String> whitelist;
 
 	@Override
 	protected boolean process(AuthContext ctx) {
