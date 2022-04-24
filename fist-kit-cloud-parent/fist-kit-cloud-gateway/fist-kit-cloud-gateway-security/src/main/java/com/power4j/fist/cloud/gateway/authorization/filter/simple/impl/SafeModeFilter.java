@@ -19,11 +19,14 @@ package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -31,18 +34,25 @@ import java.util.Optional;
  * @since 1.0
  */
 @Slf4j
+@RequiredArgsConstructor
 public class SafeModeFilter extends AbstractAuthFilter {
+
+	private final Set<String> whitelist;
 
 	@Override
 	protected boolean process(AuthContext ctx) {
-		Optional<InetAddress> address = Optional.ofNullable(ctx.getExchange().getRequest().getRemoteAddress())
-				.map(InetSocketAddress::getAddress);
-		boolean isSafe = address.map(InetAddress::isLoopbackAddress).orElse(false);
+		Optional<String> address = Optional.ofNullable(ctx.getExchange().getRequest().getRemoteAddress())
+				.map(InetSocketAddress::getAddress).map(InetAddress::getHostAddress);
+		boolean isSafe = address.map(s -> matchAny(s, whitelist)).orElse(false);
 
 		if (log.isDebugEnabled()) {
-			log.debug("safe check = {},address = {} ", isSafe, address.map(InetAddress::getHostAddress).orElse("null"));
+			log.debug("safe check = {},address = {} ", isSafe, address.orElse("null"));
 		}
 		return exitChain(ctx, isSafe ? AuthProblem.SAFE_MODE_PASS : AuthProblem.SAFE_MODE_DENIED);
+	}
+
+	static boolean matchAny(String input, Collection<String> patterns) {
+		return patterns.stream().anyMatch(input::matches);
 	}
 
 }

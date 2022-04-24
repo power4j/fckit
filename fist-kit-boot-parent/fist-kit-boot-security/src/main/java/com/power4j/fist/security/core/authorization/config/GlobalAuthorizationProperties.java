@@ -20,7 +20,9 @@ import com.power4j.fist.boot.common.prop.PropConstant;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,6 +44,12 @@ public class GlobalAuthorizationProperties {
 	 * 安全模式
 	 */
 	private boolean safeMode = false;
+
+	/**
+	 * 安全模式允许的IP,比如 {@code '192.168.*'}
+	 *
+	 */
+	private List<String> safeModeIpList = Collections.singletonList("127.*");
 
 	/**
 	 * 跳过鉴权的入站地址,支持ANT,比如 {@code '/api/**'}

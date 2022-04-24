@@ -37,6 +37,7 @@ import com.power4j.fist.security.core.authorization.config.GlobalAuthorizationPr
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import com.power4j.fist.security.core.authorization.service.reactive.PermissionDefinitionService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -48,7 +49,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -88,7 +91,12 @@ public class UpstreamAuthFilterConfigure {
 	@Order(BASE_ORDER + 110)
 	@ConditionalOnProperty(prefix = GlobalAuthorizationProperties.PROP_PREFIX, name = "safe-mode", havingValue = "true")
 	public SafeModeFilter safeModeFilter() {
-		return new SafeModeFilter();
+		Set<String> ips = authorizationProperties.getSafeModeIpList();
+		if (ObjectUtils.isEmpty(ips)) {
+			ips = new HashSet<>();
+			ips.add("127.0.0.1");
+		}
+		return new SafeModeFilter(ips);
 	}
 
 	@Bean
