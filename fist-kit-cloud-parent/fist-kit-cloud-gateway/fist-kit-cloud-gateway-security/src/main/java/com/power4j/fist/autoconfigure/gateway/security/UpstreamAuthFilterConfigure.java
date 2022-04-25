@@ -37,6 +37,8 @@ import com.power4j.fist.security.core.authorization.config.GlobalAuthorizationPr
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import com.power4j.fist.security.core.authorization.service.reactive.PermissionDefinitionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -49,12 +51,14 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2022/1/13
  * @since 1.0
  */
+@Slf4j
 @RequiredArgsConstructor
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(GlobalAuthorizationProperties.class)
@@ -89,12 +93,17 @@ public class UpstreamAuthFilterConfigure {
 	@ConditionalOnProperty(prefix = GlobalAuthorizationProperties.PROP_PREFIX, name = "safe-mode.enabled",
 			havingValue = "true")
 	public SafeModeFilter safeModeFilter() {
-		return new SafeModeFilter(authorizationProperties.getSafeMode().getWhitelist());
+		List<String> whitelist = authorizationProperties.getSafeMode().getWhitelist();
+		log.info("{} init with whitelist :{}", SafeModeFilter.class.getSimpleName(), StringUtils.join(whitelist, ","));
+		return new SafeModeFilter(whitelist);
 	}
 
 	@Bean
 	@Order(BASE_ORDER + 200)
 	public SkipAuthorizationFilter skipAuthorizationFilter(PathMatcher pathMatcher) {
+		Set<String> skip = authorizationProperties.getSkip();
+		log.info("{} init with skip list :{}", SkipAuthorizationFilter.class.getSimpleName(),
+				StringUtils.join(skip, ","));
 		return new SkipAuthorizationFilter(authorizationProperties.getSkip(), pathMatcher);
 	}
 

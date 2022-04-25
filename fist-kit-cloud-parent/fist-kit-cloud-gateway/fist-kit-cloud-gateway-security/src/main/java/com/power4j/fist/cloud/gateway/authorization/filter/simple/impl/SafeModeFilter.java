@@ -23,10 +23,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -54,6 +57,19 @@ public class SafeModeFilter extends AbstractAuthFilter {
 
 	static boolean matchAny(String input, Collection<String> patterns) {
 		return patterns.stream().anyMatch(input::matches);
+	}
+
+	@PostConstruct
+	void postCheck() {
+		for (String p : whitelist) {
+			try {
+				Pattern.compile(p);
+			}
+			catch (PatternSyntaxException e) {
+				log.error("表达式非法:{}", p);
+				throw e;
+			}
+		}
 	}
 
 }
