@@ -16,11 +16,13 @@
 
 package com.power4j.fist.boot.apidoc.springdoc.extension;
 
+import com.power4j.fist.boot.apidoc.ApiDetails;
 import com.power4j.fist.boot.apidoc.ApiTrait;
 import com.power4j.fist.boot.apidoc.DocConstant;
 import com.power4j.fist.boot.apidoc.DocUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.Operation;
+import org.apache.commons.lang3.StringUtils;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.web.method.HandlerMethod;
 
@@ -36,8 +38,19 @@ public class ApiTraitOperationCustomizer implements OperationCustomizer {
 
 	@Override
 	public Operation customize(Operation operation, HandlerMethod handlerMethod) {
-		Optional.ofNullable(handlerMethod.getMethodAnnotation(ApiTrait.class)).map(DocUtil::createDetails)
-				.ifPresent(details -> operation.addExtension(DocConstant.SECURE_API_DETAILS_EXTENSION, details));
+		Optional.ofNullable(handlerMethod.getMethodAnnotation(ApiTrait.class)).ifPresent(apiTrait -> {
+			ApiDetails details = DocUtil.createDetails(apiTrait);
+			operation.addExtension(DocConstant.SECURE_API_DETAILS_EXTENSION, details);
+			final String tip = String.format("level:%s,code:%s,access:%s", apiTrait.level().name(), apiTrait.code(),
+					apiTrait.access().name());
+			final String desc = operation.getDescription();
+			if (StringUtils.isNotEmpty(desc)) {
+				operation.description(String.format("%s ( %s )", desc, tip));
+			}
+			else {
+				operation.description(tip);
+			}
+		});
 		return operation;
 	}
 
