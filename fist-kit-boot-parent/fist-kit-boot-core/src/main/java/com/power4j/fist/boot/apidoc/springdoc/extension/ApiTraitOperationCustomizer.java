@@ -23,7 +23,7 @@ import com.power4j.fist.boot.apidoc.DocUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.Operation;
 import org.apache.commons.lang3.StringUtils;
-import org.springdoc.core.customizers.OperationCustomizer;
+import org.springdoc.core.customizers.GlobalOperationCustomizer;
 import org.springframework.web.method.HandlerMethod;
 
 import java.util.Objects;
@@ -34,14 +34,14 @@ import java.util.Optional;
  * @date 2021/6/30
  * @since 1.0
  */
-public class ApiTraitOperationCustomizer implements OperationCustomizer {
+public class ApiTraitOperationCustomizer implements GlobalOperationCustomizer {
 
 	@Override
 	public Operation customize(Operation operation, HandlerMethod handlerMethod) {
 		Optional.ofNullable(handlerMethod.getMethodAnnotation(ApiTrait.class)).ifPresent(apiTrait -> {
 			ApiDetails details = DocUtil.createDetails(apiTrait);
 			operation.addExtension(DocConstant.SECURE_API_DETAILS_EXTENSION, details);
-			final String tip = String.format("level:%s,code:%s,access:%s", apiTrait.level().name(), apiTrait.code(),
+			final String tip = String.format("层级:%s | 权限码:%s | 访问类型:%s", apiTrait.level().name(), apiTrait.code(),
 					apiTrait.access().name());
 			final String desc = operation.getDescription();
 			if (StringUtils.isNotEmpty(desc)) {
