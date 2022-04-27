@@ -16,4 +16,4 @@
 #  limitations under the License.
 #
 
-./mvnw clean deploy -Dgpg.passphrase=${GPG_PWD} -DskipTests=true -P 'oss-release'
+./mvnw --settings ./ossrh-settings.xml clean deploy -Dgpg.passphrase=${GPG_PWD} -DskipTests=true -P 'aliyun-repo,oss-release'
