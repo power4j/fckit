@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
  * @since 1.0
  * @param <ID> ID 类型
  * @param <T> T 业务对象类型
+ * @deprecated 请使用TreeMaker替代
+ * @see TreeMaker
  */
 public class TreeBuilder<ID, T> {
 

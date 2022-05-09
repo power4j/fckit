@@ -16,6 +16,7 @@
 
 package com.power4j.fist.data.tree;
 
+import com.power4j.fist.data.tree.domain.TreeNode;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
@@ -23,6 +24,7 @@ import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -145,10 +147,10 @@ public class TreeUtil {
 	 * @param <T> 节点类型
 	 * @return 返回节点MAP
 	 */
-	public <ID, T> Map<ID, T> flatten(Collection<T> roots, AccessOp<ID, T> accessOp) {
+	public <ID, T> List<T> flatten(Collection<T> roots, AccessOp<ID, T> accessOp) {
 		List<T> list = new ArrayList<>(roots.size());
 		treeWalk(roots, accessOp, list::add);
-		return list.stream().collect(Collectors.toMap(o -> accessOp.getIdGetter().apply(o), Function.identity()));
+		return list;
 	}
 
 	@Getter
