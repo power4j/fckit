@@ -59,7 +59,7 @@
 
   <properties>
     <skipTests>false</skipTests>
-    <revision>2022.0.3-SNAPSHOT</revision>
+    <revision>2022.0.3</revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>11</java.version>
