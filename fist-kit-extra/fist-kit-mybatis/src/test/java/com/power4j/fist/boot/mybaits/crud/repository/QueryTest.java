@@ -55,7 +55,7 @@ public class QueryTest {
 
 	@BeforeAll
 	void setUp() {
-		List<Book> books = BookUtils.createEntity(ids);
+		List<Book> books = TestUtils.createBookEntity(ids);
 		bookRepository.saveAll(books);
 	}
 

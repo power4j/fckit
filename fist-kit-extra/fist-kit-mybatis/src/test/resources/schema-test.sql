@@ -29,3 +29,11 @@ create table if not exists book
     id bigint identity primary key,
     title varchar
 );
+
+
+drop table if exists people;
+create table if not exists people
+(
+    id bigint identity primary key,
+    name varchar
+);

@@ -29,15 +29,19 @@ import java.util.stream.LongStream;
  * @since 1.0
  */
 @UtilityClass
-public class BookUtils {
+public class TestUtils {
 
-	List<Book> createEntity(long idStart, int size) {
+	List<Book> createBookEntity(long idStart, int size) {
 		List<Long> idList = LongStream.range(idStart, idStart + size).boxed().collect(Collectors.toList());
-		return createEntity(idList);
+		return createBookEntity(idList);
 	}
 
-	List<Book> createEntity(Collection<Long> ids) {
+	List<Book> createBookEntity(Collection<Long> ids) {
 		return ids.stream().map(Book::of).collect(Collectors.toList());
+	}
+
+	List<People> createPeopleEntity(Collection<Long> ids) {
+		return ids.stream().map(People::of).collect(Collectors.toList());
 	}
 
 }

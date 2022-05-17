@@ -35,24 +35,24 @@ import java.util.List;
 class UpdateTest {
 
 	@Autowired
-	private BookRepository bookRepository;
+	private PeopleRepository peopleRepository;
 
 	@Test
 	void saveOne() {
-		Book book = Book.of(-100L);
-		bookRepository.saveOne(book);
-		Book book2 = bookRepository.findOneById(-100L).orElse(null);
-		Assertions.assertNotNull(book2);
+		People people = People.of(-100L);
+		peopleRepository.saveOne(people);
+		People people2 = peopleRepository.findOneById(-100L).orElse(null);
+		Assertions.assertNotNull(people2);
 	}
 
 	@Test
 	void deleteAllById() {
 		List<Long> ids = Arrays.asList(1L, 2L, 3L, 4L, 5L);
-		List<Book> books = BookUtils.createEntity(ids);
-		bookRepository.saveAll(books);
+		List<People> peoples = TestUtils.createPeopleEntity(ids);
+		peopleRepository.saveAll(peoples);
 
-		bookRepository.deleteAllById(ids);
-		long count2 = bookRepository.findAllById(ids).size();
+		peopleRepository.deleteAllById(ids);
+		long count2 = peopleRepository.findAllById(ids).size();
 		Assertions.assertEquals(0L, count2);
 	}
 
