@@ -18,10 +18,11 @@ package com.power4j.fist.boot.mybaits.crud.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,8 +39,10 @@ import java.util.stream.LongStream;
  * @since 1.0
  */
 @Slf4j
+
 @SpringBootTest
 @AutoConfigureTestDatabase
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class QueryTest {
 
 	long ID90001 = 90001L;
@@ -50,15 +53,15 @@ public class QueryTest {
 	@Autowired
 	private BookRepository bookRepository;
 
-	@BeforeEach
+	@BeforeAll
 	void setUp() {
 		List<Book> books = BookUtils.createEntity(ids);
 		bookRepository.saveAll(books);
 	}
 
-	@AfterEach
+	@AfterAll
 	void tearDown() {
-		bookRepository.deleteAll();
+		bookRepository.deleteAllById(ids);
 	}
 
 	@Test

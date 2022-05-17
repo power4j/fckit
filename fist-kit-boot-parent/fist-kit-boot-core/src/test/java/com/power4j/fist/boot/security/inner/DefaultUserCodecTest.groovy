@@ -17,6 +17,7 @@
 package com.power4j.fist.boot.security.inner
 
 import com.power4j.coca.kit.common.io.codec.impl.BufferGz
+import com.power4j.coca.kit.common.text.StringPool
 import com.power4j.fist.boot.security.core.UserInfo
 import spock.lang.Specification
 
@@ -76,7 +77,7 @@ class DefaultUserCodecTest extends Specification {
 
 		then:
 		System.out.println(value)
-		value.startsWith(BufferGz.NAME)
+		value.startsWith(StringPool.PLUS +  BufferGz.NAME)
 
 		when:
 		UserInfo decoded = codec.decode(value)
