@@ -39,7 +39,6 @@ import java.util.stream.LongStream;
  * @since 1.0
  */
 @Slf4j
-
 @SpringBootTest
 @AutoConfigureTestDatabase
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
