@@ -87,9 +87,9 @@
     <springfox.version>3.0.0</springfox.version>
     <swagger3-api.version>2.1.13</swagger3-api.version>
     <springdoc-openapi.version>1.6.8</springdoc-openapi.version>
-    <spring-boot-admin.version>2.6.2</spring-boot-admin.version>
+    <spring-boot-admin.version>2.6.7</spring-boot-admin.version>
     <spring-security-jwt.version>1.0.11.RELEASE</spring-security-jwt.version>
-    <oauth2-oidc-sdk.version>9.19</oauth2-oidc-sdk.version>
+    <oauth2-oidc-sdk.version>9.35</oauth2-oidc-sdk.version>
     <spring-security-oauth2.version>2.3.6.RELEASE</spring-security-oauth2.version>
     <transmittable-thread-local.version>2.12.1</transmittable-thread-local.version>
     <excel-spring-boot-starter.version>1.2.1</excel-spring-boot-starter.version>
@@ -561,7 +561,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>3.2.0</version>
+            <version>3.4.0</version>
             <configuration>
               <encoding>UTF-8</encoding>
               <charset>UTF-8</charset>
