@@ -91,7 +91,7 @@
     <spring-security-jwt.version>1.0.11.RELEASE</spring-security-jwt.version>
     <oauth2-oidc-sdk.version>9.35</oauth2-oidc-sdk.version>
     <spring-security-oauth2.version>2.3.6.RELEASE</spring-security-oauth2.version>
-    <transmittable-thread-local.version>2.12.1</transmittable-thread-local.version>
+    <transmittable-thread-local.version>2.12.6</transmittable-thread-local.version>
     <excel-spring-boot-starter.version>1.2.1</excel-spring-boot-starter.version>
 
     <spock-lib.version>2.1-groovy-3.0</spock-lib.version>
