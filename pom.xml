@@ -63,7 +63,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>11</java.version>
-    <spring-cloud.version>2021.0.1</spring-cloud.version>
+    <spring-cloud.version>2021.0.2</spring-cloud.version>
     <spring-cloud-alibaba.version>2021.0.1.0</spring-cloud-alibaba.version>
     <!-- plugin -->
     <mapstruct.version>1.4.2.Final</mapstruct.version>
@@ -75,7 +75,7 @@
     <druid.version>1.2.5</druid.version>
     <hutool.version>5.7.13</hutool.version>
     <coca-kit.version>0.1.1</coca-kit.version>
-    <guava.version>30.1.1-jre</guava.version>
+    <guava.version>31.1-jre</guava.version>
     <knife4j.version>3.0.2</knife4j.version>
     <redisson.version>3.15.4</redisson.version>
     <ez-captcha.version>0.1.1</ez-captcha.version>
@@ -85,13 +85,13 @@
     <mapstruct.version>1.4.2.Final</mapstruct.version>
     <logbook.version>2.14.0</logbook.version>
     <springfox.version>3.0.0</springfox.version>
-    <swagger3-api.version>2.1.13</swagger3-api.version>
+    <swagger3-api.version>2.2.0</swagger3-api.version>
     <springdoc-openapi.version>1.6.8</springdoc-openapi.version>
     <spring-boot-admin.version>2.6.7</spring-boot-admin.version>
     <spring-security-jwt.version>1.0.11.RELEASE</spring-security-jwt.version>
     <oauth2-oidc-sdk.version>9.35</oauth2-oidc-sdk.version>
     <spring-security-oauth2.version>2.3.6.RELEASE</spring-security-oauth2.version>
-    <transmittable-thread-local.version>2.12.1</transmittable-thread-local.version>
+    <transmittable-thread-local.version>2.12.6</transmittable-thread-local.version>
     <excel-spring-boot-starter.version>1.2.1</excel-spring-boot-starter.version>
 
     <spock-lib.version>2.1-groovy-3.0</spock-lib.version>
@@ -602,7 +602,7 @@
           <plugin>
             <groupId>org.sonatype.plugins</groupId>
             <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.8</version>
+            <version>1.6.13</version>
             <extensions>true</extensions>
             <configuration>
               <serverId>ossrh</serverId>
