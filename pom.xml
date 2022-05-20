@@ -73,7 +73,6 @@
     <gmavenplus-plugin.version>1.13.1</gmavenplus-plugin.version>
     <!-- libs -->
     <druid.version>1.2.9</druid.version>
-    <hutool.version>5.7.13</hutool.version>
     <coca-kit.version>0.1.1</coca-kit.version>
     <guava.version>31.1-jre</guava.version>
     <knife4j.version>3.0.3</knife4j.version>
@@ -208,11 +207,6 @@
         <version>${revision}</version>
       </dependency>
       <!-- 第三方库 -->
-      <dependency>
-        <groupId>cn.hutool</groupId>
-        <artifactId>hutool-all</artifactId>
-        <version>${hutool.version}</version>
-      </dependency>
       <dependency>
         <groupId>com.power4j.kit</groupId>
         <artifactId>coca-core</artifactId>

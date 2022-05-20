@@ -37,10 +37,6 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>cn.hutool</groupId>
-      <artifactId>hutool-all</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.power4j.kit</groupId>
       <artifactId>coca-core</artifactId>
     </dependency>
