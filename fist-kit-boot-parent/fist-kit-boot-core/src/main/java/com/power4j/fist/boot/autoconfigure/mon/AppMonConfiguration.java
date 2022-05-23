@@ -20,22 +20,24 @@ import com.power4j.fist.boot.mon.aspect.ApiLogAspect;
 import com.power4j.fist.boot.mon.aspect.ReportErrorAspect;
 import com.power4j.fist.boot.mon.event.ApiLogEvent;
 import com.power4j.fist.boot.mon.event.ServerErrorEvent;
+import com.power4j.fist.boot.mon.info.DefaultExceptionTranslator;
+import com.power4j.fist.boot.mon.info.ExceptionTranslator;
 import com.power4j.fist.boot.mon.listener.AbstractEventListener;
 import com.power4j.fist.boot.mon.listener.DefaultApiLogEventListener;
 import com.power4j.fist.boot.mon.listener.DefaultServerErrorEventListener;
-import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.Aspects;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.MessageSourceAccessor;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2022/1/18
  * @since 1.0
  */
-@RequiredArgsConstructor
 @Configuration(proxyBeanMethods = false)
 public class AppMonConfiguration {
 
@@ -52,9 +54,16 @@ public class AppMonConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean(ExceptionTranslator.class)
+	public ExceptionTranslator defaultExceptionTranslator(
+			ObjectProvider<MessageSourceAccessor> messageSourceAccessors) {
+		return new DefaultExceptionTranslator(messageSourceAccessors.getIfAvailable());
+	}
+
+	@Bean
 	@ConditionalOnClass(Aspects.class)
-	public ApiLogAspect apiLogAspect() {
-		return new ApiLogAspect();
+	public ApiLogAspect apiLogAspect(ExceptionTranslator translator) {
+		return new ApiLogAspect(translator);
 	}
 
 	@Bean

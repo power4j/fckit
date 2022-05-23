@@ -23,17 +23,20 @@ import com.power4j.fist.boot.common.aop.AopUtil;
 import com.power4j.fist.boot.mon.EventUtils;
 import com.power4j.fist.boot.mon.annotation.ApiLog;
 import com.power4j.fist.boot.mon.event.ApiLogEvent;
+import com.power4j.fist.boot.mon.info.ApiResponseInfo;
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
+import com.power4j.fist.boot.mon.info.ExceptionTranslator;
 import com.power4j.fist.boot.mon.info.HttpRequestInfo;
-import com.power4j.fist.boot.mon.info.HttpResponseInfo;
 import com.power4j.fist.boot.util.SpringEventUtil;
 import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.lang.Nullable;
 
 import java.lang.reflect.Method;
@@ -48,7 +51,10 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Slf4j
 @Aspect
+@RequiredArgsConstructor
 public class ApiLogAspect {
+
+	private final ExceptionTranslator exceptionTranslator;
 
 	private final AtomicReference<String> appNameRef = new AtomicReference<>(null);
 
@@ -62,7 +68,7 @@ public class ApiLogAspect {
 		// @formatter:off
 		ApiLogEvent event = ApiLogEvent.builder()
 				.appName(ObjectUtils.defaultIfNull(getAppName(), "unknown"))
-				.operation(getDescription(point, apiLog))
+				.operation(getDescription(point))
 				.requestInfo(requestInfo)
 				.time(DateTimeKit.utcNow())
 				.build();
@@ -71,7 +77,8 @@ public class ApiLogAspect {
 			Object result = point.proceed();
 			event.setDuration(Duration.between(event.getTime(), DateTimeKit.utcNow()));
 			try {
-				handleResult(result, event);
+				fetchResultInfo(result, event);
+				fire(event);
 			}
 			catch (Throwable any) {
 				log.error(any.getMessage(), any);
@@ -82,7 +89,8 @@ public class ApiLogAspect {
 		catch (Exception e) {
 			event.setDuration(Duration.between(event.getTime(), DateTimeKit.utcNow()));
 			try {
-				handleError(e, event);
+				fetchErrorInfo(e, event);
+				fire(event);
 			}
 			catch (Throwable any) {
 				log.error(any.getMessage(), any);
@@ -91,28 +99,29 @@ public class ApiLogAspect {
 		}
 	}
 
-	void handleResult(Object result, ApiLogEvent event) {
-		HttpResponseInfo responseInfo = new HttpResponseInfo();
+	void fetchResultInfo(Object result, ApiLogEvent event) {
+		ApiResponseInfo responseInfo = new ApiResponseInfo();
 		if (result instanceof Result) {
 			Result<?> r = (Result<?>) result;
 			responseInfo.setCode(r.getCode());
 			responseInfo.setMessage(r.getMessage());
 		}
 		event.setResponseInfo(responseInfo);
-		SpringEventUtil.publishEvent(event);
 	}
 
-	void handleError(Throwable e, ApiLogEvent event) {
-		event.setError(ExceptionInfo.from(e, 2000));
-		SpringEventUtil.publishEvent(event);
+	void fetchErrorInfo(Throwable e, ApiLogEvent event) {
+		exceptionTranslator.translateException(e).ifPresentOrElse(event::setResponseInfo,
+				() -> event.setError(ExceptionInfo.from(e, 2000)));
 	}
 
-	String getDescription(ProceedingJoinPoint point, ApiLog annotation) {
-
-		if (ObjectUtils.isNotEmpty(annotation.operation())) {
-			return annotation.operation();
-		}
+	String getDescription(ProceedingJoinPoint point) {
 		final Method method = AopUtil.getMethod(point);
+		ApiLog annotation = AnnotationUtils.findAnnotation(method, ApiLog.class);
+		final String value = (String) AnnotationUtils.getValue(annotation);
+		if (ObjectUtils.isNotEmpty(value)) {
+			return value;
+		}
+
 		final Operation operation = method.getAnnotation(Operation.class);
 		if (Objects.nonNull(operation)) {
 			return ObjectUtils.firstNonNull(operation.summary(), operation.description());
@@ -128,6 +137,10 @@ public class ApiLogAspect {
 		}
 		EventUtils.getAppName().ifPresent(v -> appNameRef.compareAndSet(null, v));
 		return appNameRef.get();
+	}
+
+	void fire(ApiLogEvent event) {
+		SpringEventUtil.publishEvent(event);
 	}
 
 }

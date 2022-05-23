@@ -18,7 +18,7 @@ package com.power4j.fist.boot.mon.event;
 
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.mon.info.HttpRequestInfo;
-import com.power4j.fist.boot.mon.info.HttpResponseInfo;
+import com.power4j.fist.boot.mon.info.ApiResponseInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,7 +48,7 @@ public class ApiLogEvent implements Serializable {
 
 	private HttpRequestInfo requestInfo;
 
-	private HttpResponseInfo responseInfo;
+	private ApiResponseInfo responseInfo;
 
 	@Nullable
 	private ExceptionInfo error;
