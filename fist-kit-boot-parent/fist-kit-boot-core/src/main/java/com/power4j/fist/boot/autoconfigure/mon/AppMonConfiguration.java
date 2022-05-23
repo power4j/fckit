@@ -29,9 +29,12 @@ import org.aspectj.lang.Aspects;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.MessageSourceAccessor;
+
+import java.util.Objects;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -55,9 +58,11 @@ public class AppMonConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(ExceptionTranslator.class)
-	public ExceptionTranslator defaultExceptionTranslator(
-			ObjectProvider<MessageSourceAccessor> messageSourceAccessors) {
-		return new DefaultExceptionTranslator(messageSourceAccessors.getIfAvailable());
+	public ExceptionTranslator defaultExceptionTranslator(ObjectProvider<MessageSource> messageSourceObjectProvider) {
+		final MessageSource source = messageSourceObjectProvider.getIfAvailable();
+		MessageSourceAccessor messageSourceAccessor = Objects.nonNull(source) ? new MessageSourceAccessor(source)
+				: null;
+		return new DefaultExceptionTranslator(messageSourceAccessor);
 	}
 
 	@Bean
