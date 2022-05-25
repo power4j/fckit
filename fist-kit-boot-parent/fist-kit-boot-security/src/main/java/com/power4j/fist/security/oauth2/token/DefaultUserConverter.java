@@ -89,6 +89,7 @@ public class DefaultUserConverter implements UserConverter<AuthenticatedUser> {
 			return userInfo.getMetaProp(SecurityConstant.UserProp.KEY_PERMISSION_LIST,type)
 					.orElse(Collections.emptyList())
 					.stream()
+					.distinct()
 					.collect(Collectors.toMap(Function.identity(), SimpleGrantedPermission::new));
 			// @formatter:on
 		}
