@@ -72,14 +72,15 @@ public class UserPermissionFilter extends AbstractAuthFilter {
 		if (!validateTenant(tenantId, ctx)) {
 			return exitChain(ctx, AuthProblem.TENANT_CHECK_DENIED);
 		}
-		if (!userInfo.getPermissions().containsKey(permissionDefinition.getCode())) {
+		final String target = permissionDefinition.getCode();
+		if (!userInfo.getPermissions().containsKey(target)) {
 			if (log.isDebugEnabled()) {
-				log.debug("Permission({}) is not owned by user ({}). action = {}", permissionDefinition.getCode(),
-						userInfo.getUsername(), ctx.getInbound().shortDescription());
+				log.debug("Permission({}) is not owned by user ({}). action = {}", target, userInfo.getUsername(),
+						ctx.getInbound().shortDescription());
 			}
-			return exitChain(ctx, AuthProblem.PERMISSION_CHECK_DENIED);
+			return exitChain(ctx, AuthProblem.PERMISSION_CHECK_DENIED.moreInfo(target));
 		}
-		return true;
+		return exitChain(ctx, AuthProblem.PERMISSION_CHECK_PASS.moreInfo(target));
 	}
 
 	private boolean validateTenant(@Nullable String tenantId, AuthContext ctx) {

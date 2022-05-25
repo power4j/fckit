@@ -81,6 +81,11 @@ public class AuthProblem {
 	public final static AuthProblem SAFE_MODE_PASS = new AuthProblem(CODE_AUTH_PASS, "SAFE_MODE_PASS");
 
 	/**
+	 * 有API访问权限
+	 */
+	public final static AuthProblem PERMISSION_CHECK_PASS = new AuthProblem(CODE_AUTH_PASS, "PERMISSION_CHECK_PASS");
+
+	/**
 	 * 鉴权正常结束
 	 */
 	public final static AuthProblem AUTH_END_PASS = new AuthProblem(CODE_AUTH_PASS, "AUTH_END_PASS");
