@@ -30,6 +30,7 @@ import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.PrepareAu
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.PublicAccessFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.SafeModeFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.SkipAuthorizationFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.TenantFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.UpstreamLocateFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.UserPermissionFilter;
 import com.power4j.fist.cloud.gateway.proxy.ProxyResolver;
@@ -137,6 +138,14 @@ public class UpstreamAuthFilterConfigure {
 	@Order(BASE_ORDER + 1_100)
 	public LoginAccessFilter loginAccessFilter() {
 		return new LoginAccessFilter();
+	}
+
+	@Bean
+	@Order(BASE_ORDER + 1_190)
+	@ConditionalOnProperty(prefix = GlobalAuthorizationProperties.PROP_FILTERS + ".tenant", name = "enabled",
+			matchIfMissing = true)
+	public TenantFilter tenantFilter() {
+		return new TenantFilter(authorizationProperties);
 	}
 
 	@Bean

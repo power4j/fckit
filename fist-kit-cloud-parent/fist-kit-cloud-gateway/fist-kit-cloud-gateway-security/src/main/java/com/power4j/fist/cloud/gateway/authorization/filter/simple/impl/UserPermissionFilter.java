@@ -16,26 +16,15 @@
 
 package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
 
-import cn.hutool.core.lang.TypeReference;
-import com.power4j.fist.boot.security.core.SecurityConstant;
-import com.power4j.fist.cloud.gateway.authorization.AuthUtils;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
-import com.power4j.fist.cloud.gateway.authorization.domain.AuthUser;
-import com.power4j.fist.cloud.gateway.authorization.domain.ResourceLevel;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
 import com.power4j.fist.security.core.authorization.config.GlobalAuthorizationProperties;
 import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.lang.Nullable;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -53,8 +42,7 @@ public class UserPermissionFilter extends AbstractAuthFilter {
 
 	@Override
 	protected boolean process(AuthContext ctx) {
-		final PermissionDefinition permissionDefinition = ctx.getPermissionDefinition();
-		if (Objects.isNull(permissionDefinition)) {
+		if (Objects.isNull(ctx.getPermissionDefinition())) {
 			return true;
 		}
 		final AuthenticatedUser userInfo = ctx.getUserInfo();
@@ -68,10 +56,6 @@ public class UserPermissionFilter extends AbstractAuthFilter {
 		AuthenticatedUser userInfo = Objects.requireNonNull(ctx.getUserInfo());
 		PermissionDefinition permissionDefinition = Objects.requireNonNull(ctx.getPermissionDefinition());
 
-		final String tenantId = resolveTenantId(ctx.getExchange().getRequest()).orElse(null);
-		if (!validateTenant(tenantId, ctx)) {
-			return exitChain(ctx, AuthProblem.TENANT_CHECK_DENIED);
-		}
 		final String target = permissionDefinition.getCode();
 		if (!userInfo.getPermissions().containsKey(target)) {
 			if (log.isDebugEnabled()) {
@@ -81,46 +65,6 @@ public class UserPermissionFilter extends AbstractAuthFilter {
 			return exitChain(ctx, AuthProblem.PERMISSION_CHECK_DENIED.moreInfo(target));
 		}
 		return exitChain(ctx, AuthProblem.PERMISSION_CHECK_PASS.moreInfo(target));
-	}
-
-	private boolean validateTenant(@Nullable String tenantId, AuthContext ctx) {
-		AuthenticatedUser userInfo = Objects.requireNonNull(ctx.getUserInfo());
-		assert ctx.getPermissionDefinition() != null;
-		if (ResourceLevel.PL.getValue().equals(ctx.getPermissionDefinition().getLevel())) {
-			// remove header only
-			ctx.setExchange(AuthUtils.eraseHeader(ctx.getExchange(), SecurityConstant.HEADER_USER_TOKEN_INNER));
-			return true;
-		}
-		if (Objects.isNull(tenantId)) {
-			if (log.isDebugEnabled()) {
-				log.debug("No tenant id found on this request. {}", ctx.getInbound().shortDescription());
-			}
-			ctx.updateState(AuthProblem.TENANT_ID_REQUIRED);
-			return false;
-		}
-		List<String> orgList = userInfo.getInfo(AuthUser.INFO_KEY_ORG, Collections.emptyList(),
-				new TypeReference<List<String>>() {
-				});
-		if (!orgList.contains(tenantId)) {
-			if (log.isDebugEnabled()) {
-				log.debug("User({}) is not a member of tenant ({}). {}", userInfo.getUsername(), tenantId,
-						ctx.getInbound().shortDescription());
-			}
-			ctx.updateState(AuthProblem.TENANT_CHECK_DENIED);
-			return false;
-		}
-		return true;
-	}
-
-	// ~ Util
-	// ===================================================================================================
-
-	protected Optional<String> resolveTenantId(ServerHttpRequest request) {
-		String value = request.getQueryParams().getFirst(authorizationProperties.getAuth().getTenantParameter());
-		if (ObjectUtils.isEmpty(value)) {
-			value = request.getHeaders().getFirst(authorizationProperties.getAuth().getTenantHeader());
-		}
-		return Optional.ofNullable(value).filter(o -> !o.isEmpty());
 	}
 
 }

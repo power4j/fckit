@@ -38,6 +38,8 @@ public class GlobalAuthorizationProperties {
 
 	public static final String PROP_PREFIX = PropConstant.PROP_ROOT_PREFIX + PROP_ENTRY;
 
+	public static final String PROP_FILTERS = PROP_PREFIX + ".filters";
+
 	private boolean enabled = true;
 
 	/**
