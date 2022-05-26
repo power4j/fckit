@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.service.reactive;
+package com.power4j.fist.security.core.authorization.service;
 
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import org.springframework.http.HttpMethod;
