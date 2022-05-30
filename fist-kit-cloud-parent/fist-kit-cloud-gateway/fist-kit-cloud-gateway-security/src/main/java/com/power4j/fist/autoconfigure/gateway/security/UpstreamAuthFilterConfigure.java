@@ -36,7 +36,7 @@ import com.power4j.fist.cloud.gateway.authorization.filter.simple.impl.UserPermi
 import com.power4j.fist.cloud.gateway.proxy.ProxyResolver;
 import com.power4j.fist.security.core.authorization.config.GlobalAuthorizationProperties;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
-import com.power4j.fist.security.core.authorization.service.reactive.PermissionDefinitionService;
+import com.power4j.fist.security.core.authorization.service.PermissionDefinitionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

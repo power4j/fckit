@@ -22,7 +22,7 @@ import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
 import com.power4j.fist.cloud.gateway.authorization.filter.simple.AbstractAuthFilter;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
-import com.power4j.fist.security.core.authorization.service.reactive.PermissionDefinitionService;
+import com.power4j.fist.security.core.authorization.service.PermissionDefinitionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
