@@ -1,4 +1,7 @@
+## 版本
 
+- `2022.0.x` : spring boot 2.6.x
+- `2022.1.x` : spring boot 2.7.x
 
 ## GIT 提交规范
 
