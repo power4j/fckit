@@ -17,10 +17,13 @@
 package com.power4j.fist.data.tree;
 
 import com.power4j.fist.data.tree.domain.TreeNode;
+import lombok.Data;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -29,6 +32,29 @@ import java.util.List;
  * @since 2022
  */
 class TreeNodeUtilTest {
+
+	@Data
+	static class NodeView {
+
+		private String id;
+
+		private List<NodeView> sub;
+
+		public void addSub(Collection<NodeView> list) {
+			if (list == null) {
+				return;
+			}
+			if (sub == null) {
+				sub = new ArrayList<>(list.size());
+			}
+			sub.addAll(list);
+		}
+
+		public NodeView(String id) {
+			this.id = id;
+		}
+
+	}
 
 	static TreeNode<Integer> makeNode(int id) {
 		return TreeNode.of(id, null);
@@ -77,6 +103,43 @@ class TreeNodeUtilTest {
 		TreeNode<Integer> nod_30 = nod_3.getChildren().get(1);
 		Assertions.assertEquals(30, nod_30.getId());
 
+	}
+
+	@Test
+	void convert() {
+
+		// @formatter:off
+
+		//
+		//          (1)       (0)
+		//         / |  \
+		//       /   |   \
+		//     (3) (100) (2)
+		//    /  \
+		// (30)  (20)
+		//
+
+		// @formatter:on
+
+		List<TreeNode<Integer>> lv1 = Arrays.asList(makeNode(1), makeNode(0));
+		List<TreeNode<Integer>> lv2 = Arrays.asList(makeNode(3), makeNode(100), makeNode(2));
+		List<TreeNode<Integer>> lv3 = Arrays.asList(makeNode(30), makeNode(20));
+
+		lv1.get(0).appendChildren(lv2);
+		lv2.get(0).appendChildren(lv3);
+
+		TreeNodeUtil.ConvertOp<TreeNode<Integer>, NodeView> op = TreeNodeUtil.ConvertOp
+				.<TreeNode<Integer>, NodeView>builder().objectConvert(o -> new NodeView(o.getId().toString()))
+				.childSetter(NodeView::addSub).build();
+
+		List<NodeView> convertedLv0 = TreeNodeUtil.convertToList(lv1, op);
+		Assertions.assertEquals(2, convertedLv0.size());
+
+		List<NodeView> convertedLv1 = convertedLv0.get(0).getSub();
+		Assertions.assertEquals(3, convertedLv1.size());
+
+		List<NodeView> convertedLv2 = convertedLv1.get(0).getSub();
+		Assertions.assertEquals(2, convertedLv2.size());
 	}
 
 }

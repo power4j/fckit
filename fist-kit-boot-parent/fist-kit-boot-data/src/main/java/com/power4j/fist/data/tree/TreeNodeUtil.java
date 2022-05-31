@@ -17,6 +17,8 @@
 package com.power4j.fist.data.tree;
 
 import com.power4j.fist.data.tree.domain.Node;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -111,6 +114,60 @@ public class TreeNodeUtil {
 				parentNode.appendChild(node);
 			}
 		}
+	}
+
+	/**
+	 * 转换为其他类型,无接口依赖
+	 * @param src 数据源
+	 * @param op 转换所需各种函数
+	 * @param dist 用于保存结果
+	 * @param <ID> ID 类型
+	 * @param <N> 原类型
+	 * @param <U> 目标类型
+	 */
+	public <ID, N extends Node<ID, N>, U> void convert(Collection<? extends N> src, ConvertOp<N, U> op,
+			Collection<? super U> dist) {
+		for (N node : src) {
+			final U target = op.objectConvert.apply(node);
+			dist.add(target);
+			final List<N> children = node.getChildren();
+			if (ObjectUtils.isNotEmpty(children)) {
+				final List<U> list = new ArrayList<>(2);
+				convert(children, op, list);
+				op.childSetter.accept(target, list);
+			}
+		}
+	}
+
+	/**
+	 * 转换为其他类型,无接口依赖
+	 * @param src 数据源
+	 * @param op 转换所需各种函数
+	 * @param <ID> ID 类型
+	 * @param <N> 原类型
+	 * @param <U> 目标类型
+	 * @return 返回转换后的列表
+	 */
+	public <ID, N extends Node<ID, N>, U> List<U> convertToList(Collection<? extends N> src, ConvertOp<N, U> op) {
+		List<U> list = new ArrayList<>(2);
+		convert(src, op, list);
+		return list;
+	}
+
+	@Getter
+	@Builder
+	public static class ConvertOp<S, T> {
+
+		/**
+		 * 取ID的方法
+		 */
+		private final Function<? super S, ? extends T> objectConvert;
+
+		/**
+		 * 添加子元素的方法
+		 */
+		private final BiConsumer<? super T, Collection<T>> childSetter;
+
 	}
 
 }
