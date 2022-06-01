@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(ObjectMapper.class)
-@ConditionalOnProperty(value = JacksonCustomizeProperties.PROP_PREFIX, name = "enabled", matchIfMissing = true)
+@ConditionalOnProperty(prefix = JacksonCustomizeProperties.PROP_PREFIX, name = "enabled", matchIfMissing = true)
 @EnableConfigurationProperties(JacksonCustomizeProperties.class)
 @AutoConfigureBefore(JacksonAutoConfiguration.class)
 @RequiredArgsConstructor
