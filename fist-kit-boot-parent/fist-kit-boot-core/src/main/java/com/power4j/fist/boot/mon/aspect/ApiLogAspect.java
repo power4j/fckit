@@ -24,9 +24,11 @@ import com.power4j.fist.boot.mon.EventUtils;
 import com.power4j.fist.boot.mon.annotation.ApiLog;
 import com.power4j.fist.boot.mon.event.ApiLogEvent;
 import com.power4j.fist.boot.mon.info.ApiResponseInfo;
+import com.power4j.fist.boot.mon.info.AuthInfo;
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.mon.info.ExceptionTranslator;
 import com.power4j.fist.boot.mon.info.HttpRequestInfo;
+import com.power4j.fist.boot.security.core.UserInfoAccessor;
 import com.power4j.fist.boot.util.SpringEventUtil;
 import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +44,7 @@ import org.springframework.lang.Nullable;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -55,6 +58,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ApiLogAspect {
 
 	private final ExceptionTranslator exceptionTranslator;
+
+	@Nullable
+	private final UserInfoAccessor userInfoAccessor;
 
 	private final AtomicReference<String> appNameRef = new AtomicReference<>(null);
 
@@ -71,6 +77,7 @@ public class ApiLogAspect {
 				.operation(getDescription(point))
 				.requestInfo(requestInfo)
 				.time(DateTimeKit.utcNow())
+				.authInfo(getAuthInfo())
 				.build();
 		// @formatter:on
 		try {
@@ -97,6 +104,11 @@ public class ApiLogAspect {
 			}
 			throw e;
 		}
+	}
+
+	AuthInfo getAuthInfo() {
+		return Optional.ofNullable(userInfoAccessor).flatMap(UserInfoAccessor::getUserInfo).map(AuthInfo::from)
+				.orElseGet(AuthInfo::new);
 	}
 
 	void fetchResultInfo(Object result, ApiLogEvent event) {

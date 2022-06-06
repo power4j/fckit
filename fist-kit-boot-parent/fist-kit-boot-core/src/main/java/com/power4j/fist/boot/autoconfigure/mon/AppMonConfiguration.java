@@ -25,6 +25,7 @@ import com.power4j.fist.boot.mon.info.ExceptionTranslator;
 import com.power4j.fist.boot.mon.listener.AbstractEventListener;
 import com.power4j.fist.boot.mon.listener.DefaultApiLogEventListener;
 import com.power4j.fist.boot.mon.listener.DefaultServerErrorEventListener;
+import com.power4j.fist.boot.security.core.UserInfoAccessor;
 import org.aspectj.lang.Aspects;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -67,8 +68,9 @@ public class AppMonConfiguration {
 
 	@Bean
 	@ConditionalOnClass(Aspects.class)
-	public ApiLogAspect apiLogAspect(ExceptionTranslator translator) {
-		return new ApiLogAspect(translator);
+	public ApiLogAspect apiLogAspect(ExceptionTranslator translator,
+			ObjectProvider<UserInfoAccessor> userInfoAccessor) {
+		return new ApiLogAspect(translator, userInfoAccessor.getIfAvailable());
 	}
 
 	@Bean
