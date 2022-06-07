@@ -14,24 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.filter.reactive;
-
-import reactor.core.publisher.Mono;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/25
+ * @date 2021/6/2
  * @since 1.0
- * @param <C>
  */
-public interface ServerAuthFilter<C> {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl;
 
-	/**
-	 * 处理请求,调用后续处理链
-	 * @param ctx 上下文
-	 * @param chain 鉴权链
-	 * @return 返回 Mono<Void> 表示处理结束
-	 */
-	Mono<C> filter(C ctx, ServerAuthFilterChain<C> chain);
-
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;

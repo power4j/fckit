@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.authorization.filter.simple.impl;
+package com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl;
 
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
@@ -37,7 +37,7 @@ public class LoadUserPermissionFilter implements GatewayAuthFilter {
 	private final PermissionService<? extends AuthenticatedUser> permissionService;
 
 	@Override
-	public Mono<Void> filter(AuthContext ctx, ServerAuthFilterChain<AuthContext> chain) {
+	public Mono<AuthContext> filter(AuthContext ctx, ServerAuthFilterChain<AuthContext> chain) {
 		final String user = ctx.getPrincipal().toString();
 		if (null == user) {
 			if (log.isTraceEnabled()) {
@@ -45,7 +45,8 @@ public class LoadUserPermissionFilter implements GatewayAuthFilter {
 			}
 			return chain.filter(ctx);
 		}
-		return permissionService.getUserPermission(user).doOnNext(o -> ctx.setUserInfo(o.orElse(null))).then();
+		return permissionService.getUserPermission(user).doOnNext(o -> ctx.setUserInfo(o.orElse(null)))
+				.then(Mono.just(ctx));
 	}
 
 }

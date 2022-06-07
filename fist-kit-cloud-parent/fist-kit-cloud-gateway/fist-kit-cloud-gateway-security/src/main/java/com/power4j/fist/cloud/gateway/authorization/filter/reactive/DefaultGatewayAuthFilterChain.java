@@ -36,7 +36,7 @@ public class DefaultGatewayAuthFilterChain extends DefaultServerAuthFilterChain<
 	}
 
 	@Override
-	public Mono<Void> filter(AuthContext context) {
+	public Mono<AuthContext> filter(AuthContext context) {
 		if (currentFilter != null && chain != null) {
 			return invokeFilter(currentFilter, chain, context);
 		}

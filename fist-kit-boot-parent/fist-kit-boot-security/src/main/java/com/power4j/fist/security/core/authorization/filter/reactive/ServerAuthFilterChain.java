@@ -31,6 +31,6 @@ public interface ServerAuthFilterChain<C> {
 	 * @param context 鉴权上下文
 	 * @return 返回 Mono<Void> 表示处理结束
 	 */
-	Mono<Void> filter(C context);
+	Mono<C> filter(C context);
 
 }
