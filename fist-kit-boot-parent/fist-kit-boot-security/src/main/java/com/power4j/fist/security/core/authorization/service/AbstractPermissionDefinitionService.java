@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpMethod;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -23,8 +23,8 @@ public abstract class AbstractPermissionDefinitionService<T extends PermissionDe
 		// @formatter:off
 		return loadFromCache(serviceName,method)
 				.orElseGet(() -> {
-					List<T> list = fetch(serviceName, method).orElse(null);
-					if(Objects.nonNull(list)){
+					List<T> list = fetch(serviceName, method).orElse(Collections.emptyList());
+					if(!list.isEmpty()){
 						updateCache(serviceName,method,list);
 					}
 					return list;
@@ -32,28 +32,13 @@ public abstract class AbstractPermissionDefinitionService<T extends PermissionDe
 		// @formatter:on
 	}
 
-	protected String makeCacheKey(String serviceName, HttpMethod method) {
-		return serviceName + "::" + method.name();
-	}
-
 	@SuppressWarnings("unchecked")
 	protected Optional<List<T>> loadFromCache(String serviceName, HttpMethod method) {
-		Cache cache = getCache().orElse(null);
-		if (Objects.isNull(cache)) {
-			return Optional.empty();
-		}
-		String key = makeCacheKey(serviceName, method);
-		try {
-			return Optional.ofNullable(cache.get(key)).map(o -> (List<T>) (o.get()));
-		}
-		catch (Exception e) {
-			log.error(e.getMessage(), e);
-			return Optional.empty();
-		}
+		return CacheHelper.loadFromCache(getCache().orElse(null), serviceName, method);
 	}
 
 	protected void updateCache(String serviceName, HttpMethod method, List<T> data) {
-		getCache().ifPresent(cache -> cache.put(makeCacheKey(serviceName, method), data));
+		CacheHelper.updateCache(getCache().orElse(null), serviceName, method, data);
 	}
 
 	/**

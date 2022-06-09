@@ -14,23 +14,27 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.service.reactive;
+package com.power4j.fist.autoconfigure.gateway.security.annotation;
 
-import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
-import reactor.core.publisher.Mono;
+import com.power4j.fist.autoconfigure.gateway.security.AuthFilterConfigure;
+import com.power4j.fist.autoconfigure.gateway.security.AuthorizeConfigure;
+import org.springframework.context.annotation.Import;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2021/12/1
  * @since 1.0
  */
-public interface PermissionService<T extends AuthenticatedUser> {
-
-	/**
-	 * 获取用户授权信息
-	 * @param user 用户标识符
-	 * @return 无权限信息返回空集合
-	 */
-	Mono<T> getUserPermission(String user);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Documented
+@Import({ AuthFilterConfigure.class, AuthorizeConfigure.class })
+public @interface EnableAuthorize {
 
 }

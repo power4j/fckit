@@ -14,23 +14,18 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.service.reactive;
+package com.power4j.fist.cloud.gateway.authorization.filter.simple;
 
-import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
-import reactor.core.publisher.Mono;
+import com.power4j.coca.kit.common.lang.ChainWorker;
+import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 
 /**
+ * 注意事项: 终结处理链必须更新 AuthProblem
+ *
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2021/6/23
  * @since 1.0
  */
-public interface PermissionService<T extends AuthenticatedUser> {
-
-	/**
-	 * 获取用户授权信息
-	 * @param user 用户标识符
-	 * @return 无权限信息返回空集合
-	 */
-	Mono<T> getUserPermission(String user);
+public interface GatewayAuthFilter extends ChainWorker<AuthContext, GatewayAuthFilterChain> {
 
 }

@@ -30,8 +30,8 @@ public interface ServerAuthFilter<C> {
 	 * 处理请求,调用后续处理链
 	 * @param ctx 上下文
 	 * @param chain 鉴权链
-	 * @return 返回 Mono<Void> 表示处理结束
+	 * @return Mono<Void>
 	 */
-	Mono<C> filter(C ctx, ServerAuthFilterChain<C> chain);
+	Mono<Void> filter(C ctx, ServerAuthFilterChain<C> chain);
 
 }

@@ -36,7 +36,7 @@ public class ReactiveLoadBalancerAutoConfiguration {
 	@Bean
 	@LoadBalanced
 	@ConditionalOnMissingBean
-	WebClient.Builder webClientBuilder() {
+	WebClient.Builder lbWebClientBuilder() {
 		return WebClient.builder();
 	}
 

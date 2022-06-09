@@ -14,23 +14,35 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.service.reactive;
+package com.power4j.fist.cloud.gateway.authorization.domain;
 
-import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
-import reactor.core.publisher.Mono;
+import lombok.Data;
+import org.springframework.http.HttpMethod;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2021/11/26
  * @since 1.0
  */
-public interface PermissionService<T extends AuthenticatedUser> {
+@Data
+public class ApiProxy {
 
-	/**
-	 * 获取用户授权信息
-	 * @param user 用户标识符
-	 * @return 无权限信息返回空集合
-	 */
-	Mono<T> getUserPermission(String user);
+	private String serviceName;
+
+	private HttpMethod method;
+
+	private String path;
+
+	public static ApiProxy of(String serviceName, HttpMethod method, String path) {
+		ApiProxy proxy = new ApiProxy();
+		proxy.setServiceName(serviceName);
+		proxy.setMethod(method);
+		proxy.setPath(path);
+		return proxy;
+	}
+
+	public String description() {
+		return String.format("[%s] %s %s", method.name(), serviceName, path);
+	}
 
 }

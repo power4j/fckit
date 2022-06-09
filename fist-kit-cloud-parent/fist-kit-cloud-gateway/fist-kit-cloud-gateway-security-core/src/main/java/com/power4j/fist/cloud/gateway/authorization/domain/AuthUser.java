@@ -14,23 +14,35 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.service.reactive;
+package com.power4j.fist.cloud.gateway.authorization.domain;
 
 import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
-import reactor.core.publisher.Mono;
+import com.power4j.fist.security.core.authorization.domain.GrantedPermission;
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2021/11/28
  * @since 1.0
  */
-public interface PermissionService<T extends AuthenticatedUser> {
+@Data
+@Builder
+public class AuthUser implements AuthenticatedUser {
 
-	/**
-	 * 获取用户授权信息
-	 * @param user 用户标识符
-	 * @return 无权限信息返回空集合
-	 */
-	Mono<T> getUserPermission(String user);
+	public static final String INFO_KEY_ORG = "org";
+
+	private Long userId;
+
+	private String username;
+
+	private String tenantId;
+
+	private Map<String, GrantedPermission> permissions;
+
+	private Map<String, Object> additionalInfo = Collections.emptyMap();
 
 }

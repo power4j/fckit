@@ -14,23 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.service.reactive;
-
-import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
-import reactor.core.publisher.Mono;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2021/6/2
  * @since 1.0
  */
-public interface PermissionService<T extends AuthenticatedUser> {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.security.core.authorization.service;
 
-	/**
-	 * 获取用户授权信息
-	 * @param user 用户标识符
-	 * @return 无权限信息返回空集合
-	 */
-	Mono<T> getUserPermission(String user);
-
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;

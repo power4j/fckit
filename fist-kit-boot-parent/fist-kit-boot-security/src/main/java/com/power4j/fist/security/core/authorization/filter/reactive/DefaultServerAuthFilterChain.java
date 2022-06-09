@@ -65,10 +65,10 @@ public class DefaultServerAuthFilterChain<C, F extends ServerAuthFilter<C>> impl
 	}
 
 	@Override
-	public Mono<C> filter(C context) {
+	public Mono<Void> filter(C context) {
 		// @formatter:off
 		return (currentFilter != null && chain != null) ?
-				invokeFilter(currentFilter,chain,context) : Mono.just(context);
+				invokeFilter(currentFilter,chain,context) : Mono.empty();
 		// @formatter:on
 	}
 
@@ -76,7 +76,7 @@ public class DefaultServerAuthFilterChain<C, F extends ServerAuthFilter<C>> impl
 		return filters;
 	}
 
-	protected Mono<C> invokeFilter(ServerAuthFilter<C> filter, DefaultServerAuthFilterChain<C, F> chain, C context) {
+	protected Mono<Void> invokeFilter(ServerAuthFilter<C> filter, DefaultServerAuthFilterChain<C, F> chain, C context) {
 		String currentName = filter.getClass().getName();
 		return filter.filter(context, chain).checkpoint(currentName + CHECK_POINT_TAG);
 	}
