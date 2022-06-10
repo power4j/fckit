@@ -35,6 +35,7 @@ import java.util.Map;
  * @author CJ (power4j@outlook.com)
  * @date 2021/11/16
  * @since 1.0
+ * @deprecated
  */
 public class ApiTraitOperationPlugin implements OperationBuilderPlugin {
 

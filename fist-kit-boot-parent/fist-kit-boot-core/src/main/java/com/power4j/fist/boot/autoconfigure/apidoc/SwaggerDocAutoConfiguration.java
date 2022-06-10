@@ -45,6 +45,7 @@ import java.util.List;
  * @author CJ (power4j@outlook.com)
  * @date 2021/11/16
  * @since 1.0
+ * @deprecated
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(OpenApiDocumentationConfiguration.class)
