@@ -25,8 +25,8 @@
     <version>${revision}</version>
   </parent>
 
-  <artifactId>fist-kit-cloud-gateway-security</artifactId>
-  <description>网关鉴权插件(Reactive)</description>
+  <artifactId>fist-kit-cloud-gateway-security-simple</artifactId>
+  <description>网关鉴权插件(Simple)</description>
 
 
   <dependencies>
@@ -38,12 +38,12 @@
     </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
-      <artifactId>fist-kit-boot-data</artifactId>
+      <artifactId>fist-kit-cloud-gateway-security-core</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
-      <artifactId>fist-kit-boot-security</artifactId>
+      <artifactId>fist-kit-boot-data</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
