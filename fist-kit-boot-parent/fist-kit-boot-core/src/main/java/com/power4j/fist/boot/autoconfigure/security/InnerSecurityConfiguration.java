@@ -21,6 +21,7 @@ import com.power4j.fist.boot.security.inner.DefaultUserCodec;
 import com.power4j.fist.boot.security.inner.SecurityUtil;
 import com.power4j.fist.boot.security.inner.TrustedUserFilter;
 import com.power4j.fist.boot.security.inner.UserDecoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -31,6 +32,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
+
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2021/10/20
@@ -39,6 +42,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class InnerSecurityConfiguration {
+
+	@Value("${fist.security.authentication.trusted.ip.whitelist:}")
+	private List<String> whitelist;
 
 	@Bean
 	@ConditionalOnMissingBean(PasswordEncoder.class)
@@ -57,7 +63,9 @@ public class InnerSecurityConfiguration {
 	@ConditionalOnProperty(prefix = "fist.security.authentication.trusted", name = "enabled", havingValue = "true",
 			matchIfMissing = true)
 	public TrustedUserFilter trustedUserFilter(UserDecoder userDecoder) {
-		return new TrustedUserFilter(userDecoder);
+		TrustedUserFilter filter = new TrustedUserFilter(userDecoder);
+		filter.setWhitelist(whitelist);
+		return filter;
 	}
 
 	@Bean

@@ -16,6 +16,7 @@
 
 package com.power4j.fist.boot.security.inner;
 
+import cn.hutool.core.net.NetUtil;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.power4j.coca.kit.common.exception.WrappedException;
 import com.power4j.fist.boot.security.context.UserContextHolder;
@@ -24,15 +25,18 @@ import com.power4j.fist.boot.security.core.UserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -49,6 +53,10 @@ public class TrustedUserFilter extends OncePerRequestFilter {
 
 	@Setter
 	private boolean strictMode = true;
+
+	@Nullable
+	@Setter
+	private Collection<String> whitelist;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -78,27 +86,33 @@ public class TrustedUserFilter extends OncePerRequestFilter {
 		}
 	}
 
+	@PostConstruct
+	void postCheck() {
+		if (whitelist != null) {
+			for (String p : whitelist) {
+				try {
+					Pattern.compile(p);
+				}
+				catch (PatternSyntaxException e) {
+					log.error("表达式非法:{}", p);
+					throw e;
+				}
+			}
+		}
+	}
+
 	private boolean isTrusted(HttpServletRequest request) {
 		if (strictMode) {
 			String ip = request.getRemoteAddr();
-			if (!isTrustedIp(ip)) {
+			if (whitelist != null && whitelist.stream().anyMatch(ip::matches)) {
+				return true;
+			}
+			if (!NetUtil.isInnerIP(ip)) {
 				log.warn("Request IP Not trusted : {}", ip);
 				return false;
 			}
 		}
 		return true;
-	}
-
-	private boolean isTrustedIp(String ip) {
-		InetAddress address = null;
-		try {
-			address = InetAddress.getByName(ip);
-		}
-		catch (UnknownHostException e) {
-			log.error(e.getMessage(), e);
-			return false;
-		}
-		return address.isLoopbackAddress() || address.isSiteLocalAddress();
 	}
 
 }
