@@ -51,11 +51,18 @@ public class GatewayAuthorizationManager implements ReactiveAuthorizationManager
 	private Mono<AuthorizationDecision> decide(AuthContext context) {
 		final AuthProblem problem = context.getAuthState().getProblem();
 		Validate.notNull(problem);
-		if (log.isDebugEnabled()) {
-			log.debug("[{}] -> {},reason = {}", problem.passStr(), context.getInbound().shortDescription(),
-					problem.description());
+		if (problem.isAuthPass()) {
+			if (log.isDebugEnabled()) {
+				log.debug("[{}] -> {},reason = {}", problem.passStr(), context.getInbound().shortDescription(),
+						problem.description());
+			}
+			return Mono.just(GRANTED);
 		}
-		return Mono.just(problem.isAuthPass() ? GRANTED : DENIED);
+		else {
+			log.info("[{}] -> {},reason = {}", problem.passStr(), context.getInbound().shortDescription(),
+					problem.description());
+			return Mono.just(DENIED);
+		}
 	}
 
 }
