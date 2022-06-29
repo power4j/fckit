@@ -78,20 +78,20 @@ public class ApiAccessRegistry implements InitializingBean {
 	private void process(ApiTrait apiTrait, RequestMappingInfo info) {
 		MultiValuedMap<String, HttpMethod> entry = null;
 		switch (apiTrait.access()) {
-		case DEFAULT:
-			// ignore
-			break;
-		case INTERNAL:
-			entry = interAccess;
-			break;
-		case USER:
-			entry = userAccess;
-			break;
-		case PUBLIC:
-			entry = pubAccess;
-			break;
-		default:
-			throw new IllegalStateException("Unexpected value: " + apiTrait.access());
+			case DEFAULT:
+				// ignore
+				break;
+			case INTERNAL:
+				entry = interAccess;
+				break;
+			case USER:
+				entry = userAccess;
+				break;
+			case PUBLIC:
+				entry = pubAccess;
+				break;
+			default:
+				throw new IllegalStateException("Unexpected value: " + apiTrait.access());
 		}
 		if (Objects.nonNull(entry)) {
 			Set<String> patterns = info.getPatternValues();
