@@ -30,6 +30,7 @@
 
   <modules>
     <module>fist-kit-mybatis</module>
+    <module>fist-kit-hibernate</module>
     <module>fist-kit-security</module>
   </modules>
 </project>
