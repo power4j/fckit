@@ -1,7 +1,7 @@
 spring:
-  datasource:
-    schema: classpath:schema-test.sql
-
+  sql:
+    init:
+      schema-locations: classpath:schema-test.sql
 logging:
   level:
     org.springframework.jdbc: debug
