@@ -15,7 +15,7 @@
  */
 
 drop table if exists org_idx;
-create table if not exists org_idx
+create table org_idx
 (
     id bigint ,
     ancestor bigint ,
@@ -24,16 +24,16 @@ create table if not exists org_idx
 );
 
 drop table if exists book;
-create table if not exists book
+create table book
 (
-    id bigint identity primary key,
+    id bigint primary key,
     title varchar
 );
 
 
 drop table if exists people;
-create table if not exists people
+create table people
 (
-    id bigint identity primary key,
+    id bigint primary key,
     name varchar
 );
