@@ -11,7 +11,9 @@ import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
  */
 @RequiredArgsConstructor
 public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver {
+
 	private final String defaultTenant;
+
 	@Override
 	public String resolveCurrentTenantIdentifier() {
 		return TenantHolder.getTenant().orElse(defaultTenant);
@@ -21,4 +23,5 @@ public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver
 	public boolean validateExistingCurrentSessions() {
 		return true;
 	}
+
 }

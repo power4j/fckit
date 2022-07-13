@@ -6,4 +6,5 @@ package com.power4j.fist.boot.autoconfigure.hibernate;
  * @since 1.0
  */
 public class HibernateTenantAutoConfiguration {
+
 }

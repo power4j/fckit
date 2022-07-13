@@ -14,4 +14,5 @@ class TenantIdentifierResolverTest {
 	@Test
 	void resolveCurrentTenantIdentifier() {
 	}
+
 }

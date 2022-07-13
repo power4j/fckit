@@ -1,6 +1,5 @@
 package com.power4j.fist.boot.hibernate;
 
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -12,10 +11,12 @@ import javax.persistence.Id;
  */
 @Entity
 public class Account {
+
 	@Id
 	@GeneratedValue
 	Long id;
 
 	@TenantId
 	String tenantId;
+
 }
