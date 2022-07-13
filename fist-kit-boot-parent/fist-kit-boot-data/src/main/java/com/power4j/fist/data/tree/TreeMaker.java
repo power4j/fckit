@@ -24,6 +24,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,7 +56,8 @@ public class TreeMaker<ID, N extends Node<ID, N>> {
 	 * @return 返回实例
 	 */
 	public static <ID, N extends Node<ID, N>> TreeMaker<ID, N> use(Collection<N> data) {
-		Map<ID, N> sourceData = data.stream().collect(Collectors.toMap(Node::getId, Function.identity()));
+		Map<ID, N> sourceData = data.stream()
+				.collect(Collectors.toMap(Node::getId, Function.identity(), (x, y) -> y, LinkedHashMap::new));
 		return new TreeMaker<>(sourceData);
 	}
 
@@ -70,7 +72,8 @@ public class TreeMaker<ID, N extends Node<ID, N>> {
 		Map<ID, ID> parentMap = nodes.stream().filter(o -> (1 == o.getDistance()))
 				.collect(Collectors.toMap(NodeIdx::getDescendant, NodeIdx::getAncestor));
 		Map<ID, TreeNode<ID>> data = nodes.stream().filter(o -> (0 == o.getDistance())).map(NodeIdx::getAncestor)
-				.map(treeMapper).collect(Collectors.toMap(TreeNode::getId, Function.identity()));
+				.map(treeMapper)
+				.collect(Collectors.toMap(TreeNode::getId, Function.identity(), (x, y) -> y, LinkedHashMap::new));
 		data.values().forEach(o -> o.setParentId(parentMap.get(o.getId())));
 		return new TreeMaker<>(data);
 	}
@@ -103,7 +106,7 @@ public class TreeMaker<ID, N extends Node<ID, N>> {
 		Function<Map<ID, N>,Map<ID, N>> rootSelect = map -> map.entrySet()
 				.stream()
 				.filter(et -> rootPred.test(et.getValue()))
-				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (x, y) -> y, LinkedHashMap::new));
 		// @formatter:on
 		return makeTree(rootSelect);
 	}

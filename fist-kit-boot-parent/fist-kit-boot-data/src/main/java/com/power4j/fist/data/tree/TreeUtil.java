@@ -16,7 +16,6 @@
 
 package com.power4j.fist.data.tree;
 
-import com.power4j.fist.data.tree.domain.TreeNode;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
@@ -24,9 +23,9 @@ import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,8 +86,10 @@ public class TreeUtil {
 	 * @param <T> 节点类型
 	 */
 	public <ID, T> void fetch(Collection<T> source, Collection<T> roots, NodeOp<ID, T> nodeOp) {
-		Map<ID, T> sourceMap = source.stream().collect(Collectors.toMap(nodeOp.idGetter, Function.identity()));
-		Map<ID, T> rootMap = roots.stream().collect(Collectors.toMap(nodeOp.idGetter, Function.identity()));
+		Map<ID, T> sourceMap = source.stream()
+				.collect(Collectors.toMap(nodeOp.idGetter, Function.identity(), (x, y) -> y, LinkedHashMap::new));
+		Map<ID, T> rootMap = roots.stream()
+				.collect(Collectors.toMap(nodeOp.idGetter, Function.identity(), (x, y) -> y, LinkedHashMap::new));
 		fetch(sourceMap, rootMap, nodeOp);
 	}
 
