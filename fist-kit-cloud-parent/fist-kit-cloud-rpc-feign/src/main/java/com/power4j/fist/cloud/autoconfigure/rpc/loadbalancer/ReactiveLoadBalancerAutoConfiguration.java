@@ -16,12 +16,12 @@
 
 package com.power4j.fist.cloud.autoconfigure.rpc.loadbalancer;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
@@ -29,7 +29,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * @date 2021/8/17
  * @since 1.0
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @ConditionalOnClass({ LoadBalancerClient.class, WebClient.class })
 public class ReactiveLoadBalancerAutoConfiguration {
 

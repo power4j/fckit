@@ -1,0 +1,2 @@
+com.power4j.fist.boot.autoconfigure.data.DataAutoConfiguration
+com.power4j.fist.boot.autoconfigure.data.WebMvcConfiguration

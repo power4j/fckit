@@ -1,0 +1,5 @@
+com.power4j.fist.boot.autoconfigure.common.CommonConfiguration
+com.power4j.fist.boot.autoconfigure.web.FistWebAutoConfiguration
+com.power4j.fist.boot.autoconfigure.web.FistReactiveWebAutoConfiguration
+com.power4j.fist.boot.autoconfigure.apidoc.SpringDocAutoConfiguration
+com.power4j.fist.boot.autoconfigure.apidoc.SwaggerDocAutoConfiguration

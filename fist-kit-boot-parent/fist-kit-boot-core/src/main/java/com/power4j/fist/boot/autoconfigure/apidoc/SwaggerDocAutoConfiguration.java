@@ -19,9 +19,9 @@ package com.power4j.fist.boot.autoconfigure.apidoc;
 import com.power4j.fist.boot.apidoc.swagger.plugin.ApiTraitOperationPlugin;
 import com.power4j.fist.boot.security.core.SecurityConstant;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -47,7 +47,7 @@ import java.util.List;
  * @since 1.0
  * @deprecated
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @ConditionalOnClass(OpenApiDocumentationConfiguration.class)
 public class SwaggerDocAutoConfiguration {
 

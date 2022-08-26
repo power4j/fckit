@@ -19,8 +19,9 @@ package com.power4j.fist.boot.autoconfigure.common;
 import com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration;
 import com.power4j.fist.boot.autoconfigure.mon.AppMonConfiguration;
 import com.power4j.fist.boot.common.jackson.JacksonConfig;
+import com.power4j.fist.boot.util.ApplicationContextHolder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Import;
 
 /**
@@ -29,8 +30,8 @@ import org.springframework.context.annotation.Import;
  * @since 1.0
  */
 @Slf4j
-@Configuration(proxyBeanMethods = false)
-@Import({ MessageConfiguration.class, JacksonConfig.class, AppMonConfiguration.class })
+@AutoConfiguration
+@Import({ ApplicationContextHolder.class, MessageConfiguration.class, JacksonConfig.class, AppMonConfiguration.class })
 public class CommonConfiguration {
 
 }

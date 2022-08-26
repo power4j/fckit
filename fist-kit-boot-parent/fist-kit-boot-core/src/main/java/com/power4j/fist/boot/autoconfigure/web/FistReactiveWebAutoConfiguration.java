@@ -17,8 +17,8 @@
 package com.power4j.fist.boot.autoconfigure.web;
 
 import com.power4j.fist.boot.web.reactive.error.GlobalErrorConfigure;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 /**
@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Import;
  * @date 2021/6/16
  * @since 1.0
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @Import({ GlobalErrorConfigure.class })
 public class FistReactiveWebAutoConfiguration {

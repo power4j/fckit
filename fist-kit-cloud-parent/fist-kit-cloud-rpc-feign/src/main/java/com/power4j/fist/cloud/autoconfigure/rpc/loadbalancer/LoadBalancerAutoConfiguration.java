@@ -16,11 +16,11 @@
 
 package com.power4j.fist.cloud.autoconfigure.rpc.loadbalancer;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -28,7 +28,7 @@ import org.springframework.web.client.RestTemplate;
  * @date 2021/8/16
  * @since 1.0
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @ConditionalOnClass(LoadBalancerClient.class)
 public class LoadBalancerAutoConfiguration {
 

@@ -18,8 +18,8 @@ package com.power4j.fist.boot.autoconfigure.data;
 
 import com.power4j.fist.boot.web.PageParameterResolver;
 import com.power4j.fist.boot.web.PageRequestResolver;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * @date 2021/11/1
  * @since 1.0
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class WebMvcConfiguration implements WebMvcConfigurer {
 

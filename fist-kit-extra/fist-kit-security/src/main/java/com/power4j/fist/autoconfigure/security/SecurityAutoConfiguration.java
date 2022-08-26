@@ -18,16 +18,16 @@ package com.power4j.fist.autoconfigure.security;
 
 import com.power4j.fist.boot.security.SecurityUtil;
 import com.power4j.fist.boot.security.core.UserInfoSupplier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2021/10/9
  * @since 1.0
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 public class SecurityAutoConfiguration {
 
 	@Bean
