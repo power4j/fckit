@@ -16,6 +16,7 @@
 
 package com.power4j.fist.boot.autoconfigure.mon;
 
+import com.power4j.fist.boot.mon.SmartApiDescriptionResolver;
 import com.power4j.fist.boot.mon.aspect.ApiLogAspect;
 import com.power4j.fist.boot.mon.aspect.ReportErrorAspect;
 import com.power4j.fist.boot.mon.event.ApiLogEvent;
@@ -70,7 +71,7 @@ public class AppMonConfiguration {
 	@ConditionalOnClass(Aspects.class)
 	public ApiLogAspect apiLogAspect(ExceptionTranslator translator,
 			ObjectProvider<UserInfoAccessor> userInfoAccessor) {
-		return new ApiLogAspect(translator, userInfoAccessor.getIfAvailable());
+		return new ApiLogAspect(new SmartApiDescriptionResolver(), translator, userInfoAccessor.getIfAvailable());
 	}
 
 	@Bean

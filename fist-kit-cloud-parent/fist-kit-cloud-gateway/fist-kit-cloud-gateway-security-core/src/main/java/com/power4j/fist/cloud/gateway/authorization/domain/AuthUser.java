@@ -43,6 +43,7 @@ public class AuthUser implements AuthenticatedUser {
 
 	private Map<String, GrantedPermission> permissions;
 
+	@Builder.Default
 	private Map<String, Object> additionalInfo = Collections.emptyMap();
 
 }

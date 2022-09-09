@@ -16,7 +16,6 @@
 
 package com.power4j.fist.security.oauth2.token;
 
-import cn.hutool.core.lang.TypeReference;
 import com.power4j.coca.kit.common.text.StringPool;
 import com.power4j.fist.boot.security.core.SecurityConstant;
 import com.power4j.fist.boot.security.core.UserInfo;
@@ -28,6 +27,8 @@ import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
 import com.power4j.fist.security.core.authorization.domain.GrantedPermission;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.reflect.TypeLiteral;
+import org.apache.commons.lang3.reflect.Typed;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication;
 
@@ -83,7 +84,7 @@ public class DefaultUserConverter implements UserConverter<AuthenticatedUser> {
 
 		@Override
 		public Map<String, GrantedPermission> getPermissions() {
-			TypeReference<Collection<String>> type = new TypeReference<Collection<String>>() {
+			Typed<Collection<String>> type = new TypeLiteral<>() {
 			};
 			// @formatter:off
 			return userInfo.getMetaProp(SecurityConstant.UserProp.KEY_PERMISSION_LIST,type)

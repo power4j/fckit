@@ -16,8 +16,8 @@
 
 package com.power4j.fist.security.core.authorization.domain;
 
-import cn.hutool.core.lang.TypeReference;
-import cn.hutool.core.map.MapUtil;
+import com.power4j.fist.boot.common.utils.MapKit;
+import org.apache.commons.lang3.reflect.Typed;
 
 import java.util.Map;
 
@@ -74,8 +74,8 @@ public interface AuthenticatedUser {
 	 * @param type 类型
 	 * @return 值不存在/类型转换失败,返回传入的默认值
 	 */
-	default <T> T getInfo(String key, T defaultValue, TypeReference<T> type) {
-		return MapUtil.getQuietly(getAdditionalInfo(), key, type, defaultValue);
+	default <T> T getInfo(String key, T defaultValue, Typed<T> type) {
+		return MapKit.useValue(getAdditionalInfo(), key, type).orElse(defaultValue);
 	}
 
 	/**

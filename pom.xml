@@ -74,7 +74,8 @@
     <!-- libs -->
     <druid.version>1.2.11</druid.version>
     <hutool.version>5.8.5</hutool.version>
-    <coca-kit.version>0.1.1</coca-kit.version>
+    <commons-io.version>2.11.0</commons-io.version>
+    <coca-kit.version>0.1.2</coca-kit.version>
     <guava.version>31.1-jre</guava.version>
     <knife4j.version>3.0.3</knife4j.version>
     <redisson.version>3.17.6</redisson.version>
@@ -102,6 +103,7 @@
     <module>fist-kit-cloud-parent</module>
     <module>fist-kit-extra</module>
     <module>fist-kit-test</module>
+    <module>fist-core</module>
   </modules>
 
   <dependencies>
@@ -156,15 +158,36 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- fist libs -->
+      <!-- fist core -->
       <dependency>
         <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-kit-boot-core</artifactId>
+        <artifactId>fist-core-api</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-kit-mybatis</artifactId>
+        <artifactId>fist-core-data</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-core-web</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-core-support</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-core-security</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <!-- fist boot -->
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-kit-boot-core</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
@@ -179,7 +202,17 @@
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-kit-mybatis</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
         <artifactId>fist-kit-security</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-kit-apidoc</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
@@ -219,13 +252,18 @@
       </dependency>
       <!-- 第三方库 -->
       <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
+      </dependency>
+      <dependency>
         <groupId>cn.hutool</groupId>
         <artifactId>hutool-all</artifactId>
         <version>${hutool.version}</version>
       </dependency>
       <dependency>
         <groupId>com.power4j.kit</groupId>
-        <artifactId>coca-core</artifactId>
+        <artifactId>coca-common</artifactId>
         <version>${coca-kit.version}</version>
       </dependency>
       <dependency>
@@ -261,11 +299,6 @@
       <dependency>
         <groupId>org.redisson</groupId>
         <artifactId>redisson</artifactId>
-        <version>${redisson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.redisson</groupId>
-        <artifactId>redisson-spring-boot-starter</artifactId>
         <version>${redisson.version}</version>
       </dependency>
       <dependency>

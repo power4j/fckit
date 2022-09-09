@@ -1,6 +1,5 @@
 package com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl;
 
-import cn.hutool.core.lang.TypeReference;
 import com.power4j.fist.boot.security.core.SecurityConstant;
 import com.power4j.fist.cloud.gateway.AuthUtils;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
@@ -14,6 +13,7 @@ import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import com.power4j.fist.security.core.authorization.filter.reactive.ServerAuthFilterChain;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.reflect.TypeLiteral;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
@@ -74,7 +74,7 @@ public class TenantFilter implements GatewayAuthFilter {
 			return false;
 		}
 		List<String> orgList = userInfo.getInfo(AuthUser.INFO_KEY_ORG, Collections.emptyList(),
-				new TypeReference<List<String>>() {
+				new TypeLiteral<List<String>>() {
 				});
 		if (!orgList.contains(tenantId)) {
 			if (log.isDebugEnabled()) {

@@ -16,12 +16,13 @@
 
 package com.power4j.fist.boot.security.oauth2;
 
-import cn.hutool.core.lang.TypeReference;
 import com.power4j.coca.kit.common.text.StringPool;
 import com.power4j.fist.boot.security.core.DefaultUserInfoExtractor;
 import com.power4j.fist.boot.security.core.SecurityConstant;
 import com.power4j.fist.boot.security.core.UserInfoExtractor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.reflect.TypeLiteral;
+import org.apache.commons.lang3.reflect.Typed;
 import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -53,7 +54,7 @@ public class AuthUserConverter extends DefaultUserAuthenticationConverter {
 	@Nullable
 	@Override
 	public Authentication extractAuthentication(Map<String, ?> map) {
-		TypeReference<List<String>> type = new TypeReference<List<String>>() {
+		Typed<List<String>> type = new TypeLiteral<>() {
 		};
 		return authUserExtractor.extractAuthUser(map).map(u -> {
 			List<String> roles = u.getMetaProp(SecurityConstant.UserProp.KEY_ROLE_LIST, type).orElse(new ArrayList<>());

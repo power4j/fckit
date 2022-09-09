@@ -32,5 +32,6 @@
     <module>fist-kit-cloud-gateway-security-core</module>
     <module>fist-kit-cloud-gateway-security-simple</module>
     <module>fist-kit-cloud-gateway-security-reactive</module>
+    <module>fist-kit-cloud-gateway-resource-server</module>
   </modules>
 </project>

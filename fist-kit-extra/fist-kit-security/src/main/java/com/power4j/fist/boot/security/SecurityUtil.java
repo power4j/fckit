@@ -16,10 +16,11 @@
 
 package com.power4j.fist.boot.security;
 
-import cn.hutool.core.lang.TypeReference;
 import com.power4j.fist.boot.security.core.SecurityConstant;
 import com.power4j.fist.boot.security.core.UserInfo;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.reflect.TypeLiteral;
+import org.apache.commons.lang3.reflect.Typed;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -68,7 +69,7 @@ public class SecurityUtil {
 	 * 当前登录用户的权限列表，用户会话不存在或者无权限返回空集合
 	 */
 	public Set<String> getAuthorities() {
-		final TypeReference<List<String>> stringListType = new TypeReference<List<String>>() {
+		final Typed<List<String>> stringListType = new TypeLiteral<>() {
 		};
 		// @formatter:off
 		return getUser()

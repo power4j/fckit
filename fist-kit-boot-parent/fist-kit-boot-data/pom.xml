@@ -30,47 +30,47 @@
   <dependencies>
     <dependency>
       <groupId>com.power4j.fist</groupId>
-      <artifactId>fist-kit-boot-core</artifactId>
+      <artifactId>fist-core-data</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.baomidou</groupId>
-      <artifactId>mybatis-plus-core</artifactId>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-core-support</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-tx</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-webmvc</artifactId>
-      <optional>true</optional>
-    </dependency>
+    <!-- provided -->
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjweaver</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-context</artifactId>
-      <optional>true</optional>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
-      <artifactId>spring-aop</artifactId>
-      <optional>true</optional>
+      <artifactId>spring-web</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.pig4cloud.excel</groupId>
-      <artifactId>excel-spring-boot-starter</artifactId>
-      <optional>true</optional>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webflux</artifactId>
+      <scope>provided</scope>
     </dependency>
-    <!-- Test -->
     <dependency>
-      <groupId>com.power4j.fist</groupId>
-      <artifactId>fist-kit-test</artifactId>
-      <scope>test</scope>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
