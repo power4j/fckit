@@ -19,7 +19,8 @@ package com.power4j.fist.cloud.oauth2.server.resource.reactive;
 import com.power4j.fist.boot.security.core.SecurityConstant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Nullable;
+import org.apache.commons.lang3.ClassUtils;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
@@ -28,9 +29,6 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
-
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -45,38 +43,45 @@ public class BearTokenAuthenticationConverterFilter implements WebFilter {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+		return handle(exchange).flatMap(chain::filter).then();
+	}
+
+	private Mono<ServerWebExchange> handle(ServerWebExchange exchange) {
 		// @formatter:off
 		return ReactiveSecurityContextHolder.getContext()
-				.filter(ctx -> Objects.nonNull(ctx.getAuthentication()))
-				.flatMap(ctx -> handleAuthentication(ctx, exchange, chain))
-				.switchIfEmpty(Mono.defer(() -> handleNoAuthentication(exchange,chain)));
+				.filter((c) -> c.getAuthentication() != null)
+				.map(SecurityContext::getAuthentication)
+				.flatMap(authentication -> handleServerWebExchange(exchange, authentication))
+				.switchIfEmpty(Mono.just(exchange));
 		// @formatter:on
 	}
 
-	private Mono<Void> handleNoAuthentication(ServerWebExchange exchange, WebFilterChain chain) {
-		if (log.isTraceEnabled()) {
-			log.trace("No authentication : {}", exchange.getRequest().getURI());
+	private Mono<ServerWebExchange> handleServerWebExchange(ServerWebExchange exchange, Authentication authentication) {
+		if (log.isDebugEnabled()) {
+			log.debug("Authentication({}): {} ", ClassUtils.getSimpleName(authentication),
+					requestLogString(exchange.getRequest()));
 		}
-		return chain.filter(exchange);
-	}
-
-	private Mono<Void> handleAuthentication(@Nullable SecurityContext context, ServerWebExchange exchange,
-			WebFilterChain chain) {
-		final Authentication authentication = Optional.ofNullable(context).map(SecurityContext::getAuthentication)
-				.orElse(null);
 		if (authentication instanceof BearerTokenAuthentication) {
-			log.debug("Authentication : {},request = {}", authentication.getClass().getSimpleName(),
-					exchange.getRequest().getURI());
 			BearerTokenAuthentication tokenAuthentication = (BearerTokenAuthentication) authentication;
 			return authenticationProcessor.process(exchange, tokenAuthentication.getTokenAttributes()).flatMap(w -> {
 				if (log.isTraceEnabled()) {
 					log.trace("{} = {}", SecurityConstant.HEADER_USER_TOKEN_INNER,
 							w.getRequest().getHeaders().getFirst(SecurityConstant.HEADER_USER_TOKEN_INNER));
 				}
-				return chain.filter(w);
+				return Mono.just(w);
 			});
 		}
-		return Mono.empty();
+		else {
+			if (log.isDebugEnabled()) {
+				log.debug("Authentication not supported({}): {} ", ClassUtils.getSimpleName(authentication),
+						requestLogString(exchange.getRequest()));
+			}
+			return Mono.just(exchange);
+		}
+	}
+
+	static String requestLogString(ServerHttpRequest request) {
+		return String.format("[%s %s] %s", request.getId(), request.getMethod(), request.getURI());
 	}
 
 }

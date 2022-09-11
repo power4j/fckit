@@ -17,6 +17,7 @@
 package com.power4j.fist.boot.security.inner;
 
 import com.power4j.coca.kit.common.exception.WrappedException;
+import com.power4j.fist.boot.common.utils.NetKit;
 import com.power4j.fist.boot.security.context.UserContextHolder;
 import com.power4j.fist.boot.security.core.SecurityConstant;
 import com.power4j.fist.boot.security.core.UserInfo;
@@ -32,6 +33,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -111,6 +113,11 @@ public class TrustedUserFilter extends OncePerRequestFilter {
 				return true;
 			}
 			else {
+				InetAddress address = NetKit.parse(ip);
+				if (address.isLoopbackAddress() || address.isSiteLocalAddress()) {
+					return true;
+				}
+				log.warn("认证信息不可信");
 				return false;
 			}
 		}

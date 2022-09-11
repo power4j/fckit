@@ -10,6 +10,7 @@
   - `feat` 新功能
   - `fix` 修复问题/BUG
   - `style` 代码风格相关,不影响运行结果
+  - `polish` 代码优化相关,不影响运行结果
   - `perf` (性能)优化
   - `refactor` 重构
   - `revert` 还原之前的修改
