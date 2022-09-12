@@ -14,19 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.security.core.authorization.domain;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/26
+ * @date 2021/6/2
  * @since 1.0
  */
-public interface GrantedPermission {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.boot.security.oauth2.server.resource;
 
-	/**
-	 * 权限编码
-	 * @return 编码字符串
-	 */
-	String getPermissionCode();
-
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;
