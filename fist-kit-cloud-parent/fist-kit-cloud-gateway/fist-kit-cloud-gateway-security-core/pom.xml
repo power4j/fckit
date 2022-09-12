@@ -30,17 +30,19 @@
 
 
   <dependencies>
-    <!-- compile libs -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
       <artifactId>fist-kit-boot-core</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
       <artifactId>fist-kit-boot-security</artifactId>
-      <scope>compile</scope>
     </dependency>
+    <!-- provided -->
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-gateway-server</artifactId>
@@ -55,6 +57,17 @@
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-oauth2-resource-server</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <!-- test -->
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-kit-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

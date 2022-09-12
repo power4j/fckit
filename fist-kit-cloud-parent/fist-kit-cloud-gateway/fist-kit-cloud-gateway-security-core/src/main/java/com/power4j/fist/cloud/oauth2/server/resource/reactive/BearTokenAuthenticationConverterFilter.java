@@ -43,20 +43,20 @@ public class BearTokenAuthenticationConverterFilter implements WebFilter {
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-		return handle(exchange).flatMap(chain::filter).then();
+		return handleRequest(exchange).flatMap(chain::filter).then();
 	}
 
-	private Mono<ServerWebExchange> handle(ServerWebExchange exchange) {
+	private Mono<ServerWebExchange> handleRequest(ServerWebExchange exchange) {
 		// @formatter:off
 		return ReactiveSecurityContextHolder.getContext()
 				.filter((c) -> c.getAuthentication() != null)
 				.map(SecurityContext::getAuthentication)
-				.flatMap(authentication -> handleServerWebExchange(exchange, authentication))
+				.flatMap(authentication -> handleAuthentication(exchange, authentication))
 				.switchIfEmpty(Mono.just(exchange));
 		// @formatter:on
 	}
 
-	private Mono<ServerWebExchange> handleServerWebExchange(ServerWebExchange exchange, Authentication authentication) {
+	private Mono<ServerWebExchange> handleAuthentication(ServerWebExchange exchange, Authentication authentication) {
 		if (log.isDebugEnabled()) {
 			log.debug("Authentication({}): {} ", ClassUtils.getSimpleName(authentication),
 					requestLogString(exchange.getRequest()));
