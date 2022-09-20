@@ -32,6 +32,5 @@
     <module>fist-kit-cloud-gateway</module>
     <module>fist-kit-cloud-rpc-feign</module>
     <module>fist-kit-cloud-core</module>
-    <module>fist-kit-cloud-security-oauth2</module>
   </modules>
 </project>

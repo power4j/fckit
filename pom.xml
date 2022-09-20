@@ -228,22 +228,17 @@
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-kit-cloud-security-oauth2</artifactId>
-        <version>${revision}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.power4j.fist</groupId>
         <artifactId>fist-kit-cloud-gateway-security-core</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-kit-cloud-gateway-security-simple</artifactId>
+        <artifactId>fist-kit-cloud-gateway-security-reactive</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-kit-cloud-gateway-security-reactive</artifactId>
+        <artifactId>fist-kit-cloud-gateway-resource-server</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

@@ -31,5 +31,6 @@
   <modules>
     <module>fist-kit-mybatis</module>
     <module>fist-kit-apidoc</module>
+    <module>fist-kit-security</module>
   </modules>
 </project>
