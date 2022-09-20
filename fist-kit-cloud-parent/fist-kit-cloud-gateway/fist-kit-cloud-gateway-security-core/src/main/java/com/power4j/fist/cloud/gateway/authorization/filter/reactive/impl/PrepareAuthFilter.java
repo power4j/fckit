@@ -23,11 +23,16 @@ import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
 import com.power4j.fist.cloud.gateway.authorization.domain.RequestInfo;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.GatewayAuthFilter;
 import com.power4j.fist.security.core.authorization.filter.reactive.ServerAuthFilterChain;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+
+import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ORIGINAL_REQUEST_URL_ATTR;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -40,13 +45,21 @@ public class PrepareAuthFilter implements GatewayAuthFilter {
 	public Mono<Void> filter(AuthContext ctx, ServerAuthFilterChain<AuthContext> chain) {
 		final ServerWebExchange exchange = AuthUtils.eraseHeader(ctx.getExchange(),
 				SecurityConstant.HEADER_USER_TOKEN_INNER);
+		LinkedHashSet<URI> uris = exchange.getRequiredAttribute(GATEWAY_ORIGINAL_REQUEST_URL_ATTR);
 		final ServerHttpRequest request = exchange.getRequest();
 		ctx.setExchange(exchange);
+		URI originUri;
+		if (ObjectUtils.isNotEmpty(uris)) {
+			originUri = uris.iterator().next();
+		}
+		else {
+			originUri = request.getURI();
+		}
 		if (Objects.isNull(request.getMethod())) {
 			return exitChain(ctx,
 					AuthProblem.HTTP_PROTOCOL.moreInfo("Method not supported:" + request.getMethodValue()));
 		}
-		RequestInfo info = new RequestInfo(request.getHeaders(), request.getMethod(), request.getURI());
+		RequestInfo info = new RequestInfo(request.getHeaders(), request.getMethod(), originUri);
 		ctx.setInbound(info);
 		return doNext(ctx, chain);
 	}

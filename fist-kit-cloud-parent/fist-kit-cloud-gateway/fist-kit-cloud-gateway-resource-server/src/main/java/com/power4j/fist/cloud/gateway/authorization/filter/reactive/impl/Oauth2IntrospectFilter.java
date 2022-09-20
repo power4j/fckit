@@ -41,7 +41,11 @@ public class Oauth2IntrospectFilter implements GatewayAuthFilter {
 
 	@Override
 	public Mono<Void> filter(AuthContext ctx, ServerAuthFilterChain<AuthContext> chain) {
-		return updateUserInfo(ctx).flatMap(o -> doNext(o, chain));
+		// @formatter:off
+		return updateUserInfo(ctx)
+				.switchIfEmpty(Mono.just(ctx))
+				.flatMap(o -> doNext(o, chain));
+		// @formatter:on
 	}
 
 	protected Mono<AuthContext> updateUserInfo(AuthContext ctx) {
