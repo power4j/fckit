@@ -34,5 +34,6 @@
     <module>fist-core-web</module>
     <module>fist-core-support</module>
     <module>fist-core-security</module>
+    <module>fist-core-gateway-authorization</module>
   </modules>
 </project>

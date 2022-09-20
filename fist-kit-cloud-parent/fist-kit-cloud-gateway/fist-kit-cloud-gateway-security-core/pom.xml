@@ -31,16 +31,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-core-web</artifactId>
     </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
-      <artifactId>fist-kit-boot-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.power4j.fist</groupId>
-      <artifactId>fist-kit-boot-security</artifactId>
+      <artifactId>fist-core-security</artifactId>
     </dependency>
     <!-- provided -->
     <dependency>

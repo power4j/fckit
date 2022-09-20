@@ -24,6 +24,13 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
+ * 默认路由目标解析算法,优先级如下
+ * <ul>
+ * <li>路由meta中的serviceId值</li>
+ * <li>路由URI的schema是'lb',那么URI的host部分就是</li>
+ * <li>使用路由的ID值</li>
+ * </ul>
+ *
  * @author CJ (power4j@outlook.com)
  * @date 2022/1/13
  * @since 1.0

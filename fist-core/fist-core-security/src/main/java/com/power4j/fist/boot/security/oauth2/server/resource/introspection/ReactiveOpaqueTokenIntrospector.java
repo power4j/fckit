@@ -17,6 +17,7 @@ public interface ReactiveOpaqueTokenIntrospector {
 	 * Returning a {@link Map} is indicative that the token is valid.
 	 * @param token the token to introspect
 	 * @return the token's attributes
+	 * @throws Oauth2IntrospectionException
 	 */
 	Mono<Oauth2AuthenticatedPrincipal> introspect(String token);
 

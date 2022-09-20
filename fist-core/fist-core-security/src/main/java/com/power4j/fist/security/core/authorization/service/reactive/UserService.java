@@ -14,26 +14,22 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.proxy;
+package com.power4j.fist.security.core.authorization.service.reactive;
 
-import com.power4j.fist.cloud.gateway.authorization.domain.RouteTarget;
-import org.springframework.lang.Nullable;
-import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/13
+ * @date 2021/11/26
  * @since 1.0
  */
-public interface RouteTargetResolver {
+public interface UserService<T> {
 
 	/**
-	 * 解析路由目标
-	 * @param route 与当前请求匹配的路由
-	 * @param exchange ServerWebExchange
-	 * @return 返回路由目标
+	 * 获取用户授权信息
+	 * @param user 用户标识符
+	 * @return 无权限信息返回空集合
 	 */
-	@Nullable
-	RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange);
+	Mono<T> loadUser(String user);
 
 }

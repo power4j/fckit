@@ -48,6 +48,10 @@ public class AuthProblem {
 		return this;
 	}
 
+	public boolean codeEquals(int value) {
+		return code == value;
+	}
+
 	public boolean isAuthPass() {
 		return CODE_AUTH_PASS == code;
 	}

@@ -33,7 +33,15 @@
     <!-- compile libs -->
     <dependency>
       <groupId>com.power4j.fist</groupId>
-      <artifactId>fist-core-api</artifactId>
+      <artifactId>fist-core-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-core-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-kit-cloud-gateway-security-core</artifactId>
     </dependency>
     <!-- optional libs -->
     <dependency>

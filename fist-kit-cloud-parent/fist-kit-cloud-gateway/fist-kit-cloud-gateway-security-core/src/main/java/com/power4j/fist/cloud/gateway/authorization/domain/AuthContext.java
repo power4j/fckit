@@ -35,11 +35,12 @@ public class AuthContext {
 
 	private final AuthState authState;
 
-	private final Object principal;
-
 	private ServerWebExchange exchange;
 
 	private RequestInfo inbound;
+
+	@Nullable
+	private Object principal;
 
 	@Nullable
 	private RouteInfo route;
@@ -53,13 +54,13 @@ public class AuthContext {
 	@Nullable
 	private PermissionDefinition permissionDefinition;
 
-	public AuthContext(ServerWebExchange exchange, Object principal) {
+	public AuthContext(ServerWebExchange exchange, @Nullable Object principal) {
 		this.exchange = exchange;
 		this.principal = principal;
 		this.authState = new AuthState();
 	}
 
-	public AuthContext(ServerWebExchange exchange, Object principal, AuthState state) {
+	public AuthContext(ServerWebExchange exchange, @Nullable Object principal, AuthState state) {
 		this.exchange = exchange;
 		this.principal = principal;
 		this.authState = state;

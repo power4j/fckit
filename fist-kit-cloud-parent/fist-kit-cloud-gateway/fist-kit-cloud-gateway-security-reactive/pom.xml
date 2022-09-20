@@ -34,37 +34,34 @@
     <dependency>
       <groupId>com.power4j.fist</groupId>
       <artifactId>fist-kit-boot-core</artifactId>
-      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-kit-boot-security</artifactId>
     </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
       <artifactId>fist-kit-cloud-gateway-security-core</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
       <artifactId>fist-kit-boot-data</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>oauth2-oidc-sdk</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-oauth2-resource-server</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-oauth2-jose</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-      <scope>compile</scope>
     </dependency>
     <!-- optional libs -->
     <dependency>

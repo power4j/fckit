@@ -14,26 +14,14 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.cloud.gateway.proxy;
-
-import com.power4j.fist.cloud.gateway.authorization.domain.RouteTarget;
-import org.springframework.lang.Nullable;
-import org.springframework.web.server.ServerWebExchange;
-
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/13
+ * @date 2021/6/2
  * @since 1.0
  */
-public interface RouteTargetResolver {
+@NonNullApi
+@NonNullFields
+package com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl;
 
-	/**
-	 * 解析路由目标
-	 * @param route 与当前请求匹配的路由
-	 * @param exchange ServerWebExchange
-	 * @return 返回路由目标
-	 */
-	@Nullable
-	RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange);
-
-}
+import org.springframework.lang.NonNullApi;
+import org.springframework.lang.NonNullFields;

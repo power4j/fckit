@@ -18,11 +18,15 @@ package com.power4j.fist.boot.web.reactive.util;
 
 import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
 import lombok.experimental.UtilityClass;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -44,6 +48,53 @@ public class ServerHttpRequestUtil {
 					.map(InetAddress::getHostAddress);
 		}
 		return ip;
+	}
+
+	/**
+	 * 请求行
+	 * @param request the request
+	 * @return 请求行,比如 {@code GET /users/john}
+	 */
+	public String simpleRequestLine(ServerHttpRequest request) {
+		final HttpMethod method = request.getMethod();
+		return (method == null ? "NULL" : method.name()) + " " + request.getURI().getPath();
+	}
+
+	/**
+	 * 修改请求头
+	 * @param origin 原始请求
+	 * @param headersConsumer 消费函数
+	 * @return 返回新的ServerHttpRequest
+	 */
+	public ServerHttpRequest updateHeaders(ServerHttpRequest origin, Consumer<HttpHeaders> headersConsumer) {
+		// @formatter:off
+		return origin
+				.mutate()
+				.headers(headersConsumer)
+				.build();
+		// @formatter:on
+	}
+
+	/**
+	 * 添加或者覆盖HTTP头
+	 * @param origin 原始请求
+	 * @param key 头名称
+	 * @param value 值
+	 * @return 返回新的ServerHttpRequest
+	 */
+	public ServerHttpRequest putHeader(ServerHttpRequest origin, String key, String value) {
+		return updateHeaders(origin, h -> h.add(key, value));
+	}
+
+	/**
+	 * 添加或者覆盖HTTP头
+	 * @param origin 原始请求
+	 * @param key 头名称
+	 * @param values 值
+	 * @return 返回新的ServerHttpRequest
+	 */
+	public ServerHttpRequest putHeader(ServerHttpRequest origin, String key, List<? extends String> values) {
+		return updateHeaders(origin, h -> h.addAll(key, values));
 	}
 
 }

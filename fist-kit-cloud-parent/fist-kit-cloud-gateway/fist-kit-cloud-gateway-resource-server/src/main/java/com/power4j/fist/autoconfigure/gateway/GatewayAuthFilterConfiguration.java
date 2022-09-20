@@ -1,20 +1,4 @@
-/*
- *  Copyright 2021 ChenJun (power4j@outlook.com & https://github.com/John-Chan)
- *
- *  Licensed under the GNU LESSER GENERAL PUBLIC LICENSE 3.0;
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  <p>
- *  http://www.gnu.org/licenses/lgpl.html
- *  <p>
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
-package com.power4j.fist.autoconfigure.gateway.security;
+package com.power4j.fist.autoconfigure.gateway;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.power4j.fist.boot.common.matcher.FastPathMatcher;
@@ -26,29 +10,27 @@ import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.AuthEnd
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.InternalAccessFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.LoadPermissionDefinitionFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.LoginAccessFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.Oauth2IntrospectFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.PrepareAuthFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.PublicAccessFilter;
+import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.ReadRouteFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.SafeModeFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.SkipAuthorizationFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.TenantFilter;
-import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.UpstreamLocateFilter;
 import com.power4j.fist.cloud.gateway.authorization.filter.reactive.impl.UserPermissionFilter;
-import com.power4j.fist.cloud.gateway.proxy.ProxyResolver;
+import com.power4j.fist.cloud.security.oauth2.client.UserIntrospectClient;
 import com.power4j.fist.security.core.authorization.config.GlobalAuthorizationProperties;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import com.power4j.fist.security.core.authorization.service.reactive.ReactivePermissionDefinitionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 import java.util.List;
@@ -56,7 +38,6 @@ import java.util.Set;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2022/1/13
  * @since 1.0
  */
 @Slf4j
@@ -64,15 +45,11 @@ import java.util.Set;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(GlobalAuthorizationProperties.class)
 @ConditionalOnProperty(prefix = GlobalAuthorizationProperties.PROP_PREFIX, name = "enabled", matchIfMissing = true)
-public class AuthFilterConfigure {
+public class GatewayAuthFilterConfiguration {
 
 	static final int BASE_ORDER = 10_000;
 
 	private final GlobalAuthorizationProperties authorizationProperties;
-
-	private final ObjectProvider<RouteLocator> routeLocators;
-
-	private final ObjectProvider<ProxyResolver> proxyResolvers;
 
 	private final ReactivePermissionDefinitionService<? extends PermissionDefinition> permissionDefinitionService;
 
@@ -110,10 +87,8 @@ public class AuthFilterConfigure {
 
 	@Bean
 	@Order(BASE_ORDER + 300)
-	public UpstreamLocateFilter upstreamLocateFilter() {
-		UpstreamLocateFilter filter = new UpstreamLocateFilter(routeLocators.getObject());
-		proxyResolvers.ifAvailable(filter::setProxyResolver);
-		return filter;
+	public ReadRouteFilter readRouteFilter() {
+		return new ReadRouteFilter();
 	}
 
 	@Bean
@@ -132,6 +107,12 @@ public class AuthFilterConfigure {
 	@Order(BASE_ORDER + 600)
 	public PublicAccessFilter publicAccessFilter() {
 		return new PublicAccessFilter();
+	}
+
+	@Bean
+	@Order(BASE_ORDER + 700)
+	public Oauth2IntrospectFilter oauth2IntrospectFilter(UserIntrospectClient client) {
+		return new Oauth2IntrospectFilter(client);
 	}
 
 	@Bean
@@ -157,7 +138,7 @@ public class AuthFilterConfigure {
 	}
 
 	@Bean
-	@Order(Ordered.LOWEST_PRECEDENCE)
+	@Order
 	public AuthEndFilter authEndFilter() {
 		return new AuthEndFilter();
 	}

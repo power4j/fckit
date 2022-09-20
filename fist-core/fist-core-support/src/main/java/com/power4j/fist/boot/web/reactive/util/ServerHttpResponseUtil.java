@@ -100,9 +100,15 @@ public class ServerHttpResponseUtil {
 	 * @return Mono
 	 */
 	public Mono<Void> writeBuffer(ServerHttpResponse response, Mono<ByteBuffer> data) {
-
 		return data.map(bytes -> response.bufferFactory().wrap(bytes)).flatMap(
 				buffer -> response.writeWith(Mono.just(buffer)).doOnError(e -> DataBufferUtils.release(buffer)));
+	}
+
+	public ServerHttpResponse requireWriteable(ServerHttpResponse response) {
+		if (response.isCommitted()) {
+			throw new IllegalStateException("response committed");
+		}
+		return response;
 	}
 
 }
