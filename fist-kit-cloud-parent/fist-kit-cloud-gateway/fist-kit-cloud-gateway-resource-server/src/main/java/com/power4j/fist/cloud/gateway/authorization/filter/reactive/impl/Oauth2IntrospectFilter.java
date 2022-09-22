@@ -57,6 +57,10 @@ public class Oauth2IntrospectFilter implements GatewayAuthFilter {
 					ctx.setPrincipal(u);
 					ctx.setUserInfo(new AuthenticatedUserAdapter(u));
 					return ctx;
+				})
+				.onErrorResume(ex -> {
+					log.error("Update user info error",ex);
+					return Mono.just(ctx);
 				});
 		// @formatter:on
 	}

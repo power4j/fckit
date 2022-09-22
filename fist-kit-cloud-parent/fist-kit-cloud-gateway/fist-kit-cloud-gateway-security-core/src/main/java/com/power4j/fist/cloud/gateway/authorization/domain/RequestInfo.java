@@ -55,6 +55,15 @@ public class RequestInfo {
 	@Getter
 	private final Map<String, Object> meta;
 
+	/**
+	 * For test
+	 * @param uri the uri value
+	 * @return RequestInfo with empty headers
+	 */
+	public static RequestInfo httpGet(String uri) {
+		return new RequestInfo(HttpHeaders.EMPTY, HttpMethod.GET, URI.create(uri));
+	}
+
 	public RequestInfo(HttpHeaders headers, HttpMethod method, URI uri) {
 		this.headers = headers;
 		this.method = method;

@@ -28,6 +28,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
+import java.util.Objects;
+
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2021/11/26
@@ -56,18 +59,27 @@ public class LoadPermissionDefinitionFilter implements GatewayAuthFilter {
 		// @formatter:off
 		return reactivePermissionDefinitionService
 				.getPermissionDefinition(upstream.getServiceName(), upstream.getMethod())
-				.flatMap(list -> {
-					pathMatcher.bestMatch(list, api, PermissionDefinition::getPath)
-							.ifPresent(ctx::setPermissionDefinition);
-					return doNext(ctx, chain);
-				}).switchIfEmpty(Mono.defer(() -> {
-					if (log.isDebugEnabled()) {
-						if (null == ctx.getPermissionDefinition()) {
-							log.debug("No permission definition for {}", api);
-						}
+				.switchIfEmpty(Mono.defer(() -> {
+					if (null == ctx.getPermissionDefinition()) {
+						log.debug("No permission definition for {}", api);
 					}
+					return Mono.just(Collections.emptyList());
+				}))
+				.onErrorResume(ex -> {
+					log.error("Load permission definition error",ex);
+					return Mono.just(Collections.emptyList());
+				})
+				.flatMap(list -> {
+					PermissionDefinition matched = pathMatcher.bestMatch(list, api, PermissionDefinition::getPath)
+							.orElse(null);
+					if(Objects.isNull(matched)){
+						log.debug("No permission definition matched for {} {}",upstream.getServiceName(), api);
+					}else{
+						log.trace("Request matches : {} => {}",ctx.getInbound().shortDescription(),matched.getPath());
+					}
+					ctx.setPermissionDefinition(matched);
 					return doNext(ctx, chain);
-				}));
+				});
 		// @formatter:on
 	}
 
