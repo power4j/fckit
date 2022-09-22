@@ -74,7 +74,7 @@
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <!-- libs -->
     <druid.version>1.2.11</druid.version>
-    <hutool.version>5.8.5</hutool.version>
+    <hutool.version>5.8.7</hutool.version>
     <commons-io.version>2.11.0</commons-io.version>
     <coca-kit.version>0.1.2</coca-kit.version>
     <guava.version>31.1-jre</guava.version>
