@@ -30,10 +30,4 @@ public class AuthState {
 	@Nullable
 	private AuthProblem problem;
 
-	@Nullable
-	private String message;
-
-	@Nullable
-	private String userToken;
-
 }
