@@ -96,7 +96,7 @@
     <transmittable-thread-local.version>2.14.0</transmittable-thread-local.version>
     <excel-spring-boot-starter.version>1.2.6</excel-spring-boot-starter.version>
 
-    <spock-lib.version>2.1-groovy-3.0</spock-lib.version>
+    <spock-lib.version>2.2-groovy-4.0</spock-lib.version>
   </properties>
 
   <modules>
