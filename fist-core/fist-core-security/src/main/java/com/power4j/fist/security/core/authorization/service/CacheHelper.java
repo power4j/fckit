@@ -6,6 +6,7 @@ import org.springframework.cache.Cache;
 import org.springframework.http.HttpMethod;
 import org.springframework.lang.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,6 +42,19 @@ public class CacheHelper {
 	public <T> void updateCache(@Nullable Cache cache, String serviceName, HttpMethod method, List<T> data) {
 		if (Objects.nonNull(cache)) {
 			cache.put(makeCacheKey(serviceName, method), data);
+		}
+	}
+
+	public boolean removeCache(@Nullable Cache cache, String serviceName, HttpMethod method) {
+		if (Objects.nonNull(cache)) {
+			return cache.evictIfPresent(makeCacheKey(serviceName, method));
+		}
+		return false;
+	}
+
+	public void removeCache(@Nullable Cache cache, String serviceName) {
+		if (Objects.nonNull(cache)) {
+			Arrays.stream(HttpMethod.values()).forEach(m -> cache.evict(makeCacheKey(serviceName, m)));
 		}
 	}
 

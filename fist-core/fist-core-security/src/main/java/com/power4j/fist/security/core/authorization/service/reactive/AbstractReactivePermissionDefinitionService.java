@@ -5,6 +5,7 @@ import com.power4j.fist.security.core.authorization.service.CacheHelper;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpMethod;
+import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -22,29 +23,33 @@ public abstract class AbstractReactivePermissionDefinitionService<T extends Perm
 	@Override
 	public Mono<List<T>> getPermissionDefinition(String serviceName, HttpMethod method) {
 		// @formatter:off
-		return loadFromCache(serviceName,method)
+		return Mono.justOrEmpty(loadFromCache(serviceName,method))
 				.switchIfEmpty(
 						fetch(serviceName, method)
-						.switchIfEmpty(Mono.just(Collections.emptyList()))
-						.flatMap(o -> updateCache(serviceName,method,o))
+								.doOnNext(o -> updateCache(serviceName,method,o))
+								.switchIfEmpty(Mono.just(Collections.emptyList()))
 				);
 		// @formatter:on
 	}
 
+	@Nullable
 	@SuppressWarnings("unchecked")
-	protected Mono<List<T>> loadFromCache(String serviceName, HttpMethod method) {
-		// @formatter:off
-		return CacheHelper.<List<T>>loadFromCache(getCache().orElse(null),serviceName,method)
-				.map(Mono::just)
-				.orElseGet(Mono::empty);
-		// @formatter:on
+	protected List<T> loadFromCache(String serviceName, HttpMethod method) {
+		return (List<T>) CacheHelper.loadFromCache(getCache().orElse(null), serviceName, method).orElse(null);
 	}
 
-	protected Mono<List<T>> updateCache(String serviceName, HttpMethod method, List<T> data) {
+	protected void updateCache(String serviceName, HttpMethod method, List<T> data) {
 		if (ObjectUtils.isNotEmpty(data)) {
 			CacheHelper.updateCache(getCache().orElse(null), serviceName, method, data);
 		}
-		return Mono.just(data);
+	}
+
+	protected void removeCache(String serviceName, HttpMethod method) {
+		CacheHelper.removeCache(getCache().orElse(null), serviceName, method);
+	}
+
+	protected void removeCache(String serviceName) {
+		CacheHelper.removeCache(getCache().orElse(null), serviceName);
 	}
 
 	/**

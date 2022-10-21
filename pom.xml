@@ -243,6 +243,11 @@
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-kit-redisson</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
         <artifactId>fist-kit-test</artifactId>
         <version>${revision}</version>
       </dependency>
@@ -298,6 +303,11 @@
         <version>${redisson.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.redisson</groupId>
+        <artifactId>redisson-spring-boot-starter</artifactId>
+        <version>${redisson.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.devskiller.friendly-id</groupId>
         <artifactId>friendly-id</artifactId>
         <version>${friendly-id.version}</version>
@@ -336,6 +346,11 @@
         <groupId>com.github.xiaoymin</groupId>
         <artifactId>knife4j-spring-boot-starter</artifactId>
         <version>${knife4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>de.codecentric</groupId>
+        <artifactId>spring-boot-admin-server</artifactId>
+        <version>${spring-boot-admin.version}</version>
       </dependency>
       <dependency>
         <groupId>de.codecentric</groupId>

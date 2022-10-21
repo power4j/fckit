@@ -61,7 +61,7 @@ public class AuthProblem {
 	}
 
 	public String description() {
-		return String.format("%d - %s,details: %s", code, msg, moreInfo);
+		return String.format("%s(%d),details: %s", msg, code, moreInfo);
 	}
 
 	/**

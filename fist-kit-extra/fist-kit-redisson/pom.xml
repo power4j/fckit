@@ -21,17 +21,25 @@
 
   <parent>
     <groupId>com.power4j.fist</groupId>
-    <artifactId>fist-cloud-dependencies</artifactId>
+    <artifactId>fist-kit-extra</artifactId>
     <version>${revision}</version>
   </parent>
 
-  <artifactId>fist-kit-extra</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>fist-kit-redisson</artifactId>
 
-  <modules>
-    <module>fist-kit-mybatis</module>
-    <module>fist-kit-apidoc</module>
-    <module>fist-kit-security</module>
-    <module>fist-kit-redisson</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-core-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-core-support</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.redisson</groupId>
+      <artifactId>redisson-spring-boot-starter</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
 </project>

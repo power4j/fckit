@@ -1,0 +1,2 @@
+com.power4j.fist.boot.autoconfigure.redisson.topic.RedissonTopicAutoConfiguration
+com.power4j.fist.boot.autoconfigure.redisson.queue.RedissonQueueAutoConfiguration
