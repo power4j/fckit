@@ -21,8 +21,9 @@
 
   <parent>
     <groupId>com.power4j.fist</groupId>
-    <artifactId>fist-cloud-dependencies</artifactId>
+    <artifactId>fist-kit-build</artifactId>
     <version>${revision}</version>
+    <relativePath>../fist-kit-build</relativePath>
   </parent>
 
   <artifactId>fist-kit-test</artifactId>
@@ -30,7 +31,6 @@
   <description>Test support</description>
 
   <properties>
-    <!-- spring-boot-dependencies 已经定义了 groovy.version  -->
     <groovy-tables.version>1.6</groovy-tables.version>
     <powermock-lib.version>2.0.9</powermock-lib.version>
   </properties>

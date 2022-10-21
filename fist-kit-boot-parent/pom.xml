@@ -21,8 +21,9 @@
 
   <parent>
     <groupId>com.power4j.fist</groupId>
-    <artifactId>fist-cloud-dependencies</artifactId>
+    <artifactId>fist-kit-build</artifactId>
     <version>${revision}</version>
+    <relativePath>../fist-kit-build</relativePath>
   </parent>
 
   <artifactId>fist-kit-boot-parent</artifactId>
