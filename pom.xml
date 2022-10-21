@@ -348,21 +348,6 @@
         <version>${knife4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>de.codecentric</groupId>
-        <artifactId>spring-boot-admin-server</artifactId>
-        <version>${spring-boot-admin.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>de.codecentric</groupId>
-        <artifactId>spring-boot-admin-starter-server</artifactId>
-        <version>${spring-boot-admin.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>de.codecentric</groupId>
-        <artifactId>spring-boot-admin-starter-client</artifactId>
-        <version>${spring-boot-admin.version}</version>
-      </dependency>
-      <dependency>
         <groupId>com.pig4cloud.excel</groupId>
         <artifactId>excel-spring-boot-starter</artifactId>
         <version>${excel-spring-boot-starter.version}</version>
@@ -391,6 +376,14 @@
         <groupId>org.mapstruct</groupId>
         <artifactId>mapstruct-processor</artifactId>
         <version>${mapstruct.version}</version>
+      </dependency>
+      <!-- BOM -->
+      <dependency>
+        <groupId>de.codecentric</groupId>
+        <artifactId>spring-boot-admin-dependencies</artifactId>
+        <version>${spring-boot-admin.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.zalando</groupId>
