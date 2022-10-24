@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.power4j.fist</groupId>
-  <artifactId>fist-kit</artifactId>
+  <artifactId>fist-kit-parent</artifactId>
   <version>${revision}</version>
   <packaging>pom</packaging>
 
@@ -98,20 +98,83 @@
   </properties>
 
   <modules>
-    <module>fist-kit-dependencies</module>
+    <module>fist-kit-infra</module>
+    <module>fist-kit-app</module>
+    <module>fist-kit-cloud</module>
     <module>fist-kit-build</module>
-    <module>fist-kit-boot-parent</module>
-    <module>fist-kit-cloud-parent</module>
-    <module>fist-kit-extra</module>
-    <module>fist-kit-test</module>
-    <module>fist-core</module>
+    <module>fist-kit-dependencies</module>
   </modules>
 
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>io.spring.javaformat</groupId>
+        <artifactId>spring-javaformat-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <inherited>true</inherited>
+            <goals>
+              <goal>validate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- help eclipse-plugin to get the right java-version -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <parameters>true</parameters>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>oss</flattenMode>
+          <embedBuildProfileDependencies>true</embedBuildProfileDependencies>
+          <pomElements>
+            <distributionManagement>remove</distributionManagement>
+            <repositories>remove</repositories>
+          </pomElements>
+        </configuration>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>flatten-clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
 
@@ -239,19 +302,7 @@
       <id>oss-release</id>
       <build>
         <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
+          <!-- oss-release: maven-source-plugin already configured -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
