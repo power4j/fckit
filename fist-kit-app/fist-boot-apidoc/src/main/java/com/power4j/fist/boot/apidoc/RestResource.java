@@ -16,12 +16,12 @@
 
 package com.power4j.fist.boot.apidoc;
 
-import cn.hutool.core.lang.Assert;
-import cn.hutool.core.util.HexUtil;
-import cn.hutool.crypto.digest.DigestUtil;
 import com.power4j.coca.kit.common.text.StringPool;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.http.HttpMethod;
 
 import java.nio.charset.StandardCharsets;
@@ -44,11 +44,11 @@ public class RestResource implements ResourceDescribe {
 
 	@Override
 	public String getResourceSign() {
-		Assert.notNull(getMethod());
-		Assert.notNull(getRequestMappingPattern());
+		Validate.notNull(getMethod());
+		Validate.notNull(getRequestMappingPattern());
 		String context = getMethod().name().toLowerCase() + StringPool.AT + getRequestMappingPattern();
-		String hi = DigestUtil.sha1Hex(context);
-		String lo = HexUtil.toHex(crc32(context.getBytes(StandardCharsets.UTF_8)));
+		String hi = DigestUtils.sha1Hex(context);
+		String lo = u32Hex(crc32(context.getBytes(StandardCharsets.UTF_8)));
 		return (hi.substring(0, 8) + StringPool.DASH + lo).toLowerCase();
 	}
 
@@ -61,6 +61,10 @@ public class RestResource implements ResourceDescribe {
 		CRC32 crc32 = new CRC32();
 		crc32.update(data);
 		return crc32.getValue();
+	}
+
+	String u32Hex(long value) {
+		return StringUtils.leftPad(Long.toHexString(value), 8);
 	}
 
 }

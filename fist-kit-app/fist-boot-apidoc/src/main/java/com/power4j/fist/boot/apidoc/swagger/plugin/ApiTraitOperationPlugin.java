@@ -16,7 +16,8 @@
 
 package com.power4j.fist.boot.apidoc.swagger.plugin;
 
-import cn.hutool.core.bean.BeanUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.power4j.fist.boot.apidoc.ApiDetails;
 import com.power4j.fist.boot.apidoc.ApiTrait;
 import com.power4j.fist.boot.apidoc.DocConstant;
@@ -39,6 +40,11 @@ import java.util.Map;
  */
 public class ApiTraitOperationPlugin implements OperationBuilderPlugin {
 
+	private final static ObjectMapper MAPPER = new ObjectMapper();
+
+	private final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<Map<String, Object>>() {
+	};
+
 	@Override
 	public void apply(OperationContext context) {
 		context.findAnnotation(ApiTrait.class).map(DocUtil::createDetails).map(this::toObjectVendorExtension)
@@ -53,7 +59,7 @@ public class ApiTraitOperationPlugin implements OperationBuilderPlugin {
 
 	private ObjectVendorExtension toObjectVendorExtension(ApiDetails details) {
 		ObjectVendorExtension extension = new ObjectVendorExtension(DocConstant.SECURE_API_DETAILS_EXTENSION);
-		Map<String, Object> props = BeanUtil.beanToMap(details);
+		Map<String, Object> props = MAPPER.convertValue(details, MAP_TYPE);
 		props.forEach((k, v) -> {
 			extension.addProperty(new StringVendorExtension(k, v.toString()));
 		});

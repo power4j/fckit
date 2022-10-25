@@ -16,11 +16,11 @@
 
 package com.power4j.fist.boot.apidoc;
 
-import cn.hutool.core.lang.Assert;
-import cn.hutool.crypto.digest.DigestUtil;
 import com.power4j.coca.kit.common.text.StringPool;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -52,12 +52,12 @@ public class HandlerMethodResource implements ResourceDescribe {
 	@Override
 	public String getResourceSign() {
 		String context = buildMethodSignature();
-		return DigestUtil.sha1Hex(context).toLowerCase();
+		return DigestUtils.sha1Hex(context).toLowerCase();
 	}
 
 	private String buildMethodSignature() {
-		Assert.notNull(methodName);
-		Assert.notNull(returnType);
+		Validate.notNull(methodName);
+		Validate.notNull(returnType);
 		StringBuilder builder = new StringBuilder();
 		builder.append(StringPool.BRACKET_L).append(clazz.getSimpleName()).append(StringPool.BRACKET_R);
 		builder.append(methodName);

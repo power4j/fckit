@@ -16,7 +16,6 @@
 
 package com.power4j.fist.boot.apidoc;
 
-import cn.hutool.core.text.CharSequenceUtil;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +37,7 @@ public class DocUtil {
 		ApiTrait apiTrait = supplier.get();
 		if (Objects.nonNull(apiTrait)) {
 			ApiDetails details = createDetails(apiTrait);
-			if (CharSequenceUtil.isEmpty(details.getResourceName())) {
+			if (StringUtils.isEmpty(details.getResourceName())) {
 				details.setResourceName(describe.getResourceName());
 			}
 			return Optional.of(details);
