@@ -23,6 +23,7 @@
     <groupId>com.power4j.fist</groupId>
     <artifactId>fist-kit-cloud</artifactId>
     <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>fist-cloud-rpc-feign</artifactId>

@@ -23,6 +23,7 @@
     <groupId>com.power4j.fist</groupId>
     <artifactId>fist-kit-app</artifactId>
     <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>fist-web</artifactId>

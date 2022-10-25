@@ -23,6 +23,7 @@
     <groupId>com.power4j.fist</groupId>
     <artifactId>fist-kit-app</artifactId>
     <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>fist-boot-apidoc</artifactId>
@@ -32,10 +33,6 @@
     <dependency>
       <groupId>com.power4j.fist</groupId>
       <artifactId>fist-kit-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>cn.hutool</groupId>
-      <artifactId>hutool-all</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
