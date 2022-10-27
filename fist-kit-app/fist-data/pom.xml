@@ -26,11 +26,11 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>fist-crud</artifactId>
+  <artifactId>fist-data</artifactId>
   <packaging>pom</packaging>
 
   <modules>
-    <module>fist-support-crud</module>
+    <module>fist-support-data</module>
     <module>fist-boot-data</module>
     <module>fist-boot-crud-mybatis</module>
   </modules>

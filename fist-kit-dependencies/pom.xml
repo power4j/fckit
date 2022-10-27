@@ -90,7 +90,7 @@
       </dependency>
       <dependency>
         <groupId>com.power4j.fist</groupId>
-        <artifactId>fist-support-crud</artifactId>
+        <artifactId>fist-support-data</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

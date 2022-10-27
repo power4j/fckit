@@ -31,7 +31,7 @@
 
   <modules>
     <module>fist-web</module>
-    <module>fist-crud</module>
+    <module>fist-data</module>
     <module>fist-security</module>
     <module>fist-boot-apidoc</module>
   </modules>
