@@ -18,6 +18,7 @@ package com.power4j.fist.boot.autoconfigure.data;
 
 import com.power4j.fist.data.tenant.InTenantAspect;
 import com.power4j.fist.data.tenant.TenantContextFilter;
+import com.power4j.fist.data.tenant.TenantInvokeAspect;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -46,6 +47,11 @@ public class DataAutoConfiguration {
 	@Bean
 	public InTenantAspect inTenantAspect() {
 		return new InTenantAspect();
+	}
+
+	@Bean
+	public TenantInvokeAspect tenantInvokeAspect() {
+		return new TenantInvokeAspect();
 	}
 
 	@ConditionalOnClass({ Servlet.class })

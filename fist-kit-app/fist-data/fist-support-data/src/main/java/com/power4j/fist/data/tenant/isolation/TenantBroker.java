@@ -17,11 +17,15 @@
 package com.power4j.fist.data.tenant.isolation;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import com.power4j.coca.kit.common.exception.WrappedException;
-import com.power4j.coca.kit.common.util.function.RunAny;
-import com.power4j.coca.kit.common.util.function.SupplyAny;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.function.Failable;
+import org.apache.commons.lang3.function.FailableConsumer;
+import org.apache.commons.lang3.function.FailableFunction;
+import org.apache.commons.lang3.function.FailableRunnable;
+import org.apache.commons.lang3.function.FailableSupplier;
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayDeque;
@@ -29,8 +33,7 @@ import java.util.Deque;
 
 /**
  * @author CJ (power4j@outlook.com)
- * @date 2021/11/11
- * @since 1.0
+ * @since 2022.1
  */
 @UtilityClass
 public class TenantBroker {
@@ -42,40 +45,69 @@ public class TenantBroker {
 		}
 	};
 
-	public void runAs(@Nullable String tenant, RunAny runnable) throws WrappedException {
-		String pre = TenantHolder.getTenant().orElse(null);
-		try {
-			TenantHolder.setTenant(tenant);
-			DEBUG.get().push(tenant);
-			runnable.run();
+	/**
+	 * 在指定的租户上下文中执行业务逻辑,并返回业务逻辑执行结构
+	 * @param tenant 租户
+	 * @param action 业务逻辑
+	 * @param errorHandler 异常处理器
+	 * @return 返回值由 action 的返回值确定
+	 * @param <T> 返回值类型
+	 */
+	public <T> T applyAs(final @Nullable String tenant, FailableSupplier<T, ? extends Throwable> action,
+			@Nullable final FailableFunction<Throwable, T, ? extends Throwable> errorHandler) {
+		MutableObject<T> ret = new MutableObject<>();
+		FailableRunnable<? extends Throwable> runnable = () -> ret.setValue(action.get());
+		FailableConsumer<Throwable, ? extends Throwable> errorResume;
+		if (errorHandler == null) {
+			errorResume = Failable::rethrow;
 		}
-		catch (Throwable throwable) {
-			throw WrappedException.wrap(throwable);
+		else {
+			errorResume = ex -> ret.setValue(errorHandler.apply(ex));
 		}
-		finally {
-			TenantHolder.setTenant(pre);
-			DEBUG.get().pop();
-		}
+		runAs(tenant, runnable, errorResume);
+		return ret.getValue();
 	}
 
-	public <T> T applyAs(@Nullable String tenant, SupplyAny<T> supplier) throws WrappedException {
-		String pre = TenantHolder.getTenant().orElse(null);
-		try {
-			TenantHolder.setTenant(tenant);
-			DEBUG.get().push(tenant);
-			return supplier.get();
-		}
-		catch (Throwable throwable) {
-			throw WrappedException.wrap(throwable);
-		}
-		finally {
+	/**
+	 * 在指定的租户上下文中执行业务逻辑,并返回业务逻辑执行结构
+	 * @param tenant 租户
+	 * @param action 业务逻辑
+	 * @return 返回值由 action 的返回值确定
+	 * @param <T> 返回值类型
+	 */
+	public <T> T applyAs(final @Nullable String tenant, FailableSupplier<T, ? extends Throwable> action) {
+		return applyAs(tenant, action, null);
+	}
+
+	/**
+	 * 在指定的租户上下文中执行业务逻辑
+	 * @param tenant 租户
+	 * @param action 业务逻辑
+	 * @param errorHandler 异常处理器
+	 */
+	public void runAs(final @Nullable String tenant, final FailableRunnable<? extends Throwable> action,
+			@Nullable final FailableConsumer<Throwable, ? extends Throwable> errorHandler) {
+
+		final String pre = TenantHolder.getTenant().orElse(null);
+		TenantHolder.setTenant(tenant);
+		DEBUG.get().push(ObjectUtils.defaultIfNull(tenant, "null"));
+		Failable.tryWithResources(action, errorHandler, () -> {
 			TenantHolder.setTenant(pre);
 			DEBUG.get().pop();
-		}
+		});
+	}
+
+	/**
+	 * 在指定的租户上下文中执行业务逻辑
+	 * @param tenant 租户
+	 * @param action 业务逻辑
+	 */
+	public void runAs(final @Nullable String tenant, final FailableRunnable<? extends Throwable> action) {
+		runAs(tenant, action, null);
 	}
 
 	public String dump() {
-		return StringUtils.join(" > ", DEBUG.get());
+		return StringUtils.join(DEBUG.get(), " > ");
 	}
 
 }

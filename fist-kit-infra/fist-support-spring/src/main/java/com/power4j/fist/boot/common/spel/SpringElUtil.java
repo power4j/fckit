@@ -44,7 +44,7 @@ public class SpringElUtil {
 	 * @return 执行表达式后的结果,求值发生异常时返回默认值
 	 */
 	@Nullable
-	public <T> T eval(VariableProvider variableProvider, String expr, Class<T> clazz, T defVal) {
+	public <T> T eval(VariableProvider variableProvider, String expr, Class<T> clazz, @Nullable T defVal) {
 		try {
 			return eval(variableProvider, expr, clazz);
 		}

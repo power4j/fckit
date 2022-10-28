@@ -23,7 +23,7 @@ import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInt
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
 import com.power4j.fist.boot.mybaits.handler.AuditFiller;
-import com.power4j.fist.boot.mybaits.tenant.TenantHandler;
+import com.power4j.fist.boot.mybaits.tenant.DynamicTenantHandler;
 import com.power4j.fist.boot.mybaits.tenant.TenantProperties;
 import com.power4j.fist.boot.security.core.UserInfoSupplier;
 import lombok.RequiredArgsConstructor;
@@ -85,8 +85,8 @@ public class MybatisAutoConfiguration {
 	@ConditionalOnProperty(prefix = TenantProperties.PROP_PREFIX, name = "enabled", havingValue = "true")
 	public TenantLineInnerInterceptor tenantLineInnerInterceptor() {
 		TenantLineInnerInterceptor innerInterceptor = new TenantLineInnerInterceptor();
-		innerInterceptor
-				.setTenantLineHandler(new TenantHandler(tenantProperties.getColumn(), tenantProperties.getTables()));
+		innerInterceptor.setTenantLineHandler(
+				new DynamicTenantHandler(tenantProperties.getColumn(), tenantProperties.getTables()));
 		return innerInterceptor;
 	}
 

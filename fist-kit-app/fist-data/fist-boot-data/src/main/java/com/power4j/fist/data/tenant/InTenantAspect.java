@@ -31,7 +31,6 @@ import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -52,19 +51,7 @@ public class InTenantAspect {
 		Method method = AopUtil.getMethod(point);
 		final String tenant = SpringElUtil.eval(MethodParameterResolver.of(method, arguments), inTenant.value(),
 				String.class, null);
-		Ret ret = TenantBroker.applyAs(tenant, () -> {
-			try {
-				Object object = point.proceed();
-				return new Ret(null, object);
-			}
-			catch (Throwable e) {
-				return new Ret(e, null);
-			}
-		});
-		if (Objects.nonNull(ret.getThrowable())) {
-			throw ret.getThrowable();
-		}
-		return ret.getObject();
+		return TenantBroker.applyAs(tenant, point::proceed, null);
 	}
 
 	@Data

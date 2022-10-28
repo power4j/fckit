@@ -31,6 +31,10 @@
   <dependencies>
     <dependency>
       <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-kit-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
       <artifactId>fist-support-data</artifactId>
     </dependency>
     <dependency>

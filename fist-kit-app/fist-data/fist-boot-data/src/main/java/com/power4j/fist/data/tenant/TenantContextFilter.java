@@ -43,7 +43,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
 			return;
 		}
 		try {
-			TenantBroker.runAs(value, () -> filterChain.doFilter(request, response));
+			TenantBroker.runAs(value, () -> filterChain.doFilter(request, response), null);
 		}
 		catch (WrappedException e) {
 			if (e.getCause() instanceof ServletException) {
