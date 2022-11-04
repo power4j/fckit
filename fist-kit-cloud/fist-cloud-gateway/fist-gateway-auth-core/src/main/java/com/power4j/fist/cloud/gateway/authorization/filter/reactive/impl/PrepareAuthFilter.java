@@ -45,7 +45,7 @@ public class PrepareAuthFilter implements GatewayAuthFilter {
 	public Mono<Void> filter(AuthContext ctx, ServerAuthFilterChain<AuthContext> chain) {
 		final ServerWebExchange exchange = AuthUtils.eraseHeader(ctx.getExchange(),
 				SecurityConstant.HEADER_USER_TOKEN_INNER);
-		LinkedHashSet<URI> uris = exchange.getRequiredAttribute(GATEWAY_ORIGINAL_REQUEST_URL_ATTR);
+		LinkedHashSet<URI> uris = exchange.getAttribute(GATEWAY_ORIGINAL_REQUEST_URL_ATTR);
 		final ServerHttpRequest request = exchange.getRequest();
 		ctx.setExchange(exchange);
 		URI originUri;
