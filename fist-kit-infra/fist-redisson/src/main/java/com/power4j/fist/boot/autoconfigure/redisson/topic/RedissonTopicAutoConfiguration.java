@@ -12,6 +12,7 @@ import org.redisson.spring.starter.RedissonAutoConfiguration;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -23,25 +24,24 @@ import org.springframework.context.annotation.Bean;
 @RequiredArgsConstructor
 @AutoConfiguration
 @ConditionalOnClass({ Redisson.class })
+@ConditionalOnBean(RedissonClient.class)
 @AutoConfigureAfter(RedissonAutoConfiguration.class)
 @EnableConfigurationProperties(TopicProperties.class)
 public class RedissonTopicAutoConfiguration {
-
-	private final RedissonClient redisson;
 
 	private final ObjectProvider<Codec> codecObjectProvider;
 
 	private final ObjectProvider<NameGenerator> nameCustomizerObjectProvider;
 
 	@Bean
-	TopicListenerBeanProcessor topicConsumerBeanProcessor() {
+	TopicListenerBeanProcessor topicConsumerBeanProcessor(RedissonClient redisson) {
 		NameGenerator customizer = nameCustomizerObjectProvider.getIfAvailable(DefaultNameGenerator::new);
 		Codec codec = codecObjectProvider.getIfAvailable();
 		return new TopicListenerBeanProcessor(customizer, redisson, codec);
 	}
 
 	@Bean
-	TopicPublisher topicPublisher() {
+	TopicPublisher topicPublisher(RedissonClient redisson) {
 		NameGenerator customizer = nameCustomizerObjectProvider.getIfAvailable(DefaultNameGenerator::new);
 		Codec codec = codecObjectProvider.getIfAvailable();
 		return new DefaultTopicPublisher(customizer, redisson, codec);
