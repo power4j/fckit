@@ -57,6 +57,11 @@
         <artifactId>fist-redisson</artifactId>
         <version>${revision}</version>
       </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-jackson</artifactId>
+        <version>${revision}</version>
+      </dependency>
       <!-- fist kits app -->
       <dependency>
         <groupId>com.power4j.fist</groupId>

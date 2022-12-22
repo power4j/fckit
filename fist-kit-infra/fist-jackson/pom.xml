@@ -21,19 +21,31 @@
 
   <parent>
     <groupId>com.power4j.fist</groupId>
-    <artifactId>fist-kit-build</artifactId>
+    <artifactId>fist-kit-infra</artifactId>
     <version>${revision}</version>
-    <relativePath>../fist-kit-build</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>fist-kit-infra</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>fist-jackson</artifactId>
 
-  <modules>
-    <module>fist-kit-api</module>
-    <module>fist-jackson</module>
-    <module>fist-redisson</module>
-    <module>fist-support-test</module>
-    <module>fist-support-spring</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+    </dependency>
+    <!-- test -->
+    <dependency>
+      <groupId>com.power4j.fist</groupId>
+      <artifactId>fist-support-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 </project>
