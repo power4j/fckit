@@ -26,21 +26,21 @@ public interface Groups {
 	/**
 	 * 默认（通用规则）
 	 */
-	interface Default {
+	interface Default extends javax.validation.groups.Default {
 
 	}
 
 	/**
 	 * 新增操作特有规则
 	 */
-	interface Create {
+	interface Create extends Default {
 
 	}
 
 	/**
 	 * 更新操作特有规则
 	 */
-	interface Update {
+	interface Update extends Default {
 
 	}
 
