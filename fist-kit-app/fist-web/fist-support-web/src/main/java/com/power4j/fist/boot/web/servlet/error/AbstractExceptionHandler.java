@@ -17,22 +17,20 @@
 package com.power4j.fist.boot.web.servlet.error;
 
 import com.power4j.coca.kit.common.datetime.DateTimeKit;
-import com.power4j.coca.kit.common.lang.Obj;
-import com.power4j.fist.boot.util.ApplicationContextHolder;
-import com.power4j.fist.boot.util.SpringEventUtil;
-import com.power4j.fist.boot.mon.info.EnvInfo;
-import com.power4j.fist.boot.web.event.error.HandlerErrorEvent;
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
-import com.power4j.fist.boot.web.event.error.RequestInfo;
+import com.power4j.fist.boot.mon.info.InfoUtil;
 import com.power4j.fist.boot.mon.info.TraceInfo;
 import com.power4j.fist.boot.mon.info.TraceInfoResolver;
+import com.power4j.fist.boot.util.ApplicationContextHolder;
+import com.power4j.fist.boot.util.SpringEventUtil;
+import com.power4j.fist.boot.web.event.error.HandlerErrorEvent;
+import com.power4j.fist.boot.web.event.error.RequestInfo;
 import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -40,8 +38,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 1.0
  */
 public class AbstractExceptionHandler {
-
-	private final AtomicReference<EnvInfo> envInfo = new AtomicReference<>();
 
 	private TraceInfoResolver<HttpServletRequest> traceInfoResolver = request -> Optional.empty();
 
@@ -69,7 +65,7 @@ public class AbstractExceptionHandler {
 		HandlerErrorEvent handlerErrorEvent = new HandlerErrorEvent();
 		handlerErrorEvent.setAppName(appName);
 		handlerErrorEvent.setTime(DateTimeKit.utcNow());
-		handlerErrorEvent.setEnvInfo(getEnvInfo());
+		handlerErrorEvent.setEnvInfo(InfoUtil.getEnvInfo());
 		handlerErrorEvent.setError(ExceptionInfo.from(e));
 		handlerErrorEvent.setRequestInfo(RequestInfo.from(HttpServletRequestUtil.getCurrentRequest()));
 		handlerErrorEvent.setTraceInfo(traceInfo);
@@ -84,10 +80,6 @@ public class AbstractExceptionHandler {
 	 */
 	protected boolean filterErrorEvent(HandlerErrorEvent handlerErrorEvent) {
 		return true;
-	}
-
-	private EnvInfo getEnvInfo() {
-		return envInfo.updateAndGet((o) -> Obj.keepIfNotNull(o, EnvInfo::resolve));
 	}
 
 }

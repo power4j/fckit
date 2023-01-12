@@ -18,8 +18,8 @@ package com.power4j.fist.boot.mon;
 
 import com.power4j.coca.kit.common.datetime.DateTimeKit;
 import com.power4j.fist.boot.mon.event.ServerErrorEvent;
-import com.power4j.fist.boot.mon.info.EnvInfo;
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
+import com.power4j.fist.boot.mon.info.InfoUtil;
 import com.power4j.fist.boot.mon.info.TraceInfo;
 import com.power4j.fist.boot.util.ApplicationContextHolder;
 import lombok.experimental.UtilityClass;
@@ -27,7 +27,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.lang.Nullable;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -39,15 +38,13 @@ public class EventUtils {
 
 	private final static String KEY_APP_NAME = "spring.application.name";
 
-	private final static AtomicReference<EnvInfo> ENV_INFO_CACHE = new AtomicReference<>(EnvInfo.resolve());
-
 	public ServerErrorEvent createServerErrorEvent(@Nullable String description, Throwable e) {
 		String appName = getAppName().orElse("Unknown");
 		ServerErrorEvent errorEvent = new ServerErrorEvent();
 		errorEvent.setAppName(appName);
 		errorEvent.setDescription(ObjectUtils.defaultIfNull(description, ""));
 		errorEvent.setTime(DateTimeKit.utcNow());
-		errorEvent.setEnvInfo(ENV_INFO_CACHE.get());
+		errorEvent.setEnvInfo(InfoUtil.getEnvInfo());
 		errorEvent.setError(ExceptionInfo.from(e));
 		errorEvent.setTraceInfo(new TraceInfo());
 

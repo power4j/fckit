@@ -36,6 +36,9 @@ public class EnvInfo implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Nullable
+	private String hostName;
+
+	@Nullable
 	private String osName;
 
 	@Nullable
@@ -46,14 +49,5 @@ public class EnvInfo implements Serializable {
 
 	@Nullable
 	private String jvmVersion;
-
-	public static EnvInfo resolve() {
-		EnvInfo info = new EnvInfo();
-		info.setOsName(System.getProperty("os.name"));
-		info.setOsVersion(System.getProperty("os.version"));
-		info.setJvmName(System.getProperty("java.vm.name"));
-		info.setJvmVersion(System.getProperty("java.vm.version"));
-		return info;
-	}
 
 }
