@@ -49,8 +49,8 @@ public class InTenantAspect {
 	public Object around(ProceedingJoinPoint point, InTenant inTenant) throws Throwable {
 		Object[] arguments = point.getArgs();
 		Method method = AopUtil.getMethod(point);
-		final String tenant = SpringElUtil.eval(MethodParameterResolver.of(method, arguments), inTenant.value(),
-				String.class, null);
+		final String tenant = SpringElUtil.evalWithVariable(MethodParameterResolver.of(method, arguments), null,
+				inTenant.value(), String.class, null);
 		return TenantBroker.applyAs(tenant, point::proceed, null);
 	}
 

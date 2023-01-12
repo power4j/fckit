@@ -22,8 +22,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2022/1/18
@@ -41,7 +39,6 @@ class MethodParameterResolverTest {
 
 	@Test
 	void getVariables() throws NoSuchMethodException {
-		String expr = "#name";
 		Method method = Hello.class.getMethod("hello", String.class);
 		Object[] argv = new Object[] { "fist" };
 		Map<String, Object> variables = MethodParameterResolver.of(method, argv).getVariables();

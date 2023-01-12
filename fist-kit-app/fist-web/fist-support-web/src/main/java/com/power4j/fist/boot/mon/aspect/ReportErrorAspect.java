@@ -84,8 +84,8 @@ public class ReportErrorAspect {
 		if (ObjectUtils.isNotEmpty(expr)) {
 			Object[] arguments = point.getArgs();
 			Method method = AopUtil.getMethod(point);
-			return SpringElUtil.eval(MethodParameterResolver.of(method, arguments), expr, String.class,
-					StringPool.EMPTY);
+			return SpringElUtil.evalWithVariable(MethodParameterResolver.of(method, arguments), null, expr,
+					String.class, StringPool.EMPTY);
 		}
 		return StringPool.EMPTY;
 	}
