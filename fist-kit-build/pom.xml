@@ -111,16 +111,6 @@
         <version>${ez-captcha.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.swagger.core.v3</groupId>
-        <artifactId>swagger-annotations</artifactId>
-        <version>${swagger3-api.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.swagger.core.v3</groupId>
-        <artifactId>swagger-core</artifactId>
-        <version>${swagger3-api.version}</version>
-      </dependency>
-      <dependency>
         <groupId>io.springfox</groupId>
         <artifactId>springfox-oas</artifactId>
         <version>${springfox.version}</version>

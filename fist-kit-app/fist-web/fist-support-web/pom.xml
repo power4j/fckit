@@ -64,7 +64,7 @@
     <!-- optional -->
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-annotations</artifactId>
+      <artifactId>swagger-core</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>

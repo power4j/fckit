@@ -31,7 +31,7 @@
   <dependencies>
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-annotations</artifactId>
+      <artifactId>swagger-core</artifactId>
     </dependency>
     <dependency>
       <groupId>com.power4j.fist</groupId>
