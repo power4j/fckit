@@ -27,8 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.core.DefaultParameterNameDiscoverer;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.lang.reflect.Method;
 
@@ -40,10 +38,6 @@ import java.lang.reflect.Method;
 @Slf4j
 @Aspect
 public class InTenantAspect {
-
-	private final SpelExpressionParser parser = new SpelExpressionParser();
-
-	private final DefaultParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
 
 	@Around("@annotation(inTenant)")
 	public Object around(ProceedingJoinPoint point, InTenant inTenant) throws Throwable {
