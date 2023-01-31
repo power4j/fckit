@@ -20,6 +20,7 @@ import com.power4j.fist.data.domain.PageRequest;
 import com.power4j.fist.data.domain.Sort;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 
@@ -43,7 +44,7 @@ public class PageParameter implements Serializable {
 
 	public final static String ORDER_VALUE_DESC = "descend";
 
-	@Schema(description = "页码", defaultValue = "0")
+	@Schema(description = "页码", defaultValue = "1")
 	private Integer pageNumber;
 
 	@Schema(description = "页大小", defaultValue = "20")
@@ -68,6 +69,28 @@ public class PageParameter implements Serializable {
 		page.setField(sortField);
 		page.setOrder(order);
 		return page;
+	}
+
+	public PageParameter applyDefaultPage() {
+		this.pageSize = getPageSizeOrDefault(DEFAULT_PAGE_SIZE);
+		this.pageNumber = getPageNumberOrDefault(FIRST_PAGE);
+		return this;
+	}
+
+	public int getPageNumberOrDefault(int value) {
+		int pn = ObjectUtils.defaultIfNull(this.pageNumber, value);
+		if (pn < FIRST_PAGE) {
+			pn = FIRST_PAGE;
+		}
+		return pn;
+	}
+
+	public int getPageSizeOrDefault(int value) {
+		int ps = ObjectUtils.defaultIfNull(this.pageSize, value);
+		if (ps < 0) {
+			ps = DEFAULT_PAGE_SIZE;
+		}
+		return ps;
 	}
 
 	public PageRequest toPageRequest() {
