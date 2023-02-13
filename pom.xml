@@ -73,7 +73,7 @@
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <!-- libs -->
     <commons-io.version>2.11.0</commons-io.version>
-    <coca-kit.version>0.1.3</coca-kit.version>
+    <coca-kit.version>0.1.4</coca-kit.version>
     <guava.version>31.1-jre</guava.version>
     <hutool.version>5.8.11</hutool.version>
     <redisson.version>3.19.1</redisson.version>
