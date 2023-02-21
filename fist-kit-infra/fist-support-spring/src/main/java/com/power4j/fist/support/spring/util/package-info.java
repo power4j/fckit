@@ -21,7 +21,7 @@
  */
 @NonNullApi
 @NonNullFields
-package com.power4j.fist.boot.util;
+package com.power4j.fist.support.spring.util;
 
 import org.springframework.lang.NonNullApi;
 import org.springframework.lang.NonNullFields;

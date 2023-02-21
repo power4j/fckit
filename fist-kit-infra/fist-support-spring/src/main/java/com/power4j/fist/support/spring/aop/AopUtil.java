@@ -14,35 +14,35 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.common.spel;
+package com.power4j.fist.support.spring.aop;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import lombok.experimental.UtilityClass;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.reflect.MethodSignature;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 
 /**
  * @author CJ (power4j@outlook.com)
  * @date 2022/1/18
  * @since 1.0
  */
-class MethodParameterResolverTest {
+@UtilityClass
+public class AopUtil {
 
-	static class Hello {
-
-		public void hello(String name) {
-			// Nothing
+	public Method getMethod(ProceedingJoinPoint joinPoint) {
+		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+		Method method = signature.getMethod();
+		if (method.getDeclaringClass().isInterface()) {
+			try {
+				method = joinPoint.getTarget().getClass().getDeclaredMethod(joinPoint.getSignature().getName(),
+						method.getParameterTypes());
+			}
+			catch (SecurityException | NoSuchMethodException e) {
+				throw new IllegalStateException(e);
+			}
 		}
-
-	}
-
-	@Test
-	void getVariables() throws NoSuchMethodException {
-		Method method = Hello.class.getMethod("hello", String.class);
-		Object[] argv = new Object[] { "fist" };
-		Map<String, Object> variables = MethodParameterResolver.of(method, argv).getVariables();
-		Assertions.assertEquals("fist", variables.get("name"));
+		return method;
 	}
 
 }

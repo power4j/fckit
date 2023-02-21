@@ -19,7 +19,7 @@ package com.power4j.fist.boot.autoconfigure.common;
 import com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration;
 import com.power4j.fist.boot.autoconfigure.mon.AppMonConfiguration;
 import com.power4j.fist.boot.common.jackson.JacksonConfig;
-import com.power4j.fist.boot.util.ApplicationContextHolder;
+import com.power4j.fist.support.spring.util.ApplicationContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Import;

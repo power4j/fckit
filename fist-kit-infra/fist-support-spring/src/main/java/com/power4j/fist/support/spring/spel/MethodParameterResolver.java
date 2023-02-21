@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.common.spel;
+package com.power4j.fist.support.spring.spel;
 
 import org.springframework.core.DefaultParameterNameDiscoverer;
 

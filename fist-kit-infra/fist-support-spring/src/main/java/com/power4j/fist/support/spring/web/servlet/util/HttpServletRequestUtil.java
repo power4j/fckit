@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.web.servlet.util;
+package com.power4j.fist.support.spring.web.servlet.util;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;

@@ -16,7 +16,7 @@
 
 package com.power4j.fist.data.tenant;
 
-import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
+import com.power4j.fist.support.spring.web.servlet.util.HttpServletRequestUtil;
 import lombok.experimental.UtilityClass;
 
 import javax.servlet.http.HttpServletRequest;

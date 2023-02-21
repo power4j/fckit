@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.web.reactive.util;
+package com.power4j.fist.support.spring.web.reactive.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.experimental.UtilityClass;

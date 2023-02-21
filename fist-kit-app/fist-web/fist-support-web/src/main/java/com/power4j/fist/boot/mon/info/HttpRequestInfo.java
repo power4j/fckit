@@ -16,7 +16,7 @@
 
 package com.power4j.fist.boot.mon.info;
 
-import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
+import com.power4j.fist.support.spring.web.servlet.util.HttpServletRequestUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

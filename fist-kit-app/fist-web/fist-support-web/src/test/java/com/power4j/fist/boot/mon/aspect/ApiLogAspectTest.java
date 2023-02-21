@@ -1,7 +1,7 @@
 package com.power4j.fist.boot.mon.aspect;
 
 import com.power4j.fist.boot.mon.event.ApiLogEvent;
-import com.power4j.fist.boot.util.ApplicationContextHolder;
+import com.power4j.fist.support.spring.util.ApplicationContextHolder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;

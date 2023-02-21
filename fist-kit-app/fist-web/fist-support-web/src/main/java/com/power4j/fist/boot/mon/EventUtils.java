@@ -21,7 +21,7 @@ import com.power4j.fist.boot.mon.event.ServerErrorEvent;
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.mon.info.InfoUtil;
 import com.power4j.fist.boot.mon.info.TraceInfo;
-import com.power4j.fist.boot.util.ApplicationContextHolder;
+import com.power4j.fist.support.spring.util.ApplicationContextHolder;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.lang.Nullable;

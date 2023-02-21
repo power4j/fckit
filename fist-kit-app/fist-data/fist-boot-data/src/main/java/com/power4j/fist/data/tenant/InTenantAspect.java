@@ -16,9 +16,9 @@
 
 package com.power4j.fist.data.tenant;
 
-import com.power4j.fist.boot.common.aop.AopUtil;
-import com.power4j.fist.boot.common.spel.MethodParameterResolver;
-import com.power4j.fist.boot.common.spel.SpringElUtil;
+import com.power4j.fist.support.spring.aop.AopUtil;
+import com.power4j.fist.support.spring.spel.MethodParameterResolver;
+import com.power4j.fist.support.spring.spel.SpringElUtil;
 import com.power4j.fist.data.tenant.annotation.InTenant;
 import com.power4j.fist.data.tenant.isolation.TenantBroker;
 import lombok.Data;

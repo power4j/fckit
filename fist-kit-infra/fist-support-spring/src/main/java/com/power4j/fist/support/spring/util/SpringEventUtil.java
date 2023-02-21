@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.util;
+package com.power4j.fist.support.spring.util;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.context.ApplicationEvent;

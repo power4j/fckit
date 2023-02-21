@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.common.spel;
+package com.power4j.fist.support.spring.spel;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;

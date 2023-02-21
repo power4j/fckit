@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.power4j.fist.boot.util;
+package com.power4j.fist.support.spring.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
