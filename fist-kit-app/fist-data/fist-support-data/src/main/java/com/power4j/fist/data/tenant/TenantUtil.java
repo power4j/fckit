@@ -32,7 +32,7 @@ public class TenantUtil {
 
 	public Optional<String> resolveTenantId(HttpServletRequest request) {
 		return Optional.ofNullable(HttpServletRequestUtil.getHeader(request, TenantConstant.TENANT_ID_HEADER)
-				.orElse(request.getParameter(TenantConstant.TENANT_ID_PARAMETER)));
+			.orElse(request.getParameter(TenantConstant.TENANT_ID_PARAMETER)));
 	}
 
 }

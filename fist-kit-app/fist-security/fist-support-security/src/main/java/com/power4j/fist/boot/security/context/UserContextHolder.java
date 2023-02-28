@@ -46,7 +46,7 @@ public final class UserContextHolder {
 
 	public static UserInfo requireUser() {
 		return getUser()
-				.orElseThrow(() -> new IllegalStateException("Can not offer " + UserInfo.class.getSimpleName()));
+			.orElseThrow(() -> new IllegalStateException("Can not offer " + UserInfo.class.getSimpleName()));
 	}
 
 	public static void setUser(@Nullable UserInfo val) {

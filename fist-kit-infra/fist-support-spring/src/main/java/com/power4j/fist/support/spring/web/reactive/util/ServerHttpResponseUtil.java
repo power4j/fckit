@@ -79,7 +79,7 @@ public class ServerHttpResponseUtil {
 	 */
 	public Mono<Void> writeUtf8String(ServerHttpResponse response, Mono<String> str) {
 		return str.map(s -> s.getBytes(StandardCharsets.UTF_8))
-				.flatMap(bytes -> writeBytes(response, Mono.just(bytes)));
+			.flatMap(bytes -> writeBytes(response, Mono.just(bytes)));
 	}
 
 	/**
@@ -89,8 +89,8 @@ public class ServerHttpResponseUtil {
 	 * @return Mono
 	 */
 	public Mono<Void> writeBytes(ServerHttpResponse response, Mono<byte[]> data) {
-		return data.map(bytes -> response.bufferFactory().wrap(bytes)).flatMap(
-				buffer -> response.writeWith(Mono.just(buffer)).doOnError(e -> DataBufferUtils.release(buffer)));
+		return data.map(bytes -> response.bufferFactory().wrap(bytes))
+			.flatMap(buffer -> response.writeWith(Mono.just(buffer)).doOnError(e -> DataBufferUtils.release(buffer)));
 	}
 
 	/**
@@ -100,8 +100,8 @@ public class ServerHttpResponseUtil {
 	 * @return Mono
 	 */
 	public Mono<Void> writeBuffer(ServerHttpResponse response, Mono<ByteBuffer> data) {
-		return data.map(bytes -> response.bufferFactory().wrap(bytes)).flatMap(
-				buffer -> response.writeWith(Mono.just(buffer)).doOnError(e -> DataBufferUtils.release(buffer)));
+		return data.map(bytes -> response.bufferFactory().wrap(bytes))
+			.flatMap(buffer -> response.writeWith(Mono.just(buffer)).doOnError(e -> DataBufferUtils.release(buffer)));
 	}
 
 	public ServerHttpResponse requireWriteable(ServerHttpResponse response) {

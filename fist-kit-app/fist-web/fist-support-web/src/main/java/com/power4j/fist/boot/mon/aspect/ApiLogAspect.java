@@ -108,8 +108,10 @@ public class ApiLogAspect {
 	}
 
 	AuthInfo getAuthInfo() {
-		return Optional.ofNullable(userInfoAccessor).flatMap(UserInfoAccessor::getUserInfo).map(AuthInfo::from)
-				.orElseGet(AuthInfo::new);
+		return Optional.ofNullable(userInfoAccessor)
+			.flatMap(UserInfoAccessor::getUserInfo)
+			.map(AuthInfo::from)
+			.orElseGet(AuthInfo::new);
 	}
 
 	void fetchResultInfo(Object result, ApiLogEvent event) {
@@ -123,8 +125,8 @@ public class ApiLogAspect {
 	}
 
 	void fetchErrorInfo(Throwable e, ApiLogEvent event) {
-		exceptionTranslator.translateException(e).ifPresentOrElse(event::setResponseInfo,
-				() -> event.setError(ExceptionInfo.from(e, 2000)));
+		exceptionTranslator.translateException(e)
+			.ifPresentOrElse(event::setResponseInfo, () -> event.setError(ExceptionInfo.from(e, 2000)));
 	}
 
 	String getDescription(ProceedingJoinPoint point) {

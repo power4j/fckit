@@ -58,10 +58,12 @@ public class AbstractExceptionHandler {
 	}
 
 	protected HandlerErrorEvent createErrorEvent(Throwable e) {
-		String appName = ApplicationContextHolder.getContextOptional().map(ApplicationContext::getApplicationName)
-				.orElse("未知应用");
+		String appName = ApplicationContextHolder.getContextOptional()
+			.map(ApplicationContext::getApplicationName)
+			.orElse("未知应用");
 		TraceInfo traceInfo = HttpServletRequestUtil.getCurrentRequestIfAvailable()
-				.flatMap(o -> traceInfoResolver.resolve(o)).orElse(new TraceInfo());
+			.flatMap(o -> traceInfoResolver.resolve(o))
+			.orElse(new TraceInfo());
 		HandlerErrorEvent handlerErrorEvent = new HandlerErrorEvent();
 		handlerErrorEvent.setAppName(appName);
 		handlerErrorEvent.setTime(DateTimeKit.utcNow());

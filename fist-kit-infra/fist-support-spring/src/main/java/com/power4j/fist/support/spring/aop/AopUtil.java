@@ -35,8 +35,9 @@ public class AopUtil {
 		Method method = signature.getMethod();
 		if (method.getDeclaringClass().isInterface()) {
 			try {
-				method = joinPoint.getTarget().getClass().getDeclaredMethod(joinPoint.getSignature().getName(),
-						method.getParameterTypes());
+				method = joinPoint.getTarget()
+					.getClass()
+					.getDeclaredMethod(joinPoint.getSignature().getName(), method.getParameterTypes());
 			}
 			catch (SecurityException | NoSuchMethodException e) {
 				throw new IllegalStateException(e);

@@ -47,7 +47,8 @@ public class Oauth2UserInfoExtractor extends DefaultUserInfoExtractor {
 		}
 		String clientId = MapUtils.getString(map, KEY_CLIENT_ID);
 		Map<String, Object> userInfoMap = (Map<String, Object>) Optional.of(map)
-				.map(o -> o.get(SecurityConstant.Auth2.INFO_KEY_USER_INFO)).orElse(null);
+			.map(o -> o.get(SecurityConstant.Auth2.INFO_KEY_USER_INFO))
+			.orElse(null);
 
 		if (Objects.isNull(userInfoMap)) {
 			log.debug("client authentication :{}", clientId);

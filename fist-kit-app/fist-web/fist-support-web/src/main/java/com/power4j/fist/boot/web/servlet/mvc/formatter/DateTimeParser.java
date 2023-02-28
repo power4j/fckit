@@ -42,20 +42,20 @@ import java.util.Optional;
 public class DateTimeParser {
 
 	public final static DateTimeFormatter DEFAULT_YEAR_MONTH_FORMATTER = DateTimeFormatter
-			.ofPattern(DateTimePattern.YEAR_MONTH);
+		.ofPattern(DateTimePattern.YEAR_MONTH);
 
 	public final static DateTimeFormatter DEFAULT_MONTH_DAY_FORMATTER = DateTimeFormatter
-			.ofPattern(DateTimePattern.MONTH_DAY);
+		.ofPattern(DateTimePattern.MONTH_DAY);
 
 	public final static DateTimeFormatter DEFAULT_DATE_FORMATTER = DateTimeFormatter.ofPattern(DateTimePattern.DATE);
 
 	public final static DateTimeFormatter DEFAULT_TIME_FORMATTER = DateTimeFormatter.ofPattern(DateTimePattern.TIME);
 
 	public final static DateTimeFormatter DEFAULT_DATETIME_FORMATTER = DateTimeFormatter
-			.ofPattern(DateTimePattern.DATETIME);
+		.ofPattern(DateTimePattern.DATETIME);
 
 	public final static DateTimeFormatter UTC_DATETIME_FORMATTER = DateTimeFormatter
-			.ofPattern(DateTimePattern.DATETIME_UTC);
+		.ofPattern(DateTimePattern.DATETIME_UTC);
 
 	private final static List<Pair<String, DateTimeFormatter>> YEAR_MONTH_FORMAT_REGISTRY = new ArrayList<>(3);
 

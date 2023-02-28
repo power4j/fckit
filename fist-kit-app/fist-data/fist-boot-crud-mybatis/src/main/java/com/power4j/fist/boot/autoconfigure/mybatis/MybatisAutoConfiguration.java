@@ -85,8 +85,8 @@ public class MybatisAutoConfiguration {
 	@ConditionalOnProperty(prefix = TenantProperties.PROP_PREFIX, name = "enabled", havingValue = "true")
 	public TenantLineInnerInterceptor tenantLineInnerInterceptor() {
 		TenantLineInnerInterceptor innerInterceptor = new TenantLineInnerInterceptor();
-		innerInterceptor.setTenantLineHandler(
-				new DynamicTenantHandler(tenantProperties.getColumn(), tenantProperties.getTables()));
+		innerInterceptor
+			.setTenantLineHandler(new DynamicTenantHandler(tenantProperties.getColumn(), tenantProperties.getTables()));
 		return innerInterceptor;
 	}
 

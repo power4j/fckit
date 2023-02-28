@@ -47,7 +47,7 @@ public class QueryTest {
 	long ID90001 = 90001L;
 
 	List<Long> ids = Collections
-			.unmodifiableList(LongStream.range(ID90001, ID90001 + 5).boxed().collect(Collectors.toList()));
+		.unmodifiableList(LongStream.range(ID90001, ID90001 + 5).boxed().collect(Collectors.toList()));
 
 	@Autowired
 	private BookRepository bookRepository;
@@ -96,8 +96,8 @@ public class QueryTest {
 		List<Book> list2 = bookRepository.findAllBy(wrapper2);
 		Assertions.assertEquals(0, list2.size());
 
-		LambdaQueryWrapper<Book> wrapper3 = bookRepository.lambdaWrapper().in(Book::getId,
-				Arrays.asList(ID90001, ID90001 + 1));
+		LambdaQueryWrapper<Book> wrapper3 = bookRepository.lambdaWrapper()
+			.in(Book::getId, Arrays.asList(ID90001, ID90001 + 1));
 		List<Book> list3 = bookRepository.findAllBy(wrapper3);
 		Assertions.assertEquals(2, list3.size());
 	}

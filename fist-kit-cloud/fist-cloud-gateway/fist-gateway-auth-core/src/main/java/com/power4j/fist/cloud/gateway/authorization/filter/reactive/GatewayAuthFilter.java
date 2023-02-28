@@ -39,8 +39,10 @@ public interface GatewayAuthFilter extends ServerAuthFilter<AuthContext> {
 	 * @return 返回状态调试信息
 	 */
 	default String checkpointDescription(AuthContext context) {
-		String prob = Optional.ofNullable(context.getAuthState()).map(AuthState::getProblem).map(AuthProblem::getMsg)
-				.orElse("null");
+		String prob = Optional.ofNullable(context.getAuthState())
+			.map(AuthState::getProblem)
+			.map(AuthProblem::getMsg)
+			.orElse("null");
 		return String.format("[AuthProblem] %s , [%s]", prob, getClass().getName());
 	}
 

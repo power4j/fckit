@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DataAutoConfigurationTest {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-			.withConfiguration(AutoConfigurations.of(DataAutoConfiguration.class));
+		.withConfiguration(AutoConfigurations.of(DataAutoConfiguration.class));
 
 	@Test
 	void shouldCreateDefaultBeans() {

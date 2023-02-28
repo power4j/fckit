@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  * 租户隔离注解,表示在某个租户的上下文中执行,也可用于重新指定租户
+ *
  * @author CJ (power4j@outlook.com)
  * @date 2021/11/11
  * @since 1.0

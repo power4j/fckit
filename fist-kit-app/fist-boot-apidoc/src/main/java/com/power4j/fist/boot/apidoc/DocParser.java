@@ -60,8 +60,9 @@ public class DocParser {
 		}
 		final JsonNode root = objectMapper.readTree(json);
 
-		Iterator<Map.Entry<String, JsonNode>> pathIter = Optional.ofNullable(root.get(KEY_PATHS)).map(JsonNode::fields)
-				.orElse(null);
+		Iterator<Map.Entry<String, JsonNode>> pathIter = Optional.ofNullable(root.get(KEY_PATHS))
+			.map(JsonNode::fields)
+			.orElse(null);
 		if (Objects.isNull(pathIter)) {
 			return Collections.emptyList();
 		}
@@ -73,8 +74,9 @@ public class DocParser {
 				apiModel.setMethod(kv.getKey().toLowerCase());
 				Optional<JsonNode> methodInfo = Optional.ofNullable(kv.getValue());
 				methodInfo.ifPresent(o -> {
-					apiModel.setAction(Optional.ofNullable(o.get(KEY_OPERATION_ID)).map(JsonNode::asText)
-							.orElse(StringPool.EMPTY));
+					apiModel.setAction(Optional.ofNullable(o.get(KEY_OPERATION_ID))
+						.map(JsonNode::asText)
+						.orElse(StringPool.EMPTY));
 					apiModel.setDocTags(Optional.ofNullable(o.get(KEY_TAGS)).map(this::readStrArray).orElse(null));
 					apiModel.setDescription(
 							Optional.ofNullable(o.get(KEY_SUMMARY)).map(JsonNode::asText).orElse(StringPool.EMPTY));
@@ -82,7 +84,7 @@ public class DocParser {
 				Optional<JsonNode> secureDetails = methodInfo.map(o -> o.get(DocConstant.SECURE_API_DETAILS_EXTENSION));
 				if (secureDetails.isEmpty()) {
 					secureDetails = methodInfo.map(o -> o.get(SWAGGER_EXTENSION_KEY))
-							.map(o -> o.get(DocConstant.SECURE_API_DETAILS_EXTENSION));
+						.map(o -> o.get(DocConstant.SECURE_API_DETAILS_EXTENSION));
 				}
 				if (secureDetails.isEmpty()) {
 					log.info("忽略注册 {} {}", kv.getKey(), path.getKey());

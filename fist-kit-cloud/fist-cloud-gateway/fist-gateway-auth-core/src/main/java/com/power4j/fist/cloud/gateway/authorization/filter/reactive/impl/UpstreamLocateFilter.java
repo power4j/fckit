@@ -100,7 +100,7 @@ public class UpstreamLocateFilter implements GatewayAuthFilter {
 	void updateApiProxy(@Nullable Route route, AuthContext context) {
 		RouteInfo routeInfo = Optional.ofNullable(route).map(RouteInfo::from).orElse(null);
 		ApiProxy upstream = proxyResolver.resolve(routeInfo, context.getExchange())
-				.orElseGet(() -> makeDefaultApiProxy(context));
+			.orElseGet(() -> makeDefaultApiProxy(context));
 		if (log.isTraceEnabled()) {
 			log.trace("use upstream : {}", upstream.description());
 		}

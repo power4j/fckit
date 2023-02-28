@@ -51,7 +51,8 @@ public class SafeModeFilter implements GatewayAuthFilter {
 	@Override
 	public Mono<Void> filter(AuthContext ctx, ServerAuthFilterChain<AuthContext> chain) {
 		Optional<String> address = Optional.ofNullable(ctx.getExchange().getRequest().getRemoteAddress())
-				.map(InetSocketAddress::getAddress).map(InetAddress::getHostAddress);
+			.map(InetSocketAddress::getAddress)
+			.map(InetAddress::getHostAddress);
 		boolean isSafe = address.map(s -> matchAny(s, whitelist)).orElse(false);
 
 		if (log.isDebugEnabled()) {

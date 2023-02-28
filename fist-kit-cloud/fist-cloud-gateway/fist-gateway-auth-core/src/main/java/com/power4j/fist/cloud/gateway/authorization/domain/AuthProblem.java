@@ -157,7 +157,8 @@ public class AuthProblem {
 	@Override
 	public String toString() {
 		return new StringJoiner(", ", AuthProblem.class.getSimpleName() + "[", "]").add("code=" + code)
-				.add("msgKey='" + msg + "'").toString();
+			.add("msgKey='" + msg + "'")
+			.toString();
 	}
 
 }

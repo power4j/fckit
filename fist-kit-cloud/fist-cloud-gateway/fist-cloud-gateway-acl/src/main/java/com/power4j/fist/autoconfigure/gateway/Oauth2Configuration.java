@@ -49,11 +49,13 @@ public class Oauth2Configuration {
 		if (StringUtils.startsWith(uri, LB_SCHEMA)) {
 			log.info("Use load-balanced client for: {}", uri);
 			client = lbWebClientBuilder()
-					.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret())).build();
+				.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret()))
+				.build();
 		}
 		else {
 			client = WebClient.builder()
-					.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret())).build();
+				.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret()))
+				.build();
 		}
 		ReactiveOpaqueTokenIntrospector opaqueTokenIntrospector = new DefaultReactiveOpaqueTokenIntrospector(uri,
 				client);

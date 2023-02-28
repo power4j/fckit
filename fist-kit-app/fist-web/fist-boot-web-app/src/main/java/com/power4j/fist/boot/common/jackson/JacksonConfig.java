@@ -98,9 +98,12 @@ public class JacksonConfig {
 
 	private void applyModules(Jackson2ObjectMapperBuilder builder) {
 		List<JacksonCustomizeProperties.ModuleName> excludeModules = ObjectUtils
-				.defaultIfNull(jacksonCustomizeProperties.getExcludeModules(), Collections.emptyList());
-		List<Module> modules = MODULE_MAP.entrySet().stream().filter(kv -> !excludeModules.contains(kv.getKey()))
-				.map(Map.Entry::getValue).collect(Collectors.toList());
+			.defaultIfNull(jacksonCustomizeProperties.getExcludeModules(), Collections.emptyList());
+		List<Module> modules = MODULE_MAP.entrySet()
+			.stream()
+			.filter(kv -> !excludeModules.contains(kv.getKey()))
+			.map(Map.Entry::getValue)
+			.collect(Collectors.toList());
 		if (!modules.isEmpty()) {
 			List<String> names = modules.stream().map(Module::getModuleName).collect(Collectors.toList());
 			log.info("Install modules: {}", names);

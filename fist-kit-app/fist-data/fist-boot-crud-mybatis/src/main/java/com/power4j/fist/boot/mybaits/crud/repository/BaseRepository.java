@@ -212,8 +212,9 @@ public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable>
 
 	@Override
 	public long lambdaCount(List<Eq<T>> expr, @Nullable ID exclude) {
-		Map<String, Object> parsed = expr.stream().collect(Collectors
-				.toMap(o -> lambdaHelper.colToStr(o.getColumn(), true), o -> Objects.requireNonNull(o.getValue())));
+		Map<String, Object> parsed = expr.stream()
+			.collect(Collectors.toMap(o -> lambdaHelper.colToStr(o.getColumn(), true),
+					o -> Objects.requireNonNull(o.getValue())));
 		return countByColumns(parsed, exclude);
 	}
 
@@ -239,8 +240,11 @@ public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable>
 		if (!tableInfo.havePK()) {
 			throw new UnsupportedOperationException("不支持没有ID字段的实体类型");
 		}
-		TableFieldInfo idField = tableInfo.getFieldList().stream()
-				.filter(o -> tableInfo.getKeyColumn().equals(o.getColumn())).findFirst().orElse(null);
+		TableFieldInfo idField = tableInfo.getFieldList()
+			.stream()
+			.filter(o -> tableInfo.getKeyColumn().equals(o.getColumn()))
+			.findFirst()
+			.orElse(null);
 		assert idField != null;
 
 		Object idValue = getFieldValue(entity, idField.getField());

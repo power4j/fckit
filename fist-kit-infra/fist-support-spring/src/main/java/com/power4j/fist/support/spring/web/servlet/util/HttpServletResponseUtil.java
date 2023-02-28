@@ -54,8 +54,9 @@ public class HttpServletResponseUtil {
 	 * @return
 	 */
 	public Optional<HttpServletResponse> getCurrentRequest() {
-		return Optional.ofNullable(RequestContextHolder.getRequestAttributes()).map(x -> (ServletRequestAttributes) x)
-				.map(ServletRequestAttributes::getResponse);
+		return Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+			.map(x -> (ServletRequestAttributes) x)
+			.map(ServletRequestAttributes::getResponse);
 	}
 
 	public static void writeJson(HttpServletResponse response, ObjectMapper objectMapper, Object payload,

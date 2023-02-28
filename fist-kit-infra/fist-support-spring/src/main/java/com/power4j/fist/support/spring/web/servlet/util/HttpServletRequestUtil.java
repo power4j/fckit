@@ -79,8 +79,9 @@ public class HttpServletRequestUtil {
 	 * @return Optional
 	 */
 	public Optional<HttpServletRequest> getCurrentRequestIfAvailable() {
-		return Optional.ofNullable(RequestContextHolder.getRequestAttributes()).map(x -> (ServletRequestAttributes) x)
-				.map(ServletRequestAttributes::getRequest);
+		return Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+			.map(x -> (ServletRequestAttributes) x)
+			.map(ServletRequestAttributes::getRequest);
 	}
 
 	/**
@@ -90,7 +91,7 @@ public class HttpServletRequestUtil {
 	 */
 	public HttpServletRequest getCurrentRequest() {
 		return getCurrentRequestIfAvailable()
-				.orElseThrow(() -> new IllegalStateException("Can not offer HttpServletRequest"));
+			.orElseThrow(() -> new IllegalStateException("Can not offer HttpServletRequest"));
 	}
 
 	/**

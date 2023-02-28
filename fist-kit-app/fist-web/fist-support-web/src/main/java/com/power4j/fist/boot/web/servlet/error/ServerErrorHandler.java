@@ -66,8 +66,8 @@ public class ServerErrorHandler extends AbstractExceptionHandler {
 
 	protected Result<?> makeResult(MsgBundleRejectedException e) {
 		Locale locale = Optional.ofNullable(localeResolver).map(LocaleResolver::resolve).orElse(Locale.CHINA);
-		String msg = Objects.requireNonNull(messageSourceAccessor).getMessage(e.getMsgKey(), e.getMsgArg(),
-				e.getMsgKey(), locale);
+		String msg = Objects.requireNonNull(messageSourceAccessor)
+			.getMessage(e.getMsgKey(), e.getMsgArg(), e.getMsgKey(), locale);
 		return Result.create(e.getCode(), msg, null);
 	}
 

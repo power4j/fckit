@@ -32,8 +32,8 @@ public class DefaultAccessDeniedHandler implements AccessDeniedHandler {
 		payload.put(KEY_CODE, ErrorCode.A0301);
 		payload.put(KEY_MESSAGE, String.format("Access denied(%s)", problem.getCode()));
 		return ServerHttpResponseUtil
-				.responseWithJsonObject(response, objectMapper, payload, translateHttpStatus(problem))
-				.then(Mono.defer(() -> exchange.getResponse().setComplete()));
+			.responseWithJsonObject(response, objectMapper, payload, translateHttpStatus(problem))
+			.then(Mono.defer(() -> exchange.getResponse().setComplete()));
 	}
 
 	static HttpStatus translateHttpStatus(AuthProblem problem) {
