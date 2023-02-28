@@ -23,7 +23,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.lang.Nullable;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,10 +44,6 @@ public class ApplicationContextHolder implements ApplicationContextAware, Dispos
 	}
 
 	public static Optional<ApplicationContext> getContextOptional() {
-		ApplicationContext context = CONTEXT_REF.get();
-		if (Objects.isNull(context)) {
-			throw new IllegalStateException("ApplicationContext is null");
-		}
 		return Optional.ofNullable(CONTEXT_REF.get());
 	}
 
