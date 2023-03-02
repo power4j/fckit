@@ -71,6 +71,7 @@
     <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
     <maven-surefire-plugin.version>3.0.0-M9</maven-surefire-plugin.version>
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+    <maven-dependency-plugin.version>3.5.0</maven-dependency-plugin.version>
     <!-- libs -->
     <commons-io.version>2.11.0</commons-io.version>
     <coca-kit.version>0.1.4</coca-kit.version>
@@ -252,6 +253,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${maven-compiler-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
