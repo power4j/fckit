@@ -19,7 +19,6 @@ package com.power4j.fist.cloud.autoconfigure.rpc.feign;
 import com.power4j.fist.cloud.rpc.feign.UserRelayInterceptor;
 import feign.RequestInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -29,7 +28,6 @@ import org.springframework.context.annotation.ComponentScan;
  * @since 1.0
  */
 @AutoConfiguration
-@EnableFeignClients(basePackages = "com.power4j.fist")
 @ComponentScan(basePackages = { "com.power4j.fist.cloud.autoconfigure.rpc.feign.error" })
 public class FeignClientAutoConfiguration {
 
