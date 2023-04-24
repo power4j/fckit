@@ -44,9 +44,9 @@
   </developers>
 
   <scm>
-    <url>https://github.com/power4j/fist-cloud-kit</url>
-    <connection>scm:git:git://github.com/power4j/fist-cloud-kit.git</connection>
-    <developerConnection>scm:git:https://github.com/power4j/fist-cloud-kit.git</developerConnection>
+    <url>https://github.com/power4j/fckit</url>
+    <connection>scm:git:git://github.com/power4j/fckit.git</connection>
+    <developerConnection>scm:git:https://github.com/power4j/fckit.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
