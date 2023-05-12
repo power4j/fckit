@@ -42,7 +42,8 @@ public class UserPermissionFilter implements GatewayAuthFilter {
 		}
 		final AuthenticatedUser userInfo = ctx.getUserInfo();
 		if (Objects.isNull(userInfo)) {
-			return exitChain(ctx, AuthProblem.PERMISSION_CHECK_DENIED.moreInfo("No user info"));
+			return exitChain(ctx,
+					AuthProblem.PERMISSION_CHECK_DENIED.advise(AuthProblem.Advise.AUTH).moreInfo("No user info"));
 		}
 		return validatePermission(ctx);
 	}

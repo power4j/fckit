@@ -37,8 +37,14 @@ public class DefaultAccessDeniedHandler implements AccessDeniedHandler {
 	}
 
 	static HttpStatus translateHttpStatus(AuthProblem problem) {
+		if (AuthProblem.Advise.AUTH.equals(problem.getAdvise())) {
+			return HttpStatus.UNAUTHORIZED;
+		}
 		if (problem.codeEquals(AuthProblem.HTTP_PROTOCOL.getCode())) {
 			return HttpStatus.NOT_IMPLEMENTED;
+		}
+		else if (problem.codeEquals(AuthProblem.AUTH_EXCEPTION.getCode())) {
+			return HttpStatus.INTERNAL_SERVER_ERROR;
 		}
 		return HttpStatus.FORBIDDEN;
 	}
