@@ -2,9 +2,9 @@
 ## 技术栈
 
 - JDK: `11`
-- spring-boot: `2.7.6`
-- spring-cloud: `2021.0.5`
-- spring-cloud-alibaba: `2021.0.4.0`
+- spring-boot: `3.0.2`
+- spring-cloud: `2022.0.0`
+- spring-cloud-alibaba: `2022.0.0.0-RC2`
 
 ## GIT 提交规范
 
