@@ -229,6 +229,11 @@
         <artifactId>mapstruct-processor</artifactId>
         <version>${mapstruct.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.github.seancfoley</groupId>
+        <artifactId>ipaddress</artifactId>
+        <version>${seancfoley.ipaddress.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
