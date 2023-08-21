@@ -59,8 +59,9 @@ public class DefaultProxyResolver implements ProxyResolver {
 	}
 
 	static String strip(String path, int parts) {
-		String newPath = "/" + Arrays.stream(StringUtils.tokenizeToStringArray(path, "/")).skip(parts)
-				.collect(Collectors.joining("/"));
+		String newPath = "/" + Arrays.stream(StringUtils.tokenizeToStringArray(path, "/"))
+			.skip(parts)
+			.collect(Collectors.joining("/"));
 		newPath += (newPath.length() > 1 && path.endsWith("/") ? "/" : "");
 		return newPath;
 	}

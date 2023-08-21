@@ -17,7 +17,7 @@
 package com.power4j.fist.boot.mon;
 
 import com.power4j.coca.kit.common.exception.WrappedException;
-import com.power4j.fist.boot.util.SpringEventUtil;
+import com.power4j.fist.support.spring.util.SpringEventUtil;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.function.FailableRunnable;
 import org.apache.commons.lang3.function.FailableSupplier;

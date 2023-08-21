@@ -24,7 +24,7 @@ import com.power4j.fist.boot.web.servlet.mvc.formatter.LocalDateTimeFormatter;
 import com.power4j.fist.boot.web.servlet.mvc.formatter.LocalTimeFormatter;
 import com.power4j.fist.boot.web.servlet.mvc.formatter.MonthDayFormatter;
 import com.power4j.fist.boot.web.servlet.mvc.formatter.YearMonthFormatter;
-import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
+import com.power4j.fist.support.spring.web.servlet.util.HttpServletRequestUtil;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;

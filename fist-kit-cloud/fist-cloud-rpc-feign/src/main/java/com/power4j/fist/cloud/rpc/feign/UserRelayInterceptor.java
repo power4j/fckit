@@ -40,8 +40,8 @@ public class UserRelayInterceptor implements RequestInterceptor {
 	@Override
 	public void apply(RequestTemplate template) {
 		List<String> tokens = Optional.ofNullable(template.headers().get(SecurityConstant.HEADER_USER_TOKEN_INNER))
-				.map(l -> l.stream().filter(StringUtils::isNotEmpty).collect(Collectors.toList()))
-				.orElse(Collections.emptyList());
+			.map(l -> l.stream().filter(StringUtils::isNotEmpty).collect(Collectors.toList()))
+			.orElse(Collections.emptyList());
 
 		// @formatter:off
 		if(!tokens.isEmpty()){

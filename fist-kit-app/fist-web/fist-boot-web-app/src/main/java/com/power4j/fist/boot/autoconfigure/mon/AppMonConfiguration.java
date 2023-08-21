@@ -29,8 +29,10 @@ import com.power4j.fist.boot.mon.listener.DefaultServerErrorEventListener;
 import com.power4j.fist.boot.security.core.UserInfoAccessor;
 import org.aspectj.lang.Aspects;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -69,12 +71,14 @@ public class AppMonConfiguration {
 
 	@Bean
 	@ConditionalOnClass(Aspects.class)
+	@ConditionalOnProperty(prefix = "fist.mon.api-log", name = "enabled", matchIfMissing = true)
 	public ApiLogAspect apiLogAspect(ExceptionTranslator translator,
 			ObjectProvider<UserInfoAccessor> userInfoAccessor) {
 		return new ApiLogAspect(new SmartApiDescriptionResolver(), translator, userInfoAccessor.getIfAvailable());
 	}
 
 	@Bean
+	@ConditionalOnBean(ApiLogAspect.class)
 	@ConditionalOnMissingBean(value = ApiLogEvent.class, parameterizedContainer = AbstractEventListener.class)
 	public DefaultApiLogEventListener defaultApiLogEventListener() {
 		return new DefaultApiLogEventListener();

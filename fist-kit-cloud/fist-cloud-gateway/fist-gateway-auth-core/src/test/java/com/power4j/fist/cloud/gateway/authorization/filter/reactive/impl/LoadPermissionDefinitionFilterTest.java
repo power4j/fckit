@@ -92,7 +92,7 @@ class LoadPermissionDefinitionFilterTest {
 		when(authFilterChain.filter(any())).thenReturn(Mono.empty());
 		when(matcher.bestMatch(any(), any(), any())).thenReturn(Optional.of(apiPermDefinition));
 		when(service.getPermissionDefinition(any(), any()))
-				.thenReturn(Mono.just(Collections.singletonList(apiPermDefinition)));
+			.thenReturn(Mono.just(Collections.singletonList(apiPermDefinition)));
 		Mono<Void> result = filter.filter(authContext, authFilterChain);
 		StepVerifier.create(result).verifyComplete();
 		verify(authFilterChain, only()).filter(any());

@@ -61,8 +61,8 @@ public class DefaultUserCodec implements UserCodec {
 		String json;
 		try {
 			json = objectMapper.writeValueAsString(user);
-			StrObscurer.EncoderSelector selector = (s, l) -> l.stream().filter(enc -> zipPredicate.test(s))
-					.collect(Collectors.toList());
+			StrObscurer.EncoderSelector selector = (s,
+					l) -> l.stream().filter(enc -> zipPredicate.test(s)).collect(Collectors.toList());
 			return obscurer.obscure(json, selector);
 		}
 		catch (JsonProcessingException | CodecException e) {

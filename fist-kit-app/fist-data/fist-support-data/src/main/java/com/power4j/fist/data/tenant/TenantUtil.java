@@ -16,7 +16,7 @@
 
 package com.power4j.fist.data.tenant;
 
-import com.power4j.fist.boot.web.servlet.util.HttpServletRequestUtil;
+import com.power4j.fist.support.spring.web.servlet.util.HttpServletRequestUtil;
 import lombok.experimental.UtilityClass;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +32,7 @@ public class TenantUtil {
 
 	public Optional<String> resolveTenantId(HttpServletRequest request) {
 		return Optional.ofNullable(HttpServletRequestUtil.getHeader(request, TenantConstant.TENANT_ID_HEADER)
-				.orElse(request.getParameter(TenantConstant.TENANT_ID_PARAMETER)));
+			.orElse(request.getParameter(TenantConstant.TENANT_ID_PARAMETER)));
 	}
 
 }

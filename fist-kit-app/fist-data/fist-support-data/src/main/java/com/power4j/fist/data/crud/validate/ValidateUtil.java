@@ -54,10 +54,12 @@ public class ValidateUtil {
 	 */
 	public static <T> Set<ConstraintViolation<T>> check(T object, Class<?>... groups) {
 		Locale.setDefault(LocaleContextHolder.getLocale());
-		Validator validator = Validation.byDefaultProvider().configure()
-				.messageInterpolator(new ResourceBundleMessageInterpolator(
-						new MessageSourceResourceBundleLocator(getMessageSource())))
-				.buildValidatorFactory().getValidator();
+		Validator validator = Validation.byDefaultProvider()
+			.configure()
+			.messageInterpolator(
+					new ResourceBundleMessageInterpolator(new MessageSourceResourceBundleLocator(getMessageSource())))
+			.buildValidatorFactory()
+			.getValidator();
 
 		return validator.validate(object, groups);
 	}

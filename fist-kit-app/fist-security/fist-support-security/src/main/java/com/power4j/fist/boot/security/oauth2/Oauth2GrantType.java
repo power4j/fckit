@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 /**
  * 授权类型 see <a href=https://datatracker.ietf.org/doc/html/rfc6749#section-1.3>rfc6749
  * section-1.3</a>
+ *
  * @author CJ (power4j@outlook.com)
  * @date 2021/11/24
  * @since 1.0

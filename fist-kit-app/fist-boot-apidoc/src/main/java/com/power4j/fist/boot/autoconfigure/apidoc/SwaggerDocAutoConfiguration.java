@@ -61,17 +61,22 @@ public class SwaggerDocAutoConfiguration {
 	@Bean
 	public Docket docket() {
 		// FIXME 可配置化
-		return new Docket(DocumentationType.OAS_30).apiInfo(apiInfo()).enable(true).securitySchemes(apiKeyList())
-				.securityContexts(securityContexts()).select()
-				.apis(RequestHandlerSelectors.withMethodAnnotation(Operation.class))
-				// .apis(RequestHandlerSelectors.basePackage("com.power4j.fist"))
-				.paths(PathSelectors.any()).build();
+		return new Docket(DocumentationType.OAS_30).apiInfo(apiInfo())
+			.enable(true)
+			.securitySchemes(apiKeyList())
+			.securityContexts(securityContexts())
+			.select()
+			.apis(RequestHandlerSelectors.withMethodAnnotation(Operation.class))
+			// .apis(RequestHandlerSelectors.basePackage("com.power4j.fist"))
+			.paths(PathSelectors.any())
+			.build();
 	}
 
 	private ApiInfo apiInfo() {
 		return new ApiInfoBuilder().title("FIST 接口文档")
-				.contact(new Contact("power4j", "https://github.com/power4j", "amNsYXp6QG91dGxvb2suY29t"))
-				.version("1.0").build();
+			.contact(new Contact("power4j", "https://github.com/power4j", "amNsYXp6QG91dGxvb2suY29t"))
+			.version("1.0")
+			.build();
 	}
 
 	private List<SecurityScheme> apiKeyList() {
@@ -80,8 +85,10 @@ public class SwaggerDocAutoConfiguration {
 	}
 
 	private List<SecurityContext> securityContexts() {
-		SecurityContext securityContext = SecurityContext.builder().securityReferences(defaultAuth())
-				.operationSelector(c -> true).build();
+		SecurityContext securityContext = SecurityContext.builder()
+			.securityReferences(defaultAuth())
+			.operationSelector(c -> true)
+			.build();
 		return Collections.singletonList(securityContext);
 	}
 

@@ -46,7 +46,7 @@ class ApiGuardFilterTest {
 
 		when(deniedHandler.handleAccessDenied(any(), any())).thenReturn(Mono.empty());
 		when(filter.makeAuthContext(any()))
-				.thenReturn(makeAuthContext(exchange, null, AuthProblem.PERMISSION_CHECK_DENIED));
+			.thenReturn(makeAuthContext(exchange, null, AuthProblem.PERMISSION_CHECK_DENIED));
 
 		Mono<Void> result = filter.filter(exchange, gatewayFilterChain);
 		StepVerifier.create(result).verifyComplete();
@@ -65,7 +65,7 @@ class ApiGuardFilterTest {
 
 		when(permittedHandler.handleAccessPermitted(any())).thenReturn(Mono.just(exchange));
 		when(filter.makeAuthContext(any()))
-				.thenReturn(makeAuthContext(exchange, new UserInfo(), AuthProblem.PUB_ACCESS));
+			.thenReturn(makeAuthContext(exchange, new UserInfo(), AuthProblem.PUB_ACCESS));
 		when(gatewayFilterChain.filter(any())).thenReturn(Mono.empty());
 
 		Mono<Void> result = filter.filter(exchange, gatewayFilterChain);

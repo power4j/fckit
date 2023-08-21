@@ -47,9 +47,9 @@ public class LoginAccessFilter implements GatewayAuthFilter {
 			}
 			else {
 				if (log.isDebugEnabled()) {
-					log.debug("Login access required,but not user info. => {}", ctx.getInbound().shortDescription());
+					log.debug("Login access required,but no user info. => {}", ctx.getInbound().shortDescription());
 				}
-				return exitChain(ctx, AuthProblem.USER_ACCESS_DENIED);
+				return exitChain(ctx, AuthProblem.USER_ACCESS_DENIED.advise(AuthProblem.Advise.AUTH));
 			}
 		}
 		return doNext(ctx, chain);

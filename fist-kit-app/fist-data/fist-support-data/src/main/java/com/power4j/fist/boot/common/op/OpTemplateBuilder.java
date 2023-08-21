@@ -149,7 +149,7 @@ public class OpTemplateBuilder<T> {
 	private List<OpHandler<T>> prepareHandlerList(List<HandlerInfo<T>> infoList) {
 		return infoList.stream().map(info -> {
 			OpHandler<T> handler = Optional.ofNullable(info.getHandler())
-					.orElseGet(() -> findHandler(info.getHandlerClass()));
+				.orElseGet(() -> findHandler(info.getHandlerClass()));
 			if (null == handler) {
 				throw new OpTemplateException("No handler of " + info.getHandlerClass());
 			}

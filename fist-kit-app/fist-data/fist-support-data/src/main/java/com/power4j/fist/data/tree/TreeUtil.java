@@ -87,9 +87,9 @@ public class TreeUtil {
 	 */
 	public <ID, T> void fetch(Collection<T> source, Collection<T> roots, NodeOp<ID, T> nodeOp) {
 		Map<ID, T> sourceMap = source.stream()
-				.collect(Collectors.toMap(nodeOp.idGetter, Function.identity(), (x, y) -> y, LinkedHashMap::new));
+			.collect(Collectors.toMap(nodeOp.idGetter, Function.identity(), (x, y) -> y, LinkedHashMap::new));
 		Map<ID, T> rootMap = roots.stream()
-				.collect(Collectors.toMap(nodeOp.idGetter, Function.identity(), (x, y) -> y, LinkedHashMap::new));
+			.collect(Collectors.toMap(nodeOp.idGetter, Function.identity(), (x, y) -> y, LinkedHashMap::new));
 		fetch(sourceMap, rootMap, nodeOp);
 	}
 

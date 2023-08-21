@@ -1,6 +1,6 @@
 package com.power4j.fist.boot.security.oauth2;
 
-import com.power4j.fist.boot.web.reactive.util.ServerHttpRequestUtil;
+import com.power4j.fist.support.spring.web.reactive.util.ServerHttpRequestUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;

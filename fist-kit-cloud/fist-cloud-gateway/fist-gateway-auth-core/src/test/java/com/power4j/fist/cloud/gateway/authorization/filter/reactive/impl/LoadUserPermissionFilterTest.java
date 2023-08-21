@@ -20,7 +20,7 @@ import java.util.Collections;
 class LoadUserPermissionFilterTest {
 
 	UserService<? extends AuthenticatedUser> userService1 = user -> Mono
-			.just(new AnonymousUser(Collections.emptyMap()));
+		.just(new AnonymousUser(Collections.emptyMap()));
 
 	UserService<? extends AuthenticatedUser> userService2 = user -> Mono.empty();
 

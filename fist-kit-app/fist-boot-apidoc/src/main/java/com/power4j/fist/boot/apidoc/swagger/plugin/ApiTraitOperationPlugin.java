@@ -47,8 +47,10 @@ public class ApiTraitOperationPlugin implements OperationBuilderPlugin {
 
 	@Override
 	public void apply(OperationContext context) {
-		context.findAnnotation(ApiTrait.class).map(DocUtil::createDetails).map(this::toObjectVendorExtension)
-				.ifPresent(extension -> context.operationBuilder().extensions(Collections.singletonList(extension)));
+		context.findAnnotation(ApiTrait.class)
+			.map(DocUtil::createDetails)
+			.map(this::toObjectVendorExtension)
+			.ifPresent(extension -> context.operationBuilder().extensions(Collections.singletonList(extension)));
 
 	}
 

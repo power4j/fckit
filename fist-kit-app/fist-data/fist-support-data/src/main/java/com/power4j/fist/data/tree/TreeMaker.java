@@ -57,7 +57,7 @@ public class TreeMaker<ID, N extends Node<ID, N>> {
 	 */
 	public static <ID, N extends Node<ID, N>> TreeMaker<ID, N> use(Collection<N> data) {
 		Map<ID, N> sourceData = data.stream()
-				.collect(Collectors.toMap(Node::getId, Function.identity(), (x, y) -> y, LinkedHashMap::new));
+			.collect(Collectors.toMap(Node::getId, Function.identity(), (x, y) -> y, LinkedHashMap::new));
 		return new TreeMaker<>(sourceData);
 	}
 
@@ -69,11 +69,14 @@ public class TreeMaker<ID, N extends Node<ID, N>> {
 	 */
 	public static <ID> TreeMaker<ID, TreeNode<ID>> useIdx(Collection<? extends NodeIdx<ID, ?>> nodes) {
 		Function<ID, TreeNode<ID>> treeMapper = id -> TreeNode.of(id, null);
-		Map<ID, ID> parentMap = nodes.stream().filter(o -> (1 == o.getDistance()))
-				.collect(Collectors.toMap(NodeIdx::getDescendant, NodeIdx::getAncestor));
-		Map<ID, TreeNode<ID>> data = nodes.stream().filter(o -> (0 == o.getDistance())).map(NodeIdx::getAncestor)
-				.map(treeMapper)
-				.collect(Collectors.toMap(TreeNode::getId, Function.identity(), (x, y) -> y, LinkedHashMap::new));
+		Map<ID, ID> parentMap = nodes.stream()
+			.filter(o -> (1 == o.getDistance()))
+			.collect(Collectors.toMap(NodeIdx::getDescendant, NodeIdx::getAncestor));
+		Map<ID, TreeNode<ID>> data = nodes.stream()
+			.filter(o -> (0 == o.getDistance()))
+			.map(NodeIdx::getAncestor)
+			.map(treeMapper)
+			.collect(Collectors.toMap(TreeNode::getId, Function.identity(), (x, y) -> y, LinkedHashMap::new));
 		data.values().forEach(o -> o.setParentId(parentMap.get(o.getId())));
 		return new TreeMaker<>(data);
 	}

@@ -55,7 +55,7 @@ class BearTokenAuthenticationConverterFilterTest {
 	@Test
 	public void authenticationProcessorCalled() {
 		Context context = ReactiveSecurityContextHolder
-				.withSecurityContext(Mono.just(new SecurityContextImpl(bearerTokenAuthentication)));
+			.withSecurityContext(Mono.just(new SecurityContextImpl(bearerTokenAuthentication)));
 		MockServerWebExchange serverWebExchange = MockServerWebExchange.from(MockServerHttpRequest.get("/").build());
 		given(authenticationProcessor.process(any(), any())).willReturn(Mono.just(serverWebExchange));
 		given(this.chain.filter(serverWebExchange)).willReturn(this.chainResult.mono());

@@ -129,8 +129,10 @@ class TreeNodeUtilTest {
 		lv2.get(0).appendChildren(lv3);
 
 		TreeNodeUtil.ConvertOp<TreeNode<Integer>, NodeView> op = TreeNodeUtil.ConvertOp
-				.<TreeNode<Integer>, NodeView>builder().objectConvert(o -> new NodeView(o.getId().toString()))
-				.childSetter(NodeView::addSub).build();
+			.<TreeNode<Integer>, NodeView>builder()
+			.objectConvert(o -> new NodeView(o.getId().toString()))
+			.childSetter(NodeView::addSub)
+			.build();
 
 		List<NodeView> convertedLv0 = TreeNodeUtil.convertToList(lv1, op);
 		Assertions.assertEquals(2, convertedLv0.size());

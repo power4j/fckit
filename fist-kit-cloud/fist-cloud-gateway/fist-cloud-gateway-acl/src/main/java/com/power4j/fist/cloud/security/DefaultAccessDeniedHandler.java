@@ -2,7 +2,7 @@ package com.power4j.fist.cloud.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.power4j.fist.boot.common.error.ErrorCode;
-import com.power4j.fist.boot.web.reactive.util.ServerHttpResponseUtil;
+import com.power4j.fist.support.spring.web.reactive.util.ServerHttpResponseUtil;
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthProblem;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,13 +32,19 @@ public class DefaultAccessDeniedHandler implements AccessDeniedHandler {
 		payload.put(KEY_CODE, ErrorCode.A0301);
 		payload.put(KEY_MESSAGE, String.format("Access denied(%s)", problem.getCode()));
 		return ServerHttpResponseUtil
-				.responseWithJsonObject(response, objectMapper, payload, translateHttpStatus(problem))
-				.then(Mono.defer(() -> exchange.getResponse().setComplete()));
+			.responseWithJsonObject(response, objectMapper, payload, translateHttpStatus(problem))
+			.then(Mono.defer(() -> exchange.getResponse().setComplete()));
 	}
 
 	static HttpStatus translateHttpStatus(AuthProblem problem) {
+		if (AuthProblem.Advise.AUTH.equals(problem.getAdvise())) {
+			return HttpStatus.UNAUTHORIZED;
+		}
 		if (problem.codeEquals(AuthProblem.HTTP_PROTOCOL.getCode())) {
 			return HttpStatus.NOT_IMPLEMENTED;
+		}
+		else if (problem.codeEquals(AuthProblem.AUTH_EXCEPTION.getCode())) {
+			return HttpStatus.INTERNAL_SERVER_ERROR;
 		}
 		return HttpStatus.FORBIDDEN;
 	}

@@ -38,6 +38,9 @@ public class AuthProblem {
 	@Nullable
 	private String moreInfo;
 
+	@Nullable
+	private Advise advise;
+
 	public AuthProblem(int code, String msg) {
 		this.code = code;
 		this.msg = msg;
@@ -45,6 +48,11 @@ public class AuthProblem {
 
 	public AuthProblem moreInfo(String info) {
 		moreInfo = info;
+		return this;
+	}
+
+	public AuthProblem advise(Advise advise) {
+		this.advise = advise;
 		return this;
 	}
 
@@ -157,7 +165,18 @@ public class AuthProblem {
 	@Override
 	public String toString() {
 		return new StringJoiner(", ", AuthProblem.class.getSimpleName() + "[", "]").add("code=" + code)
-				.add("msgKey='" + msg + "'").toString();
+			.add("advise=" + advise)
+			.add("msg='" + msg + "'")
+			.toString();
+	}
+
+	public enum Advise {
+
+		/** need authentication */
+		AUTH,
+		/** need permission */
+		PERM
+
 	}
 
 }
