@@ -102,11 +102,6 @@
         <version>${hutool.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.kit</groupId>
-        <artifactId>coca-common</artifactId>
-        <version>${coca-kit.version}</version>
-      </dependency>
-      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
@@ -236,6 +231,13 @@
         <groupId>com.alibaba.cloud</groupId>
         <artifactId>spring-cloud-alibaba-dependencies</artifactId>
         <version>${spring-cloud-alibaba.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.kit</groupId>
+        <artifactId>coca-bom</artifactId>
+        <version>${coca-kit.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
