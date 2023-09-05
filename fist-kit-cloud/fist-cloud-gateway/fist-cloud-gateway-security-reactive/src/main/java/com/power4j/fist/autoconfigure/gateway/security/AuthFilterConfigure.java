@@ -48,7 +48,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 import java.util.List;
@@ -157,7 +156,7 @@ public class AuthFilterConfigure {
 	}
 
 	@Bean
-	@Order(Ordered.LOWEST_PRECEDENCE)
+	@Order
 	public AuthEndFilter authEndFilter() {
 		return new AuthEndFilter();
 	}

@@ -69,7 +69,8 @@ public class PageData<T> implements Serializable {
 	}
 
 	public static <T> PageData<T> of(PageDTO<T> dto) {
-		return new PageData(dto.getContent(), dto.getTotal(), dto.getHasNext(), dto.getPageNumber(), dto.getPageSize());
+		return new PageData<>(dto.getContent(), dto.getTotal(), dto.getHasNext(), dto.getPageNumber(),
+				dto.getPageSize());
 	}
 
 	public static <T> PageDTO<T> toPageDTO(PageData<T> src) {

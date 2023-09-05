@@ -95,7 +95,7 @@ public class AuditEntity {
 	 * @return true 表示是系统数据
 	 */
 	public boolean checkSysAttr() {
-		return Objects.nonNull(lowAttr) && DataConstant.LOW_ATTR_VALUE_SYSTEM == lowAttr;
+		return Objects.equals(DataConstant.LOW_ATTR_VALUE_SYSTEM, lowAttr);
 	}
 
 	/**
@@ -103,7 +103,7 @@ public class AuditEntity {
 	 * @return true 表示是用户数据
 	 */
 	public boolean checkUserAttr() {
-		return Objects.nonNull(lowAttr) && DataConstant.LOW_ATTR_VALUE_USER == lowAttr;
+		return Objects.equals(DataConstant.LOW_ATTR_VALUE_USER, lowAttr);
 	}
 
 }
