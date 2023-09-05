@@ -17,9 +17,9 @@
 package com.power4j.fist.autoconfigure.security;
 
 import com.power4j.coca.kit.common.exception.RuntimeFaultException;
-import com.power4j.fist.boot.security.config.ResourceServerSecurityConfig;
 import com.power4j.fist.boot.security.config.JwtTokenExtractor;
 import com.power4j.fist.boot.security.config.ResourceServerConfig;
+import com.power4j.fist.boot.security.config.ResourceServerSecurityConfig;
 import com.power4j.fist.boot.security.config.SecurityProperties;
 import com.power4j.fist.boot.security.oauth2.AuthUserConverter;
 import lombok.RequiredArgsConstructor;

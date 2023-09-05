@@ -25,7 +25,7 @@ import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validation;
 import javax.validation.ValidationException;
-import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Function;
@@ -54,14 +54,13 @@ public class ValidateUtil {
 	 */
 	public static <T> Set<ConstraintViolation<T>> check(T object, Class<?>... groups) {
 		Locale.setDefault(LocaleContextHolder.getLocale());
-		Validator validator = Validation.byDefaultProvider()
+		try (ValidatorFactory validatorFactory = Validation.byDefaultProvider()
 			.configure()
 			.messageInterpolator(
 					new ResourceBundleMessageInterpolator(new MessageSourceResourceBundleLocator(getMessageSource())))
-			.buildValidatorFactory()
-			.getValidator();
-
-		return validator.validate(object, groups);
+			.buildValidatorFactory()) {
+			return validatorFactory.getValidator().validate(object, groups);
+		}
 	}
 
 	/**
