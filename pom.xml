@@ -52,7 +52,7 @@
 
   <properties>
     <skipTests>false</skipTests>
-    <revision>2022.1.10</revision>
+    <revision>2022.1.11-SNAPSHOT</revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.target>11</maven.compiler.target>
