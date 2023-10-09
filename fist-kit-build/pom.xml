@@ -81,6 +81,12 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>org.jetbrains.intellij.deps</groupId>
+      <artifactId>intellij-coverage-agent</artifactId>
+      <version>${intellij.coverage.agent.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <dependencyManagement>
@@ -94,11 +100,6 @@
         <groupId>cn.hutool</groupId>
         <artifactId>hutool-all</artifactId>
         <version>${hutool.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.power4j.kit</groupId>
-        <artifactId>coca-common</artifactId>
-        <version>${coca-kit.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -233,6 +234,13 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>com.power4j.kit</groupId>
+        <artifactId>coca-bom</artifactId>
+        <version>${coca-kit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -275,6 +283,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <skip>${skipTests}</skip>
+          <!-- Specify the IntelliJ coverage agent -->
+          <argLine>
+            -javaagent:${settings.localRepository}/org/jetbrains/intellij/deps/intellij-coverage-agent/${intellij.coverage.agent.version}/intellij-coverage-agent-${intellij.coverage.agent.version}.jar=${intellij.agent.options}
+          </argLine>
         </configuration>
       </plugin>
       <plugin>

@@ -17,10 +17,10 @@
 package com.power4j.fist.boot.mybaits.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import com.power4j.fist.data.constant.DataConstant;
 import com.power4j.fist.boot.mybaits.entity.AuditEntity;
 import com.power4j.fist.boot.security.core.UserInfo;
 import com.power4j.fist.boot.security.core.UserInfoSupplier;
+import com.power4j.fist.data.constant.DataConstant;
 import org.apache.ibatis.reflection.MetaObject;
 
 import java.time.LocalDateTime;

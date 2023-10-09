@@ -17,8 +17,8 @@
 package com.power4j.fist.boot.mybaits.tenant;
 
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
-import com.power4j.fist.data.tenant.isolation.TenantHolder;
 import com.power4j.fist.boot.security.core.SecurityConstant;
+import com.power4j.fist.data.tenant.isolation.TenantHolder;
 import lombok.Setter;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.StringValue;

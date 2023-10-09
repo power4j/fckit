@@ -16,9 +16,9 @@
 
 package com.power4j.fist.boot.autoconfigure.web;
 
-import com.power4j.fist.boot.web.constant.HttpConstant;
 import com.power4j.fist.boot.mon.info.TraceInfo;
 import com.power4j.fist.boot.mon.info.TraceInfoResolver;
+import com.power4j.fist.boot.web.constant.HttpConstant;
 import com.power4j.fist.boot.web.servlet.mvc.formatter.LocalDateFormatter;
 import com.power4j.fist.boot.web.servlet.mvc.formatter.LocalDateTimeFormatter;
 import com.power4j.fist.boot.web.servlet.mvc.formatter.LocalTimeFormatter;
