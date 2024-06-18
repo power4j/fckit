@@ -46,9 +46,7 @@ jobs:
           passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
       - name: Publish to Maven Central
-        run: |
-          echo $OSSRH_USERNAME
-          ./mvnw --settings ./ossrh-settings.xml clean deploy -Dgpg.passphrase=${MAVEN_GPG_PASSPHRASE} -DskipTests=true -P 'oss-release'
+        run: ./mvnw --settings ./ossrh-settings.xml clean deploy -Dgpg.passphrase=${MAVEN_GPG_PASSPHRASE} -DskipTests=true -P 'oss-release'
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_TOKEN_USER }}
