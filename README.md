@@ -1,4 +1,4 @@
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.power4j.fist/fist-kit-dependencies/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.power4j.fist/fist-kit-dependencies)
+[![Maven Central Version](https://img.shields.io/maven-central/v/com.power4j.fist/fist-kit-dependencies)](https://central.sonatype.com/artifact/com.power4j.fist/fist-kit-dependencies)
 ## 技术栈
 
 - JDK: `11`
