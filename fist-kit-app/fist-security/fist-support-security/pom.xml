@@ -61,6 +61,10 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.github.seancfoley</groupId>
+      <artifactId>ipaddress</artifactId>
+    </dependency>
     <!-- optional -->
     <dependency>
       <groupId>io.projectreactor</groupId>
@@ -92,7 +96,7 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15to18</artifactId>
-      <version>1.77</version>
+      <version>1.78.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
