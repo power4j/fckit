@@ -16,7 +16,6 @@
 
 package com.power4j.fist.boot.common.jackson;
 
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
@@ -75,7 +74,9 @@ public class JacksonConfig {
 			applyTimeZone(builder);
 			applySimpleDateFormat(builder);
 			applyModules(builder);
-			applyExtra(builder);
+			if (jacksonCustomizeProperties.isObfuscatedSupport()) {
+				applyExtra(builder);
+			}
 		};
 	}
 
@@ -117,8 +118,14 @@ public class JacksonConfig {
 
 	private void applyExtra(Jackson2ObjectMapperBuilder builder) {
 		log.info("Install extra Serializer/Deserializer");
-		builder.annotationIntrospector(
-				introspector -> AnnotationIntrospectorPair.pair(introspector, new ObfuscatedAnnotationIntrospector()));
+		builder.annotationIntrospector(introspector -> {
+			if (null != introspector) {
+				return AnnotationIntrospectorPair.pair(introspector, new ObfuscatedAnnotationIntrospector());
+			}
+			else {
+				return new ObfuscatedAnnotationIntrospector();
+			}
+		});
 	}
 
 }
