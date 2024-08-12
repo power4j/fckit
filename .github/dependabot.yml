@@ -6,8 +6,12 @@ updates:
   target-branch: "dev"
   schedule:
     interval: daily
-  open-pull-requests-limit: 10
+  open-pull-requests-limit: 15
   ignore:
   - dependency-name: org.springframework.security.oauth:spring-security-oauth2
   - dependency-name: com.alibaba.cloud:spring-cloud-alibaba-dependencies
-    versions: ["2021.1"]
+    versions: ["2022.x", "2023.x"]
+  - dependency-name: org.springframework.cloud:spring-cloud-dependencies
+    versions: ["2022.x", "2023.x"]
+  - dependency-name: org.springframework.boot:spring-boot-dependencies
+    versions: ["3.x"]
