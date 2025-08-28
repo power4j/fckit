@@ -34,6 +34,7 @@
     <module>fist-kit-api</module>
     <module>fist-jackson</module>
     <module>fist-redisson</module>
+    <module>fist-mybatis-plus</module>
     <module>fist-support-test</module>
     <module>fist-support-spring</module>
   </modules>
