@@ -62,6 +62,11 @@
         <artifactId>fist-jackson</artifactId>
         <version>${revision}</version>
       </dependency>
+      <dependency>
+        <groupId>com.power4j.fist</groupId>
+        <artifactId>fist-mybatis-plus</artifactId>
+        <version>${revision}</version>
+      </dependency>
       <!-- fist kits app -->
       <dependency>
         <groupId>com.power4j.fist</groupId>
