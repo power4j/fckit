@@ -150,20 +150,34 @@ Redisson `4.3.1`、MyBatis Plus `3.5.16` 当前只通过主代码 `compile`，�
 
 OpenRewrite dry-run 能识别 Gateway artifactId 迁移，但未识别本次暴露的 WebFlux 错误处理包迁移。因此后续源码影响清单不能只依赖 OpenRewrite，需要继续以编译错误为主输入。
 
-## 阶段 2 下一步
+## 阶段 2 后续进展
 
-阶段 4 已处理 `fist-support-web` 的 WebFlux 错误处理包迁移，`fist-support-web` 主代码编译通过。继续试编译后，新的 P0 阻塞点为 `fist-support-security`。
+阶段 4 已处理 `fist-support-web` 的 WebFlux 错误处理包迁移，`fist-support-web` 主代码编译通过。随后处理 `fist-support-security` 暴露的 Spring Security 7 与 WebClient API 变化：
+
+- `Sm3PasswordEncoder` 改为实现 `encodedNonNullPassword(CharSequence, byte[])`。
+- `DefaultReactiveOpaqueTokenIntrospector` 从 `WebClient.exchange()` 迁移到 `exchangeToMono(...)`。
+- 对应测试桩同步迁移到 `exchangeToMono(...)`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am "-Dtest=Sm3PasswordEncoderTest,PasswordEncoderUtilTest,DefaultReactiveOpaqueTokenIntrospectorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：`BUILD SUCCESS`，定向测试共 14 个用例，失败 0。
+
+继续运行 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 等依赖链路后，新的 P0 阻塞点为 `fist-boot-web-app` 的 Jackson 自动配置迁移：
+
+- 旧包 `org.springframework.boot.autoconfigure.jackson` 不再提供 `Jackson2ObjectMapperBuilderCustomizer` 和 `JacksonAutoConfiguration`。
+- Spring Boot `4.0.6` 本地 JAR 中存在 `org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration` 和 `JsonMapperBuilderCustomizer`。
+- 该迁移牵涉 Jackson 3 的 `tools.jackson.*` 类型，不能只做 import 替换。
 
 下一步：
 
-1. 迁移 `Sm3PasswordEncoder` 的 Spring Security 7 抽象方法。
-2. 迁移 `DefaultReactiveOpaqueTokenIntrospector` 的 `WebClient.exchange()` 调用。
-3. 修复后继续运行：
-   - `fist-kit-app/fist-security/fist-support-security`
-   - `fist-kit-app/fist-security/fist-boot-security-oauth2-server`
-   - `fist-kit-app/fist-data/fist-boot-crud-mybatis`
-   - `fist-kit-cloud/fist-cloud-rpc-feign`
-   - `fist-kit-cloud/fist-cloud-gateway`
+1. 以 `fist-kit-infra/fist-jackson` 为起点调研 Jackson 3 API 差异。
+2. 迁移自定义 Jackson 模块、序列化器、反序列化器和注解内省器。
+3. 再迁移 `fist-boot-web-app` 的 `JacksonConfig`。
 4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 5. 在主代码 `compile` 有基本通过面后，再进入 test-compile、单元测试和配置迁移诊断。
 

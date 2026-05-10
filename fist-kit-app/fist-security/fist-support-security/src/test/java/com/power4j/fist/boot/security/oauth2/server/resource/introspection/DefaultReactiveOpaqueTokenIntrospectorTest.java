@@ -23,10 +23,12 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -216,7 +218,10 @@ class DefaultReactiveOpaqueTokenIntrospectorTest {
 		ClientResponse.Headers headers = mock(ClientResponse.Headers.class);
 		given(headers.contentType()).willReturn(Optional.of(MediaType.APPLICATION_JSON));
 		given(clientResponse.headers()).willReturn(headers);
-		given(spec.exchange()).willReturn(Mono.just(clientResponse));
+		given(spec.exchangeToMono(any())).willAnswer((invocation) -> {
+			Function<ClientResponse, Mono<Map<String, Object>>> handler = invocation.getArgument(0);
+			return handler.apply(clientResponse);
+		});
 		return webClient;
 	}
 
@@ -235,7 +240,7 @@ class DefaultReactiveOpaqueTokenIntrospectorTest {
 		WebClient.RequestBodyUriSpec spec = spy(real.post());
 		WebClient webClient = spy(WebClient.class);
 		given(webClient.post()).willReturn(spec);
-		given(spec.exchange()).willThrow(ex);
+		given(spec.exchangeToMono(any())).willThrow(ex);
 		return webClient;
 	}
 

@@ -31,7 +31,7 @@ public class Sm3PasswordEncoder extends AbstractPasswordEncoder {
 	public final static String ID = "sm3";
 
 	@Override
-	protected byte[] encode(CharSequence rawPassword, byte[] salt) {
+	protected byte[] encodedNonNullPassword(CharSequence rawPassword, byte[] salt) {
 		byte[] input = rawPassword.toString().getBytes(StandardCharsets.UTF_8);
 		return Sm3Util.hash(input, salt);
 	}

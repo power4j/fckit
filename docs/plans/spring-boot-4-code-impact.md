@@ -8,7 +8,7 @@
 
 阶段 4 第一版以阶段 2 的真实编译错误为主输入，再补充静态扫描。当前不修改 Java 源码。
 
-当前第一阻塞点 `fist-support-web` 的 Spring Boot WebFlux 错误处理 API 包迁移已处理，`fist-support-web` 主代码编译已通过。继续试编译后，新的阻塞点进入 `fist-support-security`：Spring Security 7 的 `AbstractPasswordEncoder` 抽象方法变化，以及 Spring Framework 7 / WebFlux 中 `WebClient.exchange()` 移除。
+当前第一阻塞点 `fist-support-web` 的 Spring Boot WebFlux 错误处理 API 包迁移已处理，`fist-support-web` 主代码编译已通过。继续试编译后，`fist-support-security` 暴露的 Spring Security 7 与 WebClient API 迁移点也已处理，主代码编译和定向测试已通过。
 
 静态扫描显示：
 
@@ -63,7 +63,7 @@ org.springframework.boot.webflux.autoconfigure.error.ErrorWebFluxAutoConfigurati
 
 说明：OpenRewrite dry-run 未覆盖该迁移点，因此后续不能只依赖自动化补丁。
 
-## P0：Spring Security 7 与 WebClient API 迁移
+## 已处理：Spring Security 7 与 WebClient API 迁移
 
 `fist-support-web` 解除阻塞后，`fist-support-security` 暴露 3 个编译错误。
 
@@ -83,12 +83,46 @@ fist-kit-app/fist-security/fist-support-security
 - `Sm3PasswordEncoder` 继承的 `AbstractPasswordEncoder` 在 Spring Security 7 中要求实现 `encodedNonNullPassword(CharSequence, byte[])`。
 - `DefaultReactiveOpaqueTokenIntrospector` 使用的 `WebClient.RequestHeadersSpec.exchange()` 已不可用，需要迁移到 Spring Framework 7 支持的响应交换 API。
 
-处理建议：
+处理结果：
 
-1. 先核对 Spring Security 7 的 `AbstractPasswordEncoder` 新契约，迁移 SM3 密码编码器。
-2. 将 `WebClient.exchange()` 迁移为当前推荐 API，并保持不透明令牌 introspection 的错误处理语义。
-3. 重新运行 `fist-support-security` 编译。
-4. 通过后继续 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 和 Cloud Gateway 子模块编译。
+- `Sm3PasswordEncoder` 改为实现 Spring Security 7 的 `encodedNonNullPassword(CharSequence, byte[])`。
+- `DefaultReactiveOpaqueTokenIntrospector` 将 `WebClient.exchange()` 迁移为 `exchangeToMono(this::adaptToNimbusResponse)`，继续复用原有 `ClientResponse` 状态码、`Content-Type` 和响应体解析逻辑。
+- `DefaultReactiveOpaqueTokenIntrospectorTest` 的测试桩同步迁移到 `exchangeToMono(...)`，保留对响应适配逻辑的覆盖。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am "-Dtest=Sm3PasswordEncoderTest,PasswordEncoderUtilTest,DefaultReactiveOpaqueTokenIntrospectorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：`BUILD SUCCESS`，定向测试共 14 个用例，失败 0。
+
+## P0：Jackson 3 与 Boot 4 Jackson 自动配置迁移
+
+`fist-support-security` 解除阻塞后，继续编译 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 等依赖链路时，新的首个阻塞点进入 `fist-boot-web-app` 的 Jackson 自动配置。
+
+失败文件：
+
+- `fist-kit-app/fist-web/fist-boot-web-app/src/main/java/com/power4j/fist/boot/common/jackson/JacksonConfig.java`
+
+错误类型：
+
+- `org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer` 不存在。
+- `org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration` 不存在。
+
+本地 Spring Boot `4.0.6` JAR 显示相关类已迁移到 Jackson 3 方向：
+
+```text
+org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration.class
+org/springframework/boot/jackson/autoconfigure/JsonMapperBuilderCustomizer.class
+```
+
+判断：
+
+- 这不是单纯 import 迁移。`JsonMapperBuilderCustomizer` 面向 `tools.jackson.databind.json.JsonMapper.Builder`，而当前项目仍大量使用 Jackson 2 的 `com.fasterxml.jackson.*` 类型。
+- Jackson 3 迁移需要先处理 `fist-jackson` 中自定义模块、序列化器、反序列化器和注解内省器，再处理 Web App 自动配置。
+- OpenRewrite dry-run 可作为包名迁移参考，但不能直接全仓应用。
 
 ## Jackson 3
 
@@ -224,9 +258,9 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 迁移 `Sm3PasswordEncoder` 的 Spring Security 7 抽象方法。
-2. 迁移 `DefaultReactiveOpaqueTokenIntrospector` 的 `WebClient.exchange()` 调用。
-3. 重新运行 `fist-support-security` 编译。
+1. 以 `fist-jackson` 为边界调研 Jackson 3 API 迁移细节。
+2. 迁移自定义 Jackson 模块、序列化器、反序列化器和注解内省器。
+3. 再迁移 `JacksonConfig` 到 Spring Boot 4 的 `JsonMapperBuilderCustomizer`。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
 
 ## 本地证据

@@ -73,19 +73,18 @@ public class DefaultReactiveOpaqueTokenIntrospector implements ReactiveOpaqueTok
 		// @formatter:off
 		return Mono.just(token)
 				.flatMap(this::makeRequest)
-				.flatMap(this::adaptToNimbusResponse)
 				.map(this::convertClaimsSet)
 				.onErrorMap((e) -> !(e instanceof Oauth2IntrospectionException), this::onError);
 		// @formatter:on
 	}
 
-	private Mono<ClientResponse> makeRequest(String token) {
+	private Mono<Map<String, Object>> makeRequest(String token) {
 		// @formatter:off
 		return this.webClient.post()
 				.uri(this.introspectionUri)
 				.header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
 				.body(BodyInserters.fromFormData("token", token))
-				.exchange();
+				.exchangeToMono(this::adaptToNimbusResponse);
 		// @formatter:on
 	}
 
