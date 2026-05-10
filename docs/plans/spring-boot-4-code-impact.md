@@ -8,7 +8,7 @@
 
 阶段 4 第一版以阶段 2 的真实编译错误为主输入，再补充静态扫描。当前不修改 Java 源码。
 
-当前第一阻塞点是 `fist-support-web` 的 Spring Boot WebFlux 错误处理 API 包迁移。该问题会阻塞 Security、OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 和 Cloud Gateway 的继续编译，优先级高于 Jackson、Feign、Groovy 等专项迁移。
+当前第一阻塞点 `fist-support-web` 的 Spring Boot WebFlux 错误处理 API 包迁移已处理，`fist-support-web` 主代码编译已通过。继续试编译后，新的阻塞点进入 `fist-support-security`：Spring Security 7 的 `AbstractPasswordEncoder` 抽象方法变化，以及 Spring Framework 7 / WebFlux 中 `WebClient.exchange()` 移除。
 
 静态扫描显示：
 
@@ -19,7 +19,7 @@
 - `@MockBean`、`@SpyBean` 和 `org.springframework.security.jwt` 源码直接引用未命中。
 - `javax.*` 命中仅来自 JDK `javax.crypto`，不是 Jakarta EE 迁移问题。
 
-## P0：WebFlux 错误处理 API 包迁移
+## 已处理：WebFlux 错误处理 API 包迁移
 
 ### 编译错误来源
 
@@ -51,13 +51,44 @@ org.springframework.boot.webflux.error.ErrorAttributes
 org.springframework.boot.webflux.autoconfigure.error.ErrorWebFluxAutoConfiguration
 ```
 
-### 处理建议
+### 处理结果
 
-1. 单独迁移这 3 个文件的 import。
-2. 运行 `.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests compile`。
-3. 通过后继续阶段 2 中被阻塞的模块编译。
+已将 3 个文件的 import 更新到 Spring Boot 4.0.6 新包，并运行：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests compile
+```
+
+结果：`BUILD SUCCESS`。
 
 说明：OpenRewrite dry-run 未覆盖该迁移点，因此后续不能只依赖自动化补丁。
+
+## P0：Spring Security 7 与 WebClient API 迁移
+
+`fist-support-web` 解除阻塞后，`fist-support-security` 暴露 3 个编译错误。
+
+失败模块：
+
+```text
+fist-kit-app/fist-security/fist-support-security
+```
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-support-security/src/main/java/com/power4j/fist/boot/security/crypto/Sm3PasswordEncoder.java`
+- `fist-kit-app/fist-security/fist-support-security/src/main/java/com/power4j/fist/boot/security/oauth2/server/resource/introspection/DefaultReactiveOpaqueTokenIntrospector.java`
+
+错误类型：
+
+- `Sm3PasswordEncoder` 继承的 `AbstractPasswordEncoder` 在 Spring Security 7 中要求实现 `encodedNonNullPassword(CharSequence, byte[])`。
+- `DefaultReactiveOpaqueTokenIntrospector` 使用的 `WebClient.RequestHeadersSpec.exchange()` 已不可用，需要迁移到 Spring Framework 7 支持的响应交换 API。
+
+处理建议：
+
+1. 先核对 Spring Security 7 的 `AbstractPasswordEncoder` 新契约，迁移 SM3 密码编码器。
+2. 将 `WebClient.exchange()` 迁移为当前推荐 API，并保持不透明令牌 introspection 的错误处理语义。
+3. 重新运行 `fist-support-security` 编译。
+4. 通过后继续 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 和 Cloud Gateway 子模块编译。
 
 ## Jackson 3
 
@@ -193,9 +224,9 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 先迁移 P0 WebFlux 错误处理包引用。
-2. 重新运行 `fist-support-web` 编译。
-3. 编译通过后继续 Security、OAuth2 Server、MyBatis CRUD、Cloud OpenFeign、Cloud Gateway。
+1. 迁移 `Sm3PasswordEncoder` 的 Spring Security 7 抽象方法。
+2. 迁移 `DefaultReactiveOpaqueTokenIntrospector` 的 `WebClient.exchange()` 调用。
+3. 重新运行 `fist-support-security` 编译。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
 
 ## 本地证据

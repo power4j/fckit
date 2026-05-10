@@ -152,15 +152,20 @@ OpenRewrite dry-run 能识别 Gateway artifactId 迁移，但未识别本次暴�
 
 ## 阶段 2 下一步
 
-1. 进入阶段 4「源码和测试命中清单」，先处理 `fist-support-web` 的 WebFlux 错误处理包迁移。
-2. 修复该阻塞点后继续运行被阻塞模块：
+阶段 4 已处理 `fist-support-web` 的 WebFlux 错误处理包迁移，`fist-support-web` 主代码编译通过。继续试编译后，新的 P0 阻塞点为 `fist-support-security`。
+
+下一步：
+
+1. 迁移 `Sm3PasswordEncoder` 的 Spring Security 7 抽象方法。
+2. 迁移 `DefaultReactiveOpaqueTokenIntrospector` 的 `WebClient.exchange()` 调用。
+3. 修复后继续运行：
    - `fist-kit-app/fist-security/fist-support-security`
    - `fist-kit-app/fist-security/fist-boot-security-oauth2-server`
    - `fist-kit-app/fist-data/fist-boot-crud-mybatis`
    - `fist-kit-cloud/fist-cloud-rpc-feign`
    - `fist-kit-cloud/fist-cloud-gateway`
-3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
-4. 在主代码 `compile` 有基本通过面后，再进入 test-compile、单元测试和配置迁移诊断。
+4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
+5. 在主代码 `compile` 有基本通过面后，再进入 test-compile、单元测试和配置迁移诊断。
 
 ## 本地日志
 

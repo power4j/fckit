@@ -18,7 +18,7 @@ package com.power4j.fist.boot.web.reactive.error;
 
 import com.power4j.fist.boot.web.constant.HttpConstant;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
-import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
+import org.springframework.boot.webflux.error.DefaultErrorAttributes;
 import org.springframework.web.reactive.function.server.ServerRequest;
 
 import java.util.Map;
