@@ -16,17 +16,15 @@
 
 package com.power4j.fist.jackson.support.obfuscation;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
 import com.power4j.fist.jackson.annotation.Obfuscation;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.deser.jdk.StringDeserializer;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -36,7 +34,7 @@ import java.util.Optional;
  * @since 1.0
  * @see StringObfuscateRegistry
  */
-public class ObfuscatedStringDeserializer extends StdDeserializer<String> implements ContextualDeserializer {
+public class ObfuscatedStringDeserializer extends StdDeserializer<String> {
 
 	private final StringObfuscate obfuscate;
 
@@ -55,7 +53,7 @@ public class ObfuscatedStringDeserializer extends StdDeserializer<String> implem
 	}
 
 	@Override
-	public String deserialize(JsonParser p, DeserializationContext ctx) throws IOException, JacksonException {
+	public String deserialize(JsonParser p, DeserializationContext ctx) throws JacksonException {
 		String value = p.getValueAsString();
 		if (value == null) {
 			return null;
@@ -68,13 +66,12 @@ public class ObfuscatedStringDeserializer extends StdDeserializer<String> implem
 			return obfuscate.deobfuscate(value);
 		}
 		catch (Exception e) {
-			throw new JsonParseException(p, e.getMessage(), e);
+			throw new StreamReadException(p, e.getMessage(), e);
 		}
 	}
 
 	@Override
-	public JsonDeserializer<?> createContextual(DeserializationContext ctx, BeanProperty property)
-			throws JsonMappingException {
+	public ValueDeserializer<?> createContextual(DeserializationContext ctx, BeanProperty property) {
 		if (property == null) {
 			return StringDeserializer.instance;
 		}

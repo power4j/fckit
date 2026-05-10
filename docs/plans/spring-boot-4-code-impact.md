@@ -98,7 +98,7 @@ fist-kit-app/fist-security/fist-support-security
 
 结果：`BUILD SUCCESS`，定向测试共 14 个用例，失败 0。
 
-## P0：Jackson 3 与 Boot 4 Jackson 自动配置迁移
+## 已处理：Jackson 3 与 Boot 4 Jackson 自动配置最小迁移
 
 `fist-support-security` 解除阻塞后，继续编译 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 等依赖链路时，新的首个阻塞点进入 `fist-boot-web-app` 的 Jackson 自动配置。
 
@@ -118,11 +118,57 @@ org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration.class
 org/springframework/boot/jackson/autoconfigure/JsonMapperBuilderCustomizer.class
 ```
 
+处理结果：
+
+- `fist-jackson` 的核心依赖从 `com.fasterxml.jackson.core:jackson-databind` 切换为 `tools.jackson.core:jackson-databind`，并显式保留 `com.fasterxml.jackson.core:jackson-annotations`。
+- `Obfuscation`、混淆序列化器、反序列化器和注解内省器迁移到 Jackson 3 的 `tools.jackson.databind.*` API。
+- `DateTimeModule`、`NumberStrModule` 迁移到 Jackson 3 内置 `tools.jackson.databind.ext.javatime.*` 与 `tools.jackson.databind.module.SimpleModule`。
+- `JacksonConfig` 从 `Jackson2ObjectMapperBuilderCustomizer` 迁移到 `JsonMapperBuilderCustomizer`，使用 `JsonMapper.Builder` 注册 locale、时区、日期格式、模块和混淆注解内省器。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-infra/fist-jackson -am "-Dtest=JacksonSimpleStringObfuscateTest,SimpleStringObfuscateTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：
+
+- `fist-boot-web-app` 依赖链主代码编译通过。
+- `fist-jackson` 定向测试共 8 个用例，失败 0。
+
+仍需注意：
+
+- 当前只处理 Boot 4 自动配置阻塞涉及的最小 Jackson 3 路径，其他模块中的 Jackson 2 直接引用仍需继续迁移。
+- 编译期间仍可见 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告，后续应单独处理。
+
+## P0：OAuth2 password grant 扩展迁移
+
+Jackson 3 阻塞解除后，继续编译 OAuth2 Server，新的首个阻塞点进入 Resource Owner Password Grant 扩展。
+
+失败模块：
+
+```text
+fist-kit-app/fist-security/fist-boot-security-oauth2-server
+```
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/main/java/com/power4j/fist/oauth2/extension/password/OAuth2ResourceOwnerPasswordAuthenticationConverter.java`
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/main/java/com/power4j/fist/oauth2/extension/password/OAuth2ResourceOwnerPasswordAuthenticationProvider.java`
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/main/java/com/power4j/fist/oauth2/extension/utils/OAuth2EndpointUtils.java`
+
+错误类型：
+
+- `AuthorizationGrantType.PASSWORD` 不存在。
+- `OAuth2ParameterNames.USERNAME` 不存在。
+- `OAuth2ParameterNames.PASSWORD` 不存在。
+
 判断：
 
-- 这不是单纯 import 迁移。`JsonMapperBuilderCustomizer` 面向 `tools.jackson.databind.json.JsonMapper.Builder`，而当前项目仍大量使用 Jackson 2 的 `com.fasterxml.jackson.*` 类型。
-- Jackson 3 迁移需要先处理 `fist-jackson` 中自定义模块、序列化器、反序列化器和注解内省器，再处理 Web App 自动配置。
-- OpenRewrite dry-run 可作为包名迁移参考，但不能直接全仓应用。
+- Spring Security 7 / Spring Authorization Server 7 不再保留这些 password grant 便捷常量。
+- 本项目已实现自定义 password grant 扩展，短期可通过自定义常量恢复编译，但需要评估是否继续保留该扩展能力。
+- 该问题和用户「不再使用 Groovy」无直接关系，应作为 OAuth2 专项处理。
 
 ## Jackson 3
 
@@ -258,9 +304,9 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 以 `fist-jackson` 为边界调研 Jackson 3 API 迁移细节。
-2. 迁移自定义 Jackson 模块、序列化器、反序列化器和注解内省器。
-3. 再迁移 `JacksonConfig` 到 Spring Boot 4 的 `JsonMapperBuilderCustomizer`。
+1. 评估并迁移 OAuth2 password grant 扩展中的常量使用。
+2. 继续处理待删除的 OAuth2 Jackson 2 支持类和 HTTP message converter 警告。
+3. 重新运行 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 和 Cloud Gateway 试编译。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
 
 ## 本地证据

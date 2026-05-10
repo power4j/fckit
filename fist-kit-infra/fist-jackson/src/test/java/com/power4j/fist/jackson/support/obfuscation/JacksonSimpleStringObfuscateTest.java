@@ -16,16 +16,15 @@
 
 package com.power4j.fist.jackson.support.obfuscation;
 
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.power4j.fist.jackson.annotation.Obfuscation;
 import lombok.Data;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
+import tools.jackson.databind.AnnotationIntrospector;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.introspect.AnnotationIntrospectorPair;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -45,16 +44,14 @@ public class JacksonSimpleStringObfuscateTest {
 
 	@BeforeAll
 	public static void init() {
-		ObjectMapper mapper = new ObjectMapper();
-		AnnotationIntrospector sis = mapper.getSerializationConfig().getAnnotationIntrospector();
-		AnnotationIntrospector is1 = AnnotationIntrospectorPair.pair(sis,
+		JsonMapper.Builder builder = JsonMapper.builder();
+		AnnotationIntrospector is1 = AnnotationIntrospectorPair.create(builder.annotationIntrospector(),
 				new ObfuscatedAnnotationIntrospector(StringObfuscateRegistry.INSTANCE));
-		mapper.setAnnotationIntrospector(is1);
-		objectMapper = mapper;
+		objectMapper = builder.annotationIntrospector(is1).build();
 	}
 
 	@Test
-	public void testSerialize() throws IOException {
+	public void testSerialize() throws Exception {
 		Foo foo = new Foo();
 		foo.setName("hello world");
 		String value = objectMapper.writeValueAsString(foo);
@@ -63,7 +60,7 @@ public class JacksonSimpleStringObfuscateTest {
 	}
 
 	@Test
-	public void testSerializeNull() throws IOException {
+	public void testSerializeNull() throws Exception {
 		Foo foo = new Foo();
 		foo.setName(null);
 		String value = objectMapper.writeValueAsString(foo);
@@ -72,7 +69,7 @@ public class JacksonSimpleStringObfuscateTest {
 	}
 
 	@Test
-	public void testSerializeEmpty() throws IOException {
+	public void testSerializeEmpty() throws Exception {
 		Foo foo = new Foo();
 		foo.setName("");
 		String value = objectMapper.writeValueAsString(foo);
@@ -81,7 +78,7 @@ public class JacksonSimpleStringObfuscateTest {
 	}
 
 	@Test
-	public void testDeserialize() throws IOException {
+	public void testDeserialize() throws Exception {
 		String json = "{\"name\":\"OBF.XOR_V1$aGRub2slcWh6ZW4=\"}";
 		Foo foo = objectMapper.readValue(json, Foo.class);
 		System.out.println("Deserialized: " + foo.getName());
@@ -89,7 +86,7 @@ public class JacksonSimpleStringObfuscateTest {
 	}
 
 	@Test
-	public void testDeserializeNull() throws IOException {
+	public void testDeserializeNull() throws Exception {
 		String json = "{\"name\":null}";
 		Foo foo = objectMapper.readValue(json, Foo.class);
 		System.out.println("Deserialized: " + foo.getName());
@@ -97,7 +94,7 @@ public class JacksonSimpleStringObfuscateTest {
 	}
 
 	@Test
-	public void testDeserializeEmpty() throws IOException {
+	public void testDeserializeEmpty() throws Exception {
 		String json = "{\"name\":\"\"}";
 		Foo foo = objectMapper.readValue(json, Foo.class);
 		System.out.println("Deserialized: " + foo.getName());

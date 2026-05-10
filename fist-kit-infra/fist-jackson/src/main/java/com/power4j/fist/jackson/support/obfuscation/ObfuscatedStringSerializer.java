@@ -16,15 +16,14 @@
 
 package com.power4j.fist.jackson.support.obfuscation;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.ContextualSerializer;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.power4j.fist.jackson.annotation.Obfuscation;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.exc.StreamWriteException;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -34,7 +33,7 @@ import java.util.Optional;
  * @since 1.0
  * @see StringObfuscateRegistry
  */
-public class ObfuscatedStringSerializer extends StdSerializer<String> implements ContextualSerializer {
+public class ObfuscatedStringSerializer extends StdSerializer<String> {
 
 	private final StringObfuscate obfuscate;
 
@@ -53,8 +52,8 @@ public class ObfuscatedStringSerializer extends StdSerializer<String> implements
 	}
 
 	@Override
-	public void serialize(String value, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-			throws IOException {
+	public void serialize(String value, JsonGenerator jsonGenerator, SerializationContext serializerProvider)
+			throws JacksonException {
 		if (value == null) {
 			jsonGenerator.writeNull();
 		}
@@ -67,7 +66,7 @@ public class ObfuscatedStringSerializer extends StdSerializer<String> implements
 				obfuscated = obfuscate.modeId() + StringObfuscate.HEAD + obfuscate.obfuscate(value);
 			}
 			catch (Exception e) {
-				throw new JsonGenerationException(e, jsonGenerator);
+				throw new StreamWriteException(jsonGenerator, e);
 			}
 
 			jsonGenerator.writeString(obfuscated);
@@ -75,8 +74,7 @@ public class ObfuscatedStringSerializer extends StdSerializer<String> implements
 	}
 
 	@Override
-	public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property)
-			throws JsonMappingException {
+	public ValueSerializer<?> createContextual(SerializationContext prov, BeanProperty property) {
 		if (property == null) {
 			return prov.findNullValueSerializer(property);
 		}

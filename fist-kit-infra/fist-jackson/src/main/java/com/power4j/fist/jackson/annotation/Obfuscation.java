@@ -1,10 +1,10 @@
 package com.power4j.fist.jackson.annotation;
 
 import com.fasterxml.jackson.annotation.JacksonAnnotationsInside;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.power4j.fist.jackson.support.obfuscation.ObfuscatedStringDeserializer;
 import com.power4j.fist.jackson.support.obfuscation.ObfuscatedStringSerializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

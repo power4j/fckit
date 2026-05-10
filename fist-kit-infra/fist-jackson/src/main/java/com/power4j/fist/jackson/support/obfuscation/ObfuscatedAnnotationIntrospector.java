@@ -16,9 +16,10 @@
 
 package com.power4j.fist.jackson.support.obfuscation;
 
-import com.fasterxml.jackson.databind.introspect.Annotated;
-import com.fasterxml.jackson.databind.introspect.NopAnnotationIntrospector;
 import com.power4j.fist.jackson.annotation.Obfuscation;
+import tools.jackson.databind.cfg.MapperConfig;
+import tools.jackson.databind.introspect.Annotated;
+import tools.jackson.databind.introspect.NopAnnotationIntrospector;
 
 import java.util.Objects;
 
@@ -37,21 +38,21 @@ public class ObfuscatedAnnotationIntrospector extends NopAnnotationIntrospector 
 	}
 
 	@Override
-	public Object findSerializer(Annotated am) {
+	public Object findSerializer(MapperConfig<?> config, Annotated am) {
 		Obfuscation obfuscation = am.getAnnotation(Obfuscation.class);
 		if (Objects.nonNull(obfuscation)) {
 			return new ObfuscatedStringSerializer(defaultProcessor, processorProvider);
 		}
-		return super.findSerializer(am);
+		return super.findSerializer(config, am);
 	}
 
 	@Override
-	public Object findDeserializer(Annotated am) {
+	public Object findDeserializer(MapperConfig<?> config, Annotated am) {
 		Obfuscation obfuscation = am.getAnnotation(Obfuscation.class);
 		if (Objects.nonNull(obfuscation)) {
 			return new ObfuscatedStringDeserializer(defaultProcessor, processorProvider);
 		}
-		return super.findContentDeserializer(am);
+		return super.findDeserializer(config, am);
 	}
 
 }

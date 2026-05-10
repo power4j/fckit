@@ -173,11 +173,37 @@ OpenRewrite dry-run 能识别 Gateway artifactId 迁移，但未识别本次暴�
 - Spring Boot `4.0.6` 本地 JAR 中存在 `org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration` 和 `JsonMapperBuilderCustomizer`。
 - 该迁移牵涉 Jackson 3 的 `tools.jackson.*` 类型，不能只做 import 替换。
 
+该阻塞点已完成最小迁移：
+
+- `fist-jackson` 切换到 Jackson 3 `tools.jackson.core:jackson-databind`，并显式保留 Jackson annotations。
+- `DateTimeModule`、`NumberStrModule`、混淆序列化支持和 `JacksonConfig` 已迁移到 `JsonMapper.Builder` 相关 API。
+- `fist-boot-web-app` 依赖链主代码编译通过。
+- `fist-jackson` 定向测试共 8 个用例，失败 0。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-infra/fist-jackson -am "-Dtest=JacksonSimpleStringObfuscateTest,SimpleStringObfuscateTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+继续运行 OAuth2 Server 后，新的 P0 阻塞点为 Spring Security 7 / Authorization Server 7 移除 password grant 相关便捷常量：
+
+- `AuthorizationGrantType.PASSWORD`
+- `OAuth2ParameterNames.USERNAME`
+- `OAuth2ParameterNames.PASSWORD`
+
+受影响模块：
+
+```text
+fist-kit-app/fist-security/fist-boot-security-oauth2-server
+```
+
 下一步：
 
-1. 以 `fist-kit-infra/fist-jackson` 为起点调研 Jackson 3 API 差异。
-2. 迁移自定义 Jackson 模块、序列化器、反序列化器和注解内省器。
-3. 再迁移 `fist-boot-web-app` 的 `JacksonConfig`。
+1. 评估并迁移 OAuth2 password grant 扩展中的常量使用。
+2. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
+3. 重新运行 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 和 Cloud Gateway 试编译。
 4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 5. 在主代码 `compile` 有基本通过面后，再进入 test-compile、单元测试和配置迁移诊断。
 
