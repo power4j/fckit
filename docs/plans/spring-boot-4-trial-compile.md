@@ -42,6 +42,12 @@
 - `spock-lib.version`：保持 `2.4-groovy-5.0`，后续按去 Groovy 任务删除。
 - `spring-security-jwt.version`：保持 `1.1.1.RELEASE`，后续按退役任务删除。
 
+后续试运行修正：
+
+| 属性 | 原试编译版本 | 修正版本 | 原因 |
+| --- | --- | --- | --- |
+| `mybatis-spring.version` | `3.0.5` | `4.0.0` | MyBatis Plus Boot 4 starter 依赖 `mybatis-spring` 4.0.0，适配 Spring Framework 7 |
+
 ### Gateway 坐标
 
 | 模块 | 原坐标 | 试编译坐标 |
@@ -306,15 +312,35 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 .\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am "-Dtest=QueryTest,UpdateTest,AbstractNodeIdxSupportTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
 ```
 
-结果：失败。当前运行期阻塞为 `ApplicationContext` 无法创建 MyBatis mapper，根因栈为 `Property 'sqlSessionFactory' or 'sqlSessionTemplate' are required`。下一步需单独检查 MyBatis Plus Boot 4 自动配置与测试数据库替换规则。
+结果：第一轮失败。运行期阻塞为 `ApplicationContext` 无法创建 MyBatis mapper，根因栈为 `Property 'sqlSessionFactory' or 'sqlSessionTemplate' are required`。
+
+根因定位：
+
+- Spring Boot 4 的 `DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration`。
+- MyBatis Plus `3.5.16` 的 `mybatis-plus-spring-boot3-starter` 仍将 `MybatisPlusAutoConfiguration` 排在旧包 `org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration` 之后。
+- 在 Boot 4 下旧包顺序失效，`MybatisPlusAutoConfiguration` 的 `@ConditionalOnSingleCandidate(DataSource.class)` 过早评估，因此没有创建 `SqlSessionFactory`。
+
+修正：
+
+- `fist-boot-crud-mybatis` 改用 `mybatis-plus-spring-boot4-starter`。
+- 测试依赖改用 `mybatis-plus-spring-boot4-starter-test`。
+- 根 `mybatis-spring.version` 升级到 `4.0.0`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests test-compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am "-Dtest=QueryTest,UpdateTest,AbstractNodeIdxSupportTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：`test-compile` 为 `BUILD SUCCESS`；定向测试共 12 个用例，失败 0。
 
 下一步：
 
-1. 调查 MyBatis CRUD 运行期 `SqlSessionFactory` 缺失问题。
-2. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
-3. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
-4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
-5. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
+1. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
+2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
+3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
+4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
 
 ## 本地日志
 
@@ -335,5 +361,8 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 ## 资料来源
 
 - Spring Boot 4.0 Migration Guide：`https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide`
+- Spring Boot 4.0.6 发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
+- Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
+- MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

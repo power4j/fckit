@@ -271,9 +271,9 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/test/java/com/power
 
 结果：Gateway 三个子模块组合 `test-compile` 为 `BUILD SUCCESS`。
 
-## 已处理：MyBatis CRUD 测试数据库注解编译迁移
+## 已处理：MyBatis CRUD 测试数据库与 MyBatis Plus Boot 4 starter 迁移
 
-继续执行 MyBatis CRUD `test-compile` 后，测试源码暴露 Spring Boot 4 JDBC 测试模块拆分问题。
+继续执行 MyBatis CRUD `test-compile` 后，测试源码暴露 Spring Boot 4 JDBC 测试模块拆分问题；随后运行受影响测试时，又暴露 MyBatis Plus Boot 3 starter 与 Boot 4 自动配置顺序不兼容问题。
 
 失败文件：
 
@@ -286,33 +286,33 @@ fist-kit-app/fist-data/fist-boot-crud-mybatis/src/test/java/com/power4j/fist/boo
 错误类型：
 
 - `org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase` 不存在。
+- 运行 `QueryTest`、`UpdateTest`、`AbstractNodeIdxSupportTest` 时，`ApplicationContext` 无法创建 MyBatis mapper，根因栈为 `Property 'sqlSessionFactory' or 'sqlSessionTemplate' are required`。
 
 判断：
 
 - Spring Boot 4 将 JDBC 测试支持拆分到 `org.springframework.boot:spring-boot-jdbc-test`。
 - `AutoConfigureTestDatabase` 新包名为 `org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase`。
+- Spring Boot 4 的 `DataSourceAutoConfiguration` 已位于 `org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration`。
+- MyBatis Plus `3.5.16` 的 `mybatis-plus-spring-boot3-starter` 仍声明旧的 `org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration` 自动配置顺序，导致 `MybatisPlusAutoConfiguration` 过早评估，`@ConditionalOnSingleCandidate(DataSource.class)` 看不到 `DataSource`。
+- MyBatis Plus `3.5.16` 已提供 `mybatis-plus-spring-boot4-starter` 和 `mybatis-plus-spring-boot4-starter-test`，其自动配置指向 Boot 4 的 JDBC 新包。
 
 处理结果：
 
 - `fist-boot-crud-mybatis` 增加 `spring-boot-jdbc-test` 测试依赖。
 - 3 个测试类的 `AutoConfigureTestDatabase` import 更新到新包。
+- `fist-boot-crud-mybatis` 从 `mybatis-plus-spring-boot3-starter` 切换到 `mybatis-plus-spring-boot4-starter`。
+- 测试依赖从 `mybatis-plus-spring-boot3-starter-test` 切换到 `mybatis-plus-spring-boot4-starter-test`。
+- 根 `mybatis-spring.version` 从 `3.0.5` 升级到 `4.0.0`，与 MyBatis Plus Boot 4 starter 的 Spring 7 依赖组合一致。
 
 验证命令：
 
 ```powershell
 .\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis spring-javaformat:apply
 .\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests test-compile
-```
-
-结果：MyBatis CRUD `test-compile` 为 `BUILD SUCCESS`。
-
-运行期验证：
-
-```powershell
 .\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am "-Dtest=QueryTest,UpdateTest,AbstractNodeIdxSupportTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
 ```
 
-结果：失败。当前首个运行期阻塞为 `ApplicationContext` 无法创建 MyBatis mapper，根因栈为 `Property 'sqlSessionFactory' or 'sqlSessionTemplate' are required`。该问题已经超出本次编译迁移，后续需要单独检查 MyBatis Plus Boot 4 自动配置与测试数据库替换规则。
+结果：MyBatis CRUD `test-compile` 为 `BUILD SUCCESS`；定向运行测试共 12 个用例，失败 0。
 
 ## Jackson 3
 
@@ -448,13 +448,16 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 调查 MyBatis CRUD 运行期 `SqlSessionFactory` 缺失问题，确认是 MyBatis Plus Boot 4 自动配置条件变化、测试数据库替换变化，还是 starter 依赖组合问题。
-2. 继续处理待删除的 OAuth2 Jackson 2 支持类和 HTTP message converter 警告。
-3. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
+1. 继续处理待删除的 OAuth2 Jackson 2 支持类和 HTTP message converter 警告。
+2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
+3. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
 
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
+- Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
+- Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
+- MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`
