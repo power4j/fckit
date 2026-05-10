@@ -61,7 +61,7 @@ public class OAuth2EndpointUtils {
 	}
 
 	public Optional<String> resolveUsername(HttpServletRequest request) {
-		return resolveParameter(request, OAuth2ParameterNames.USERNAME, AuthConstants.SSO_PARAMETER_NAME,
+		return resolveParameter(request, AuthConstants.USERNAME_PARAMETER_NAME, AuthConstants.SSO_PARAMETER_NAME,
 				AuthConstants.SMS_PARAMETER_NAME);
 	}
 

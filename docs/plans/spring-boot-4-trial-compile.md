@@ -199,11 +199,46 @@ OpenRewrite dry-run 能识别 Gateway artifactId 迁移，但未识别本次暴�
 fist-kit-app/fist-security/fist-boot-security-oauth2-server
 ```
 
+该阻塞点已完成最小迁移：
+
+- `AuthConstants` 显式定义 password grant 类型值与 `username`、`password` 参数名。
+- password grant converter、provider、endpoint helper 与定向测试不再依赖 Spring Security 7 已移除的便捷常量。
+- 继续保留当前自定义 Resource Owner Password Grant 扩展的行为，不在本轮调研中扩大为授权模式退役。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=OAuth2ResourceOwnerBaseAuthenticationProviderTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests compile
+```
+
+结果：上述命令均为 `BUILD SUCCESS`。OAuth2 Server 定向测试共 1 个用例，失败 0。编译期间仍存在 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
+
+继续运行 Cloud Gateway 试编译后，新的 P0 阻塞点为 Spring Framework 7 `HttpHeaders` 不再暴露 Map 风格访问方法：
+
+- `HttpHeaders.keySet()`
+- `HttpHeaders.containsKey(String)`
+
+受影响模块：
+
+```text
+fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core
+```
+
+失败文件：
+
+```text
+fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power4j/fist/cloud/gateway/AuthUtils.java
+```
+
 下一步：
 
-1. 评估并迁移 OAuth2 password grant 扩展中的常量使用。
+1. 迁移 `AuthUtils` 中的 `HttpHeaders` 访问方式。
 2. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
-3. 重新运行 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 和 Cloud Gateway 试编译。
+3. 重新运行 Cloud Gateway Auth Core 与 Cloud Gateway ACL 试编译。
 4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 5. 在主代码 `compile` 有基本通过面后，再进入 test-compile、单元测试和配置迁移诊断。
 

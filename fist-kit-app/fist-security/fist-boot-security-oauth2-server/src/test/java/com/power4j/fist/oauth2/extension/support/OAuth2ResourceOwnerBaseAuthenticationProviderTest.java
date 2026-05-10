@@ -16,6 +16,7 @@
 
 package com.power4j.fist.oauth2.extension.support;
 
+import com.power4j.fist.oauth2.core.AuthConstants;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -55,7 +56,8 @@ class OAuth2ResourceOwnerBaseAuthenticationProviderTest {
 		OAuth2ResourceOwnerPasswordAuthenticationProviderStub provider = new OAuth2ResourceOwnerPasswordAuthenticationProviderStub(
 				authenticationManager, authorizationService, tokenGenerator);
 		OAuth2ResourceOwnerPasswordAuthenticationTokenStub authentication = new OAuth2ResourceOwnerPasswordAuthenticationTokenStub(
-				AuthorizationGrantType.PASSWORD, clientPrincipal, Map.of("username", "alice", "password", "pwd"));
+				new AuthorizationGrantType(AuthConstants.PASSWORD), clientPrincipal,
+				Map.of(AuthConstants.USERNAME_PARAMETER_NAME, "alice", AuthConstants.PASSWORD_PARAMETER_NAME, "pwd"));
 
 		OAuth2AuthenticationException ex = Assertions.assertThrows(OAuth2AuthenticationException.class,
 				() -> provider.authenticate(authentication));
@@ -73,8 +75,8 @@ class OAuth2ResourceOwnerBaseAuthenticationProviderTest {
 
 		@Override
 		public UsernamePasswordAuthenticationToken buildToken(Map<String, Object> reqParameters) {
-			return new UsernamePasswordAuthenticationToken(reqParameters.get("username"),
-					reqParameters.get("password"));
+			return new UsernamePasswordAuthenticationToken(reqParameters.get(AuthConstants.USERNAME_PARAMETER_NAME),
+					reqParameters.get(AuthConstants.PASSWORD_PARAMETER_NAME));
 		}
 
 		@Override

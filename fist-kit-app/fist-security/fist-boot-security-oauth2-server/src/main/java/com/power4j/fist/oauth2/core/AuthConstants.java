@@ -73,6 +73,21 @@ public interface AuthConstants {
 	String CLIENT_CREDENTIALS = "client_credentials";
 
 	/**
+	 * 密码登录
+	 */
+	String PASSWORD = "password";
+
+	/**
+	 * 密码登录用户名参数名称
+	 */
+	String USERNAME_PARAMETER_NAME = "username";
+
+	/**
+	 * 密码登录密码参数名称
+	 */
+	String PASSWORD_PARAMETER_NAME = "password";
+
+	/**
 	 * 短信登录 参数名称
 	 */
 	String SMS_PARAMETER_NAME = "mobile";

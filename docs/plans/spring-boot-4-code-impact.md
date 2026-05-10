@@ -142,7 +142,7 @@ org/springframework/boot/jackson/autoconfigure/JsonMapperBuilderCustomizer.class
 - 当前只处理 Boot 4 自动配置阻塞涉及的最小 Jackson 3 路径，其他模块中的 Jackson 2 直接引用仍需继续迁移。
 - 编译期间仍可见 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告，后续应单独处理。
 
-## P0：OAuth2 password grant 扩展迁移
+## 已处理：OAuth2 password grant 扩展迁移
 
 Jackson 3 阻塞解除后，继续编译 OAuth2 Server，新的首个阻塞点进入 Resource Owner Password Grant 扩展。
 
@@ -169,6 +169,54 @@ fist-kit-app/fist-security/fist-boot-security-oauth2-server
 - Spring Security 7 / Spring Authorization Server 7 不再保留这些 password grant 便捷常量。
 - 本项目已实现自定义 password grant 扩展，短期可通过自定义常量恢复编译，但需要评估是否继续保留该扩展能力。
 - 该问题和用户「不再使用 Groovy」无直接关系，应作为 OAuth2 专项处理。
+
+处理结果：
+
+- `AuthConstants` 显式定义 `password` grant 类型值和 `username`、`password` 参数名。
+- password grant converter、provider、endpoint helper 与定向测试改为复用项目内常量。
+- `AuthorizationGrantType` 继续使用公开构造函数表达自定义授权类型，避免恢复 Spring Security 7 已移除的便捷常量依赖。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=OAuth2ResourceOwnerBaseAuthenticationProviderTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests compile
+```
+
+结果：
+
+- OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 主代码编译通过。
+- OAuth2 Server 定向测试共 1 个用例，失败 0。
+- OAuth2 Server 编译期间仍存在 Jackson 2 相关待删除警告，需后续专项处理。
+
+## P0：Gateway `HttpHeaders` 访问方式迁移
+
+OAuth2 password grant 阻塞解除后，继续编译 Cloud Gateway ACL，新的首个阻塞点进入 Gateway Auth Core。
+
+失败模块：
+
+```text
+fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core
+```
+
+失败文件：
+
+```text
+fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power4j/fist/cloud/gateway/AuthUtils.java
+```
+
+错误类型：
+
+- `HttpHeaders.keySet()` 不存在。
+- `HttpHeaders.containsKey(String)` 不存在。
+
+判断：
+
+- Spring Framework 7 的 `HttpHeaders` 不再暴露这些 Map 风格方法。
+- `AuthUtils` 的语义只是判断目标 header 是否存在并按需移除，迁移应优先使用当前 `HttpHeaders` 支持的读取方法，不改变网关请求头清理行为。
 
 ## Jackson 3
 
@@ -304,9 +352,9 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 评估并迁移 OAuth2 password grant 扩展中的常量使用。
+1. 迁移 Gateway `AuthUtils` 中的 `HttpHeaders` 访问方式。
 2. 继续处理待删除的 OAuth2 Jackson 2 支持类和 HTTP message converter 警告。
-3. 重新运行 OAuth2 Server、MyBatis CRUD、Cloud OpenFeign 和 Cloud Gateway 试编译。
+3. 重新运行 Cloud Gateway Auth Core、Cloud Gateway ACL 与后续 Gateway 子模块试编译。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
 
 ## 本地证据

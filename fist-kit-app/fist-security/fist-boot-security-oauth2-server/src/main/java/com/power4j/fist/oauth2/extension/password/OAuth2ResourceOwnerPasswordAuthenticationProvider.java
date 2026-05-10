@@ -1,5 +1,6 @@
 package com.power4j.fist.oauth2.extension.password;
 
+import com.power4j.fist.oauth2.core.AuthConstants;
 import com.power4j.fist.oauth2.extension.support.OAuth2ResourceOwnerBaseAuthenticationProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -8,7 +9,6 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2Token;
-import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
@@ -24,6 +24,9 @@ import java.util.Map;
 @Slf4j
 public class OAuth2ResourceOwnerPasswordAuthenticationProvider
 		extends OAuth2ResourceOwnerBaseAuthenticationProvider<OAuth2ResourceOwnerPasswordAuthenticationToken> {
+
+	private static final AuthorizationGrantType PASSWORD_GRANT_TYPE = new AuthorizationGrantType(
+			AuthConstants.PASSWORD);
 
 	/**
 	 * Constructs an {@code OAuth2AuthorizationCodeAuthenticationProvider} using the
@@ -41,8 +44,8 @@ public class OAuth2ResourceOwnerPasswordAuthenticationProvider
 
 	@Override
 	public UsernamePasswordAuthenticationToken buildToken(Map<String, Object> reqParameters) {
-		String username = (String) reqParameters.get(OAuth2ParameterNames.USERNAME);
-		String password = (String) reqParameters.get(OAuth2ParameterNames.PASSWORD);
+		String username = (String) reqParameters.get(AuthConstants.USERNAME_PARAMETER_NAME);
+		String password = (String) reqParameters.get(AuthConstants.PASSWORD_PARAMETER_NAME);
 		return new UsernamePasswordAuthenticationToken(username, password);
 	}
 
@@ -58,7 +61,7 @@ public class OAuth2ResourceOwnerPasswordAuthenticationProvider
 	@Override
 	public void checkClient(RegisteredClient registeredClient) {
 		assert registeredClient != null;
-		if (!registeredClient.getAuthorizationGrantTypes().contains(AuthorizationGrantType.PASSWORD)) {
+		if (!registeredClient.getAuthorizationGrantTypes().contains(PASSWORD_GRANT_TYPE)) {
 			throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
 		}
 	}
