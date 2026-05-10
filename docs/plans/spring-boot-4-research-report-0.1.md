@@ -15,11 +15,11 @@
 - Jackson 3、Groovy/Spock 去除、Feign 路线选择、Spring Security 7、starter 模块化是本仓库的主要风险。
 - OpenRewrite、Arconia CLI、`spring-boot-properties-migrator` 应作为调研工具链，但必须先 dry-run 和人工复核。
 - Spring Boot 4.1 的虚拟线程与 HikariCP/LazyConnection 风险应进入后续 Java 21 调研，不进入本轮 GA 升级目标。
-- 后续用户侧升级手册需要引入一个机密下游应用样本。公开报告只保留泛化结论，不记录样本名称、路径、业务结构、依赖清单、配置内容、代码片段或错误日志原文。
+- 后续用户侧升级手册需要引入一个真实内部项目样本。公开报告只保留泛化结论，不记录样本名称、路径、业务结构、依赖清单、配置内容、代码片段或错误日志原文。
 
 ## 保密边界
 
-机密下游应用样本仅用于验证 FIST Kit v3 升级后对真实使用方的影响，并辅助编写用户侧升级手册。
+真实内部项目样本仅用于验证 FIST Kit v3 升级后对真实使用方的影响，并辅助编写用户侧升级手册。
 
 允许记录：
 
@@ -187,7 +187,7 @@ OpenRewrite 文档中已覆盖部分 Spring Boot 4 starter artifactId 变更，�
 2. 新建试编译分支或在当前调研分支上创建可回退提交，只修改版本属性和必要 BOM。
 3. 先运行 `.\mvnw.cmd -pl fist-kit-infra -DskipTests compile`，收集 Jackson、Groovy、starter 坐标的第一批编译错误。
 4. 再运行 `.\mvnw.cmd -pl fist-kit-cloud -DskipTests compile`，确认 OpenFeign、Gateway、LoadBalancer、Sentinel 的真实错误。
-5. 在库侧试编译完成后，使用机密下游应用样本提炼用户侧升级手册；手册只写通用步骤和泛化结论。
+5. 在库侧试编译完成后，使用真实内部项目样本提炼用户侧升级手册；手册只写通用步骤和泛化结论。
 6. 不建议先改源码。应先让工具和编译器给出真实错误边界。
 
 ## 资料来源

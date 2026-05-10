@@ -17,7 +17,7 @@
 - 后续计划不再使用 Groovy。当前 Groovy/Spock 仅用于测试代码，迁移到 Java/JUnit 5/Mockito 需要作为升级前置任务。
 - 自动化升级工具进入调研范围。优先评估 OpenRewrite、Arconia CLI 和 `spring-boot-properties-migrator`，减少手工迁移和配置参数遗漏。
 - Spring Cloud OpenFeign 与 Spring HTTP Service Clients 需要并行评估。OpenFeign 仍是 Spring Cloud 官方项目，但官方文档已标记 feature-complete，并建议新项目使用 Spring HTTP Service Clients。
-- 引入一个机密下游应用作为使用侧验证样本，用于编写用户侧升级手册。公开文档和提交信息不得记录该样本的名称、路径、业务结构、依赖清单、配置内容、代码片段或错误日志原文。
+- 引入一个真实内部项目作为使用侧验证样本，用于编写用户侧升级手册。公开文档和提交信息不得记录该样本的名称、路径、业务结构、依赖清单、配置内容、代码片段或错误日志原文。
 
 ## 已确认基线
 
@@ -71,7 +71,7 @@
 
 - `examples`：验证 starter、自动配置和客户端示例是否还能启动。
 - `benchmarks`：验证依赖管理和 JMH/日志基准测试是否仍可编译。
-- 机密下游应用样本：仅用于验证库升级后对使用方的影响，并提炼通用升级步骤；所有可提交文档只记录泛化结论。
+- 真实内部项目样本：仅用于验证库升级后对使用方的影响，并提炼通用升级步骤；所有可提交文档只记录泛化结论。
 
 ## 重点调研问题
 
@@ -90,7 +90,7 @@
 13. `fist-cloud-rpc-feign` 是继续升级 Spring Cloud OpenFeign，还是迁移到 Spring HTTP Service Clients；SDE `SecureFeignEncoder`、`SecureFeignDecoder` 及示例 Feign 客户端是否存在等价的 HTTP Service Clients 适配方案。
 14. Spring Boot 4.1 的虚拟线程与连接池优化是否影响后续 Java 21 规划。
 15. 使用方项目升级时需要哪些前置检查、依赖替换、配置迁移、测试验证和回退策略。
-16. 如何在不暴露机密下游应用信息的前提下，将真实使用方问题提炼为通用升级手册。
+16. 如何在不暴露真实内部项目信息的前提下，将真实使用方问题提炼为通用升级手册。
 
 ## 工作分解
 
@@ -191,9 +191,9 @@
 
 产出：`docs/plans/spring-boot-4-user-upgrade-guide.md`
 
-- 基于发布组件、`examples`、`benchmarks` 和机密下游应用样本，提炼使用方升级步骤。
+- 基于发布组件、`examples`、`benchmarks` 和真实内部项目样本，提炼使用方升级步骤。
 - 只记录通用操作：版本矩阵、依赖替换、配置参数迁移、常见编译错误类型、测试验证命令和回退策略。
-- 不记录机密下游应用的名称、路径、业务结构、依赖清单、配置内容、代码片段或错误日志原文。
+- 不记录真实内部项目的名称、路径、业务结构、依赖清单、配置内容、代码片段或错误日志原文。
 - 对必须引用的现象使用抽象描述，例如「某下游应用的网关模块」或「某下游应用的 OAuth 2.0 配置」；不得出现可识别项目的信息。
 
 ## 验证策略
