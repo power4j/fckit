@@ -241,6 +241,36 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 - 三个 Gateway 子模块组合编译通过。
 - 编译期间仍存在部分 deprecation 警告，需后续用 `-Xlint:deprecation` 分类。
 
+## 已处理：Gateway 测试源码 `test-compile` 迁移
+
+Gateway 主代码编译通过后，进入 `test-compile` 暴露测试夹具迁移问题。
+
+失败文件：
+
+```text
+fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/test/java/com/power4j/fist/cloud/gateway/test/HttpBinCompatibleController.java
+fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/test/java/com/power4j/fist/cloud/gateway/test/PermitAllSecurityConfiguration.java
+```
+
+错误类型：
+
+- 测试控制器使用 `Collectors.toMap(..., HttpHeaders::new)`，但 Spring Framework 7 的 `HttpHeaders` 不再满足 `Map` 供应者约束。
+- 测试安全配置使用旧式 `http.authorizeExchange().anyExchange().permitAll().and().csrf().disable()` 链式 DSL，Spring Security 7 只保留接收 `Customizer` 的方法。
+
+处理结果：
+
+- `HttpBinCompatibleController` 改为显式创建 `HttpHeaders`，再通过 `addAll(...)` 复制 `X-Test-*` header。
+- `PermitAllSecurityConfiguration` 改为 `authorizeExchange(exchange -> ...)` 和 `csrf(ServerHttpSecurity.CsrfSpec::disable)`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests test-compile
+```
+
+结果：Gateway 三个子模块组合 `test-compile` 为 `BUILD SUCCESS`。
+
 ## Jackson 3
 
 扫描命令：
@@ -375,7 +405,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 对已通过 `compile` 的核心链路执行 `test-compile`，优先暴露测试源码、Groovy / Spock 和 Spring Boot Test 相关迁移问题。
+1. 继续对 OAuth2 Server、Cloud OpenFeign、MyBatis CRUD 等已通过 `compile` 的核心链路执行 `test-compile`。
 2. 继续处理待删除的 OAuth2 Jackson 2 支持类和 HTTP message converter 警告。
 3. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。

@@ -253,9 +253,28 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：Gateway Auth Core、Gateway ACL、Gateway Security Reactive 主代码编译均为 `BUILD SUCCESS`；三个 Gateway 子模块组合编译为 `BUILD SUCCESS`。
 
+继续执行 Gateway 三个子模块组合 `test-compile` 后，测试源码暴露两类迁移问题：
+
+- `HttpBinCompatibleController` 中 `Collectors.toMap(..., HttpHeaders::new)` 不再适配 Spring Framework 7 的 `HttpHeaders` 类型。
+- `PermitAllSecurityConfiguration` 中旧式 `authorizeExchange().anyExchange().permitAll().and().csrf().disable()` 链式 DSL 不再适配 Spring Security 7。
+
+该阻塞点已完成最小迁移：
+
+- 测试控制器显式创建 `HttpHeaders` 并通过 `addAll(...)` 复制 `X-Test-*` header。
+- 测试安全配置使用 `authorizeExchange(exchange -> ...)` 和 `csrf(ServerHttpSecurity.CsrfSpec::disable)`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests test-compile
+```
+
+结果：Gateway 三个子模块组合 `test-compile` 为 `BUILD SUCCESS`。
+
 下一步：
 
-1. 对已通过 `compile` 的核心链路执行 `test-compile`，优先暴露测试源码、Groovy / Spock 和 Spring Boot Test 相关迁移问题。
+1. 继续对 OAuth2 Server、Cloud OpenFeign、MyBatis CRUD 等已通过 `compile` 的核心链路执行 `test-compile`。
 2. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
 3. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
 4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
