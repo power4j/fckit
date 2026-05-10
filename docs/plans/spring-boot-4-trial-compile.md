@@ -272,9 +272,45 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：Gateway 三个子模块组合 `test-compile` 为 `BUILD SUCCESS`。
 
+继续执行 OAuth2 Server 与 Cloud OpenFeign `test-compile`：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests test-compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests test-compile
+```
+
+结果：两条链路均为 `BUILD SUCCESS`。
+
+继续执行 MyBatis CRUD `test-compile` 后，测试源码暴露 Spring Boot 4 JDBC 测试模块拆分问题：
+
+- `AutoConfigureTestDatabase` 不再位于 `org.springframework.boot.test.autoconfigure.jdbc`。
+- Spring Boot 4 中该注解位于 `org.springframework.boot.jdbc.test.autoconfigure`，并由 `org.springframework.boot:spring-boot-jdbc-test` 提供。
+
+该阻塞点已完成最小迁移：
+
+- `fist-boot-crud-mybatis` 增加 `spring-boot-jdbc-test` 测试依赖。
+- `QueryTest`、`UpdateTest`、`AbstractNodeIdxSupportTest` 的 import 更新到新包。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests test-compile
+```
+
+结果：MyBatis CRUD `test-compile` 为 `BUILD SUCCESS`。
+
+随后尝试运行受影响测试：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am "-Dtest=QueryTest,UpdateTest,AbstractNodeIdxSupportTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：失败。当前运行期阻塞为 `ApplicationContext` 无法创建 MyBatis mapper，根因栈为 `Property 'sqlSessionFactory' or 'sqlSessionTemplate' are required`。下一步需单独检查 MyBatis Plus Boot 4 自动配置与测试数据库替换规则。
+
 下一步：
 
-1. 继续对 OAuth2 Server、Cloud OpenFeign、MyBatis CRUD 等已通过 `compile` 的核心链路执行 `test-compile`。
+1. 调查 MyBatis CRUD 运行期 `SqlSessionFactory` 缺失问题。
 2. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
 3. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
 4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
