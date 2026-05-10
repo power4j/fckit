@@ -44,8 +44,8 @@ public class AuthUtils {
 			return original;
 		}
 		boolean mutate = false;
-		for (String key : original.getRequest().getHeaders().keySet()) {
-			if (headerKeys.contains(key)) {
+		for (String key : headerKeys) {
+			if (original.getRequest().getHeaders().containsHeader(key)) {
 				mutate = true;
 				break;
 			}
@@ -62,7 +62,7 @@ public class AuthUtils {
 	}
 
 	public ServerWebExchange eraseHeader(ServerWebExchange original, String headerKey) {
-		if (!original.getRequest().getHeaders().containsKey(headerKey)) {
+		if (!original.getRequest().getHeaders().containsHeader(headerKey)) {
 			return original;
 		}
 		// @formatter:off

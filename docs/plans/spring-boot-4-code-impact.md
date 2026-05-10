@@ -192,7 +192,7 @@ fist-kit-app/fist-security/fist-boot-security-oauth2-server
 - OAuth2 Server 定向测试共 1 个用例，失败 0。
 - OAuth2 Server 编译期间仍存在 Jackson 2 相关待删除警告，需后续专项处理。
 
-## P0：Gateway `HttpHeaders` 访问方式迁移
+## 已处理：Gateway `HttpHeaders` 与 Reactive Authorization API 迁移
 
 OAuth2 password grant 阻塞解除后，继续编译 Cloud Gateway ACL，新的首个阻塞点进入 Gateway Auth Core。
 
@@ -217,6 +217,29 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 - Spring Framework 7 的 `HttpHeaders` 不再暴露这些 Map 风格方法。
 - `AuthUtils` 的语义只是判断目标 header 是否存在并按需移除，迁移应优先使用当前 `HttpHeaders` 支持的读取方法，不改变网关请求头清理行为。
+
+处理结果：
+
+- `AuthUtils` 使用 `HttpHeaders.containsHeader(String)` 判断待删除 header 是否存在，继续使用 `remove(String)` 删除 header。
+- `GatewayAuthorizationManager` 从旧 `check(...)` 方法迁移到 Spring Security 7 的 `authorize(...)` 方法。
+- `GatewayAuthorizationManager` 返回类型从 `Mono<AuthorizationDecision>` 调整为 `Mono<AuthorizationResult>`；`AuthorizationDecision` 仍作为具体授权结果对象复用。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests compile
+```
+
+结果：
+
+- Gateway Auth Core、Gateway ACL、Gateway Security Reactive 主代码编译通过。
+- 三个 Gateway 子模块组合编译通过。
+- 编译期间仍存在部分 deprecation 警告，需后续用 `-Xlint:deprecation` 分类。
 
 ## Jackson 3
 
@@ -352,9 +375,9 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 迁移 Gateway `AuthUtils` 中的 `HttpHeaders` 访问方式。
+1. 对已通过 `compile` 的核心链路执行 `test-compile`，优先暴露测试源码、Groovy / Spock 和 Spring Boot Test 相关迁移问题。
 2. 继续处理待删除的 OAuth2 Jackson 2 支持类和 HTTP message converter 警告。
-3. 重新运行 Cloud Gateway Auth Core、Cloud Gateway ACL 与后续 Gateway 子模块试编译。
+3. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
 
 ## 本地证据

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
@@ -34,11 +35,11 @@ public class GatewayAuthorizationManager implements ReactiveAuthorizationManager
 	private final UserConverter<? extends AuthenticatedUser> userConverter;
 
 	@Override
-	public Mono<AuthorizationDecision> check(Mono<Authentication> authentication, AuthorizationContext object) {
+	public Mono<AuthorizationResult> authorize(Mono<Authentication> authentication, AuthorizationContext object) {
 		return authentication.flatMap(auth -> doCheck(auth, object));
 	}
 
-	private Mono<AuthorizationDecision> doCheck(Authentication authentication, AuthorizationContext object) {
+	private Mono<AuthorizationResult> doCheck(Authentication authentication, AuthorizationContext object) {
 		AuthContext context = new AuthContext(object.getExchange(), authentication);
 		context.setUserInfo(userConverter.convert(authentication));
 		return filterChain.filter(context).doOnSuccess(o -> {
@@ -48,7 +49,7 @@ public class GatewayAuthorizationManager implements ReactiveAuthorizationManager
 		}).flatMap(o -> decide(context)).switchIfEmpty(Mono.defer(() -> decide(context)));
 	}
 
-	private Mono<AuthorizationDecision> decide(AuthContext context) {
+	private Mono<AuthorizationResult> decide(AuthContext context) {
 		final AuthProblem problem = context.getAuthState().getProblem();
 		Validate.notNull(problem);
 		if (problem.isAuthPass()) {

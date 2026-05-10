@@ -234,13 +234,32 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core
 fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power4j/fist/cloud/gateway/AuthUtils.java
 ```
 
+该阻塞点已完成最小迁移：
+
+- `AuthUtils` 使用 `HttpHeaders.containsHeader(String)` 判断 header 是否存在，保留原有 header 删除行为。
+- 继续编译 Gateway Security Reactive 后，Spring Security 7 暴露新的接口签名变化：`ReactiveAuthorizationManager` 要求实现 `authorize(...) -> Mono<AuthorizationResult>`。
+- `GatewayAuthorizationManager` 已迁移到 `authorize(...)`，授权结果仍复用 `AuthorizationDecision`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests compile
+```
+
+结果：Gateway Auth Core、Gateway ACL、Gateway Security Reactive 主代码编译均为 `BUILD SUCCESS`；三个 Gateway 子模块组合编译为 `BUILD SUCCESS`。
+
 下一步：
 
-1. 迁移 `AuthUtils` 中的 `HttpHeaders` 访问方式。
+1. 对已通过 `compile` 的核心链路执行 `test-compile`，优先暴露测试源码、Groovy / Spock 和 Spring Boot Test 相关迁移问题。
 2. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
-3. 重新运行 Cloud Gateway Auth Core 与 Cloud Gateway ACL 试编译。
+3. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
 4. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
-5. 在主代码 `compile` 有基本通过面后，再进入 test-compile、单元测试和配置迁移诊断。
+5. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
 
 ## 本地日志
 
