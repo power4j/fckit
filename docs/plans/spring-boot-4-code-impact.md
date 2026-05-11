@@ -314,6 +314,49 @@ fist-kit-app/fist-data/fist-boot-crud-mybatis/src/test/java/com/power4j/fist/boo
 
 结果：MyBatis CRUD `test-compile` 为 `BUILD SUCCESS`；定向运行测试共 12 个用例，失败 0。
 
+## 已处理：OAuth2 Server Jackson 3 与 Spring Framework 7 JSON converter 迁移
+
+MyBatis CRUD 运行期阻塞解除后，继续检查 OAuth2 Server 编译警告，确认以下 Jackson 2 相关 API 属于 Spring 7 / Authorization Server 7 迁移期高风险点：
+
+- `MappingJackson2HttpMessageConverter` 在 Spring Framework 7 中已标记 `forRemoval=true`。
+- `SecurityJackson2Modules` 仍使用 Jackson 2 类型。
+- `OAuth2AuthorizationServerJackson2Module` 仍使用 Jackson 2 类型。
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/main/java/com/power4j/fist/oauth2/extension/handler/DefaultOauthFailureHandler.java`
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/main/java/com/power4j/fist/oauth2/extension/service/DefaultAuthorizationService.java`
+
+判断：
+
+- Spring Framework 7 提供 `JacksonJsonHttpMessageConverter`，使用 Jackson 3 `JsonMapper` 读写 JSON。
+- Spring Security 7 提供 `org.springframework.security.jackson.SecurityJacksonModules`。
+- Spring Authorization Server 7 提供 `org.springframework.security.oauth2.server.authorization.jackson.OAuth2AuthorizationServerJacksonModule`。
+- Context7 Spring Framework `7.0.5` 文档确认 `JacksonJsonHttpMessageConverter` 基于 Jackson `JsonMapper`，并依赖 `tools.jackson.core:jackson-databind`。
+- Spring Security 7 文档片段仍有 Jackson 2 示例，因此该部分以本地 `spring-security-core-7.0.5.jar` 和 `spring-security-oauth2-authorization-server-7.0.5.jar` 字节码为准。
+
+处理结果：
+
+- `DefaultOauthFailureHandler` 从 `MappingJackson2HttpMessageConverter` 切换到 `JacksonJsonHttpMessageConverter`。
+- `DefaultAuthorizationService` 的授权属性与 token metadata 序列化从 `com.fasterxml.jackson.*` 迁移到 `tools.jackson.*`。
+- `DefaultAuthorizationService` 使用 `JsonMapper.builder()` 注册 `SecurityJacksonModules` 和 `OAuth2AuthorizationServerJacksonModule`，不再调用 Jackson 2 的 `ObjectMapper.registerModules(...)`。
+- 新增 `DefaultAuthorizationServiceTest`，覆盖包含 Spring Security principal 的授权属性序列化，避免只验证编译通过。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=DefaultAuthorizationServiceTest,DefaultOauthFailureHandlerTest,OAuth2ResourceOwnerBaseAuthenticationProviderTest,WebUtilTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+```
+
+结果：
+
+- OAuth2 Server 依赖链主代码编译通过。
+- OAuth2 Server 定向测试共 4 个用例，失败 0。
+- deprecation 明细编译为 `BUILD SUCCESS`；本轮旧 API 关键字 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module`、`com.fasterxml.jackson`、`jackson2` 在日志中未命中。
+
 ## Jackson 3
 
 扫描命令：
@@ -448,9 +491,9 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续处理待删除的 OAuth2 Jackson 2 支持类和 HTTP message converter 警告。
-2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
-3. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 剩余 deprecation 警告做分类，重点处理 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify 的迁移。
+2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
 
 ## 本地证据
@@ -459,5 +502,8 @@ starter 仍有旧坐标需要后续处理：
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
+- Spring Framework Context7 文档：`/spring-projects/spring-framework/v7.0.5`，`JacksonJsonHttpMessageConverter` 使用 Jackson `JsonMapper`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
+- Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
+- Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`
 - OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

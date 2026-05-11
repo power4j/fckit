@@ -335,10 +335,27 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`test-compile` 为 `BUILD SUCCESS`；定向测试共 12 个用例，失败 0。
 
+继续处理 OAuth2 Server 的 Jackson 2 待删除 API 警告：
+
+- `DefaultOauthFailureHandler` 使用的 `MappingJackson2HttpMessageConverter` 已迁移到 Spring Framework 7 的 `JacksonJsonHttpMessageConverter`。
+- `DefaultAuthorizationService` 的授权属性与 token metadata 序列化已从 `com.fasterxml.jackson.*`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 迁移到 Jackson 3 `tools.jackson.*`、`SecurityJacksonModules`、`OAuth2AuthorizationServerJacksonModule`。
+- 新增 `DefaultAuthorizationServiceTest`，覆盖包含 Spring Security principal 的授权属性序列化。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=DefaultAuthorizationServiceTest,DefaultOauthFailureHandlerTest,OAuth2ResourceOwnerBaseAuthenticationProviderTest,WebUtilTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+```
+
+结果：OAuth2 Server 依赖链主代码编译通过；定向测试共 4 个用例，失败 0；deprecation 明细编译为 `BUILD SUCCESS`，本轮 Jackson 2 旧 API 关键字在日志中未命中。
+
 下一步：
 
-1. 继续检查 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等待删除警告。
-2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的 deprecation 警告做分类。
+1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
+2. 优先处理 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify 的迁移策略。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
 

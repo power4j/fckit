@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -28,7 +28,7 @@ import java.io.IOException;
 @Slf4j
 public class DefaultOauthFailureHandler implements AuthenticationFailureHandler {
 
-	private static final MappingJackson2HttpMessageConverter ERROR_RESPONSE_CONVERTER = new MappingJackson2HttpMessageConverter();
+	private static final JacksonJsonHttpMessageConverter ERROR_RESPONSE_CONVERTER = new JacksonJsonHttpMessageConverter();
 
 	/**
 	 * Called when an authentication attempt fails.

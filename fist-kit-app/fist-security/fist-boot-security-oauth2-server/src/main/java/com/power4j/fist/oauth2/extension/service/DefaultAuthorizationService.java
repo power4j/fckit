@@ -1,8 +1,5 @@
 package com.power4j.fist.oauth2.extension.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
@@ -15,7 +12,7 @@ import org.springframework.jdbc.support.lob.DefaultLobHandler;
 import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
 import org.springframework.lang.Nullable;
-import org.springframework.security.jackson2.SecurityJackson2Modules;
+import org.springframework.security.jackson.SecurityJacksonModules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2DeviceCode;
@@ -31,10 +28,13 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
+import org.springframework.security.oauth2.server.authorization.jackson.OAuth2AuthorizationServerJacksonModule;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.DatabaseMetaData;
@@ -403,6 +403,14 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 				: new SqlParameterValue(columnMetadata.getDataType(), value);
 	}
 
+	private static ObjectMapper createObjectMapper() {
+		ClassLoader classLoader = JdbcOAuth2AuthorizationService.class.getClassLoader();
+		return JsonMapper.builder()
+			.addModules(SecurityJacksonModules.getModules(classLoader))
+			.addModule(new OAuth2AuthorizationServerJacksonModule())
+			.build();
+	}
+
 	@Nullable
 	protected String getLobCmpFunc() {
 		return null;
@@ -457,16 +465,11 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 
 		private LobHandler lobHandler = new DefaultLobHandler();
 
-		private ObjectMapper objectMapper = new ObjectMapper();
+		private ObjectMapper objectMapper = createObjectMapper();
 
 		public OAuth2AuthorizationRowMapper(RegisteredClientRepository registeredClientRepository) {
 			Assert.notNull(registeredClientRepository, "registeredClientRepository cannot be null");
 			this.registeredClientRepository = registeredClientRepository;
-
-			ClassLoader classLoader = JdbcOAuth2AuthorizationService.class.getClassLoader();
-			List<Module> securityModules = SecurityJackson2Modules.getModules(classLoader);
-			this.objectMapper.registerModules(securityModules);
-			this.objectMapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
 		}
 
 		@Override
@@ -644,14 +647,7 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 	public static class OAuth2AuthorizationParametersMapper
 			implements Function<OAuth2Authorization, List<SqlParameterValue>> {
 
-		private ObjectMapper objectMapper = new ObjectMapper();
-
-		public OAuth2AuthorizationParametersMapper() {
-			ClassLoader classLoader = JdbcOAuth2AuthorizationService.class.getClassLoader();
-			List<Module> securityModules = SecurityJackson2Modules.getModules(classLoader);
-			this.objectMapper.registerModules(securityModules);
-			this.objectMapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
-		}
+		private ObjectMapper objectMapper = createObjectMapper();
 
 		@Override
 		public List<SqlParameterValue> apply(OAuth2Authorization authorization) {
