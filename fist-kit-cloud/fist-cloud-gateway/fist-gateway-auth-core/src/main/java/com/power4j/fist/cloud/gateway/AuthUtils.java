@@ -19,7 +19,7 @@ package com.power4j.fist.cloud.gateway;
 import com.power4j.fist.boot.common.matcher.PathMatcher;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import lombok.experimental.UtilityClass;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 
 import java.util.Collection;

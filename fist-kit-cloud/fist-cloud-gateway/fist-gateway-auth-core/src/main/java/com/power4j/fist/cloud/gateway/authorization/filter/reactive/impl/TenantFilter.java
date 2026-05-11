@@ -13,8 +13,8 @@ import com.power4j.fist.security.core.authorization.filter.reactive.ServerAuthFi
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.reflect.TypeLiteral;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;

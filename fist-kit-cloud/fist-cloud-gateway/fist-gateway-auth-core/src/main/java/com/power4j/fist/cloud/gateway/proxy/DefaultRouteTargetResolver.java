@@ -20,7 +20,7 @@ import com.power4j.fist.cloud.gateway.authorization.domain.RouteTarget;
 import lombok.Setter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -43,7 +43,7 @@ public class DefaultRouteTargetResolver implements RouteTargetResolver {
 	private String serviceIdKey = "serviceId";
 
 	@Override
-	public RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange) {
+	public @Nullable RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange) {
 		if (null == route) {
 			return null;
 		}

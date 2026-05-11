@@ -18,7 +18,7 @@ package com.power4j.fist.cloud.gateway.authorization.filter.reactive;
 
 import com.power4j.fist.cloud.gateway.authorization.domain.AuthContext;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
@@ -36,11 +36,9 @@ public class DefaultGatewayAuthFilterChain implements GatewayAuthFilterChain {
 
 	private final List<GatewayAuthFilter> filters;
 
-	@Nullable
-	protected final GatewayAuthFilter currentFilter;
+	protected final @Nullable GatewayAuthFilter currentFilter;
 
-	@Nullable
-	protected final DefaultGatewayAuthFilterChain chain;
+	protected final @Nullable DefaultGatewayAuthFilterChain chain;
 
 	public DefaultGatewayAuthFilterChain(List<GatewayAuthFilter> filters) {
 		this.filters = Collections.unmodifiableList(filters);

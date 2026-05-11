@@ -17,7 +17,7 @@
 package com.power4j.fist.cloud.gateway.authorization.domain;
 
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -27,7 +27,6 @@ import org.springframework.lang.Nullable;
 @Data
 public class AuthState {
 
-	@Nullable
-	private AuthProblem problem;
+	private @Nullable AuthProblem problem;
 
 }

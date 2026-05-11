@@ -17,7 +17,7 @@
 package com.power4j.fist.cloud.gateway.proxy;
 
 import com.power4j.fist.cloud.gateway.authorization.domain.ApiProxy;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 
 import java.util.Optional;

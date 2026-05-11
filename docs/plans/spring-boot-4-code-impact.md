@@ -952,6 +952,38 @@ rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-a
 - 定向测试共 4 个用例，失败 0。
 - 剩余 deprecation 明细主要为 `DefaultAuthorizationService` 使用 Spring JDBC LOB API，以及 Apache Commons Lang 过时方法，不属于本轮空值注解迁移。
 
+## 已验证：Gateway Auth Core 方法级空值注解迁移
+
+OAuth2 Server 方法级迁移后，继续处理 Gateway Auth Core 中代理解析、鉴权上下文和过滤器链相关的显式可空契约。
+
+受影响模块：
+
+- `fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core`
+
+处理结果：
+
+- 11 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- `RouteTargetResolver` 和 `DefaultRouteTargetResolver` 的可空返回值迁移到类型使用位置，例如 `@Nullable RouteTarget resolve(...)` 与 `public @Nullable RouteTarget resolve(...)`。
+- `AuthContext`、`AuthProblem`、`AuthState` 和 `DefaultGatewayAuthFilterChain` 的可选字段迁移到类型使用位置。
+- `AuthUtils`、`ProxyResolver`、`TenantFilter`、`UpstreamLocateFilter` 保留可空入参契约。
+- `fist-gateway-auth-core` 主代码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core -am test
+rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-gateway-auth-core` deprecation 明细编译为 `BUILD SUCCESS`；本模块主代码未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+- `fist-gateway-auth-core -am test` 为 `BUILD SUCCESS`；模块自身测试共 14 个用例，失败 0。
+- 剩余 deprecation 明细为依赖链上的 `Breaker`、Apache Commons Lang 过时方法，以及本模块 `SkipAuthorizationFilter` 中 `Validate.notNull(...)`，不属于本轮空值注解迁移。
+- 全仓主代码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`；当前唯一剩余命中是 `fist-cloud-gateway-acl` 的测试文件 `ApiGuardFilterTest.java`。
+
 ## 已验证：Redisson 包级空值注解迁移
 
 API Doc 处理后，继续迁移 `fist-redisson` 中剩余的包级 Spring 空值注解。
@@ -1182,7 +1214,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-gateway-auth-core`、`fist-cloud-gateway-acl` 等仍有命中的 Gateway 模块。
+1. 处理 `fist-cloud-gateway-acl` 测试文件 `ApiGuardFilterTest.java` 中最后一个 `org.springframework.lang.Nullable` 命中，并执行 Gateway ACL 测试验证。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。

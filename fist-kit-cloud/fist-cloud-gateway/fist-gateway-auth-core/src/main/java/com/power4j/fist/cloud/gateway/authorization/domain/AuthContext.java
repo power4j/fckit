@@ -21,7 +21,7 @@ import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -39,20 +39,15 @@ public class AuthContext {
 
 	private RequestInfo inbound;
 
-	@Nullable
-	private Object principal;
+	private @Nullable Object principal;
 
-	@Nullable
-	private RouteInfo route;
+	private @Nullable RouteInfo route;
 
-	@Nullable
-	private ApiProxy upstream;
+	private @Nullable ApiProxy upstream;
 
-	@Nullable
-	private AuthenticatedUser userInfo;
+	private @Nullable AuthenticatedUser userInfo;
 
-	@Nullable
-	private PermissionDefinition permissionDefinition;
+	private @Nullable PermissionDefinition permissionDefinition;
 
 	public AuthContext(ServerWebExchange exchange, @Nullable Object principal) {
 		this.exchange = exchange;

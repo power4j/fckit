@@ -17,7 +17,7 @@
 package com.power4j.fist.cloud.gateway.proxy;
 
 import com.power4j.fist.cloud.gateway.authorization.domain.RouteTarget;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -33,7 +33,6 @@ public interface RouteTargetResolver {
 	 * @param exchange ServerWebExchange
 	 * @return 返回路由目标
 	 */
-	@Nullable
-	RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange);
+	@Nullable RouteTarget resolve(@Nullable RouteInfo route, ServerWebExchange exchange);
 
 }

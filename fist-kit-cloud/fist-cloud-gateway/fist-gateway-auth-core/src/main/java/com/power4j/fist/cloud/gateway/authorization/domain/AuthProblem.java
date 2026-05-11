@@ -17,7 +17,7 @@
 package com.power4j.fist.cloud.gateway.authorization.domain;
 
 import lombok.Getter;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.StringJoiner;
 
@@ -35,11 +35,9 @@ public class AuthProblem {
 
 	private final String msg;
 
-	@Nullable
-	private String moreInfo;
+	private @Nullable String moreInfo;
 
-	@Nullable
-	private Advise advise;
+	private @Nullable Advise advise;
 
 	public AuthProblem(int code, String msg) {
 		this.code = code;

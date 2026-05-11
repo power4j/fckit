@@ -20,8 +20,8 @@ import com.power4j.fist.cloud.gateway.authorization.domain.ApiProxy;
 import com.power4j.fist.cloud.gateway.authorization.domain.RouteTarget;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 
