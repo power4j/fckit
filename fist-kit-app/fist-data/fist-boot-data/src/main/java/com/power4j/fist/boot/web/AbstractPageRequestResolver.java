@@ -19,7 +19,7 @@ package com.power4j.fist.boot.web;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
 import java.util.Objects;
@@ -65,8 +65,7 @@ public abstract class AbstractPageRequestResolver implements HandlerMethodArgume
 		}
 	}
 
-	@Nullable
-	protected String filterFieldName(@Nullable String value) {
+	protected @Nullable String filterFieldName(@Nullable String value) {
 		if (StringUtils.isNotEmpty(value) && !value.matches(filedNamePattern)) {
 			log.error("拦截非法排序字段名称:{}", value);
 			return null;

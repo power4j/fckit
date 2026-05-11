@@ -18,8 +18,8 @@ package com.power4j.fist.boot.web;
 
 import com.power4j.fist.data.domain.PageRequest;
 import com.power4j.fist.data.domain.Pageable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
-import org.springframework.lang.Nullable;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.ModelAndViewContainer;
@@ -39,9 +39,8 @@ public class PageRequestResolver extends AbstractPageRequestResolver {
 		return parameter.getParameterType().isAssignableFrom(Pageable.class);
 	}
 
-	@Nullable
 	@Override
-	public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+	public @Nullable Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
 			NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
 		HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
 		if (Objects.isNull(request)) {

@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -52,13 +52,11 @@ public class PageParameter implements Serializable {
 	@Schema(description = "页大小", defaultValue = "20")
 	private Integer pageSize;
 
-	@Nullable
 	@Schema(description = "排序字段")
-	private String field;
+	private @Nullable String field;
 
-	@Nullable
 	@Schema(description = "排序方式 ascend | descend")
-	private String order;
+	private @Nullable String order;
 
 	public static PageParameter of(int pageNumber, int pageSize) {
 		return of(pageNumber, pageSize, null, null);

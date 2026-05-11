@@ -19,8 +19,8 @@ package com.power4j.fist.boot.web;
 import com.power4j.fist.boot.web.model.PageParameter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.MethodParameter;
-import org.springframework.lang.Nullable;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.ModelAndViewContainer;
@@ -47,9 +47,8 @@ public class PageParameterResolver extends AbstractPageRequestResolver {
 		return parameter.getParameterType().isAssignableFrom(PageParameter.class);
 	}
 
-	@Nullable
 	@Override
-	public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
+	public @Nullable Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
 			NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
 		HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
 		if (Objects.isNull(request)) {
