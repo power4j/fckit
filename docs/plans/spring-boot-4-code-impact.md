@@ -618,6 +618,37 @@ rg -n "org\.springframework\.lang\.Nullable" fist-kit-app/fist-security/fist-boo
 - `fist-boot-security -am test` 为 `BUILD SUCCESS`；依赖链测试共 40 个用例，失败 0，`fist-boot-security` 模块自身没有测试源码。
 - 编译日志中仍有依赖链上的 `fist-support-web` 与 `fist-support-security` 方法级 `org.springframework.lang.Nullable` 警告，后续按模块继续迁移。
 
+## 已验证：Support Security 方法级空值注解迁移
+
+Boot Security 方法级迁移后，继续处理依赖链中剩余命中较多的 `fist-support-security`。
+
+受影响模块：
+
+- `fist-kit-app/fist-security/fist-support-security`
+
+处理结果：
+
+- 13 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- 字段可空契约改为类型使用位置，例如 `private @Nullable String id`、`protected final @Nullable ServerAuthFilter<C> currentFilter`。
+- 方法返回值改为类型使用位置，例如 `public @Nullable String resolve(...)`、`protected @Nullable UserInfo extractFromMap(...)`、`default <A> @Nullable A getAttribute(...)`。
+- `final` 参数使用 `final @Nullable Type` 写法，避免继续沿用旧声明注解位置。
+- `fist-support-security` 主代码复扫未命中 `org.springframework.lang.Nullable`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am test
+rg -n "org\.springframework\.lang\.Nullable" fist-kit-app/fist-security/fist-support-security/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-support-security` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`。
+- `fist-support-security -am test` 为 `BUILD SUCCESS`；模块自身测试共 17 个用例，失败 0；依赖链测试共 40 个用例，失败 0。
+- 编译日志中仍有依赖链上的 `fist-support-web` 方法级 `org.springframework.lang.Nullable` 警告，后续按 Web 支撑模块继续迁移。
+
 ## 已验证：Cloud RPC Feign 包级空值注解迁移
 
 Boot Security 处理后，继续迁移 `fist-cloud-rpc-feign` 中剩余的包级 Spring 空值注解。

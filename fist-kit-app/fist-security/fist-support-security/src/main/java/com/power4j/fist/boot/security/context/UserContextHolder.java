@@ -19,7 +19,7 @@ package com.power4j.fist.boot.security.context;
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.power4j.fist.boot.security.core.UserInfo;
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -64,11 +64,9 @@ public final class UserContextHolder {
 	@Data
 	static class Ctx {
 
-		@Nullable
-		private UserInfo info;
+		private @Nullable UserInfo info;
 
-		@Nullable
-		private String originalValue;
+		private @Nullable String originalValue;
 
 	}
 

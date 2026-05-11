@@ -2,10 +2,10 @@ package com.power4j.fist.boot.security.oauth2;
 
 import com.power4j.fist.support.spring.web.reactive.util.ServerHttpRequestUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -28,8 +28,7 @@ public class DefaultServerBearerTokenResolver implements ServerBearerTokenResolv
 	private String bearerTokenHeaderName = HttpHeaders.AUTHORIZATION;
 
 	@Override
-	@Nullable
-	public String resolve(ServerHttpRequest request) {
+	public @Nullable String resolve(ServerHttpRequest request) {
 		String authorizationHeaderToken = resolveFromAuthorizationHeader(request.getHeaders());
 		String parameterToken = resolveAccessTokenFromRequest(request);
 
@@ -46,8 +45,7 @@ public class DefaultServerBearerTokenResolver implements ServerBearerTokenResolv
 		return null;
 	}
 
-	@Nullable
-	private static String resolveAccessTokenFromRequest(ServerHttpRequest request) {
+	private static @Nullable String resolveAccessTokenFromRequest(ServerHttpRequest request) {
 		List<String> parameterTokens = request.getQueryParams().get("access_token");
 		if (CollectionUtils.isEmpty(parameterTokens)) {
 			return null;
@@ -85,8 +83,7 @@ public class DefaultServerBearerTokenResolver implements ServerBearerTokenResolv
 		this.bearerTokenHeaderName = bearerTokenHeaderName;
 	}
 
-	@Nullable
-	private String resolveFromAuthorizationHeader(HttpHeaders headers) {
+	private @Nullable String resolveFromAuthorizationHeader(HttpHeaders headers) {
 		String authorization = headers.getFirst(this.bearerTokenHeaderName);
 		if (!StringUtils.startsWithIgnoreCase(authorization, "bearer")) {
 			return null;

@@ -2,7 +2,7 @@ package com.power4j.fist.boot.security.oauth2;
 
 import com.power4j.fist.boot.security.core.AuthenticatedObject;
 import com.power4j.fist.security.core.authorization.domain.GrantedPermission;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -19,9 +19,8 @@ public interface Oauth2AuthenticatedPrincipal extends AuthenticatedObject {
 	 * @param <A> the type of the attribute
 	 * @return the attribute or {@code null} otherwise
 	 */
-	@Nullable
 	@SuppressWarnings("unchecked")
-	default <A> A getAttribute(String name) {
+	default <A> @Nullable A getAttribute(String name) {
 		return (A) getAttributes().get(name);
 	}
 

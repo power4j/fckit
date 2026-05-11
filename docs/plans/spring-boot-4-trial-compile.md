@@ -546,6 +546,22 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-boot-security` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`。`fist-boot-security -am test` 为 `BUILD SUCCESS`，依赖链测试共 40 个用例，失败 0，模块自身没有测试源码。编译日志仍有依赖链上的 `fist-support-web` 与 `fist-support-security` 方法级 `org.springframework.lang.Nullable` 警告，后续按模块继续迁移。
 
+继续处理 `fist-support-security` 的方法级 `org.springframework.lang.Nullable` deprecation 警告：
+
+- 13 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 JSpecify `org.jspecify.annotations.Nullable`。
+- 字段、返回值和泛型返回值迁移到类型使用位置，例如 `private @Nullable String id`、`public @Nullable String resolve(...)`、`default <A> @Nullable A getAttribute(...)`。
+- `final` 参数使用 `final @Nullable Type` 写法。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am test
+```
+
+结果：`fist-support-security` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`。`fist-support-security -am test` 为 `BUILD SUCCESS`，模块自身测试共 17 个用例，失败 0，依赖链测试共 40 个用例，失败 0。编译日志仍有依赖链上的 `fist-support-web` 方法级 `org.springframework.lang.Nullable` 警告，后续按 Web 支撑模块继续迁移。
+
 下一步：
 
 1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交。

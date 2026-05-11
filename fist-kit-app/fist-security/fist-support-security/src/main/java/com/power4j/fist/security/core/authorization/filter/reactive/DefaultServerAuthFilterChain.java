@@ -16,7 +16,7 @@
 
 package com.power4j.fist.security.core.authorization.filter.reactive;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -34,11 +34,9 @@ public class DefaultServerAuthFilterChain<C, F extends ServerAuthFilter<C>> impl
 
 	private final List<F> filters;
 
-	@Nullable
-	protected final ServerAuthFilter<C> currentFilter;
+	protected final @Nullable ServerAuthFilter<C> currentFilter;
 
-	@Nullable
-	protected final DefaultServerAuthFilterChain<C, F> chain;
+	protected final @Nullable DefaultServerAuthFilterChain<C, F> chain;
 
 	public DefaultServerAuthFilterChain(List<F> filters) {
 		this.filters = Collections.unmodifiableList(filters);

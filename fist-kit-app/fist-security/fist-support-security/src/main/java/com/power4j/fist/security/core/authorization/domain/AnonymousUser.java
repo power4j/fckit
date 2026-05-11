@@ -17,7 +17,7 @@
 package com.power4j.fist.security.core.authorization.domain;
 
 import com.power4j.fist.boot.security.core.SecurityConstant;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,8 +38,7 @@ public class AnonymousUser implements AuthenticatedUser {
 
 	private final Map<String, Object> additionalInfo = new HashMap<>();
 
-	@Nullable
-	private String id;
+	private @Nullable String id;
 
 	public AnonymousUser(Map<String, GrantedPermission> permissionMap) {
 		this.permissionMap = Collections.unmodifiableMap(permissionMap);
@@ -69,8 +68,7 @@ public class AnonymousUser implements AuthenticatedUser {
 		return additionalInfo;
 	}
 
-	@Nullable
-	public String getId() {
+	public @Nullable String getId() {
 		return id;
 	}
 

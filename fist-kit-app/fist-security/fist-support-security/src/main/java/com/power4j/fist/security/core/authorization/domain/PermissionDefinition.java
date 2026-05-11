@@ -16,8 +16,8 @@
 
 package com.power4j.fist.security.core.authorization.domain;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -78,7 +78,6 @@ public interface PermissionDefinition {
 	 * 签名校验算法标识符
 	 * @return 返回null表示无需签名校验
 	 */
-	@Nullable
-	String getSignFlag();
+	@Nullable String getSignFlag();
 
 }

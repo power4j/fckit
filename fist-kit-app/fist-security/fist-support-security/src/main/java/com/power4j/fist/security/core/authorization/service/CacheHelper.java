@@ -2,9 +2,9 @@ package com.power4j.fist.security.core.authorization.service;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.Nullable;
 
 import java.util.Arrays;
 import java.util.List;

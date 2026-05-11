@@ -16,7 +16,7 @@
 
 package com.power4j.fist.boot.security.oauth2;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -74,9 +74,8 @@ public enum Oauth2GrantType {
 	 * @param defValue 默认值
 	 * @return 如果解析失败返回默认值
 	 */
-	@Nullable
-	public static Oauth2GrantType parseOrDefault(@Nullable final String value,
-			@Nullable final Oauth2GrantType defValue) {
+	public static @Nullable Oauth2GrantType parseOrDefault(final @Nullable String value,
+			final @Nullable Oauth2GrantType defValue) {
 		if (value == null) {
 			return defValue;
 		}
@@ -93,8 +92,7 @@ public enum Oauth2GrantType {
 	 * @param value 被解析的数据
 	 * @return 如果解析失败返回 null
 	 */
-	@Nullable
-	public static Oauth2GrantType parseOrNull(final String value) {
+	public static @Nullable Oauth2GrantType parseOrNull(final String value) {
 		return parseOrDefault(value, null);
 	}
 

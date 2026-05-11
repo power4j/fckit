@@ -1,7 +1,7 @@
 package com.power4j.fist.boot.security.oauth2;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.lang.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -14,7 +14,6 @@ public interface ServerBearerTokenResolver {
 	 * @param request the request
 	 * @return the Bearer Token value or null if none found
 	 */
-	@Nullable
-	String resolve(ServerHttpRequest request);
+	@Nullable String resolve(ServerHttpRequest request);
 
 }

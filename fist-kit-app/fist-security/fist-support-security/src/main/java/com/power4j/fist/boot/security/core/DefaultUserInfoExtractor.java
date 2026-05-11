@@ -21,7 +21,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.TypeLiteral;
 import org.apache.commons.lang3.reflect.Typed;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,8 +63,7 @@ public class DefaultUserInfoExtractor implements UserInfoExtractor {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Nullable
-	protected UserInfo extractFromMap(@Nullable Map<String, ?> userInfoMap) {
+	protected @Nullable UserInfo extractFromMap(@Nullable Map<String, ?> userInfoMap) {
 		if (Objects.isNull(userInfoMap)) {
 			return null;
 		}

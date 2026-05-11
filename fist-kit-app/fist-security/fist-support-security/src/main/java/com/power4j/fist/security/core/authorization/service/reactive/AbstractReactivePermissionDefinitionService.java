@@ -3,9 +3,9 @@ package com.power4j.fist.security.core.authorization.service.reactive;
 import com.power4j.fist.security.core.authorization.domain.PermissionDefinition;
 import com.power4j.fist.security.core.authorization.service.CacheHelper;
 import org.apache.commons.lang3.ObjectUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.cache.Cache;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -32,9 +32,8 @@ public abstract class AbstractReactivePermissionDefinitionService<T extends Perm
 		// @formatter:on
 	}
 
-	@Nullable
 	@SuppressWarnings("unchecked")
-	protected List<T> loadFromCache(String serviceName, HttpMethod method) {
+	protected @Nullable List<T> loadFromCache(String serviceName, HttpMethod method) {
 		return (List<T>) CacheHelper.loadFromCache(getCache().orElse(null), serviceName, method).orElse(null);
 	}
 
