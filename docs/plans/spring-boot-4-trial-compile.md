@@ -417,9 +417,28 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-boot-web-app` 与 `fist-support-data` deprecation 明细编译均为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`fist-boot-web-app` 模块自身没有测试源码；`fist-support-data` 模块测试共 6 个用例，失败 0；OAuth2 Server 依赖链 deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。本次 `fist-support-data -am test` 未实际运行已记录的 Groovy 测试文件，后续去 Groovy 任务需要单独确认。
 
+继续处理数据链路剩余的包级空值注解 deprecation 警告：
+
+- `fist-boot-data` 增加 `org.jspecify:jspecify` 依赖，4 个 `package-info.java` 迁移到 `@NullMarked`。
+- `fist-boot-crud-mybatis` 增加 `org.jspecify:jspecify` 依赖，8 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解，方法级 `org.springframework.lang.Nullable` deprecation 后续按显式可空契约单独迁移。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis,fist-kit-app/fist-data/fist-boot-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-data -am test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am "-Dtest=QueryTest,UpdateTest,AbstractNodeIdxSupportTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am test
+```
+
+结果：`fist-boot-data` 与 `fist-boot-crud-mybatis` deprecation 明细编译均为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`fist-boot-data` 模块测试共 2 个用例，失败 0；MyBatis CRUD 定向测试共 12 个用例，失败 0；`fist-boot-crud-mybatis` 模块全量测试共 14 个用例，失败 0。
+
 下一步：
 
-1. 对全仓剩余 `NonNullApi` / `NonNullFields` 做一次静态扫描，按依赖链优先级继续迁移 Gateway、Boot Security、Data CRUD 等模块。
+1. 继续迁移 Gateway、Cloud RPC Feign、Boot Security、API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。

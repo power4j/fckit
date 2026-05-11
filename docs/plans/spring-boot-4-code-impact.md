@@ -495,6 +495,40 @@ Security 模块迁移后，OAuth2 Server 依赖链中剩余的 `NonNullApi` / `N
 - OAuth2 Server 依赖链 deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
 - 本次 `fist-support-data -am test` 未实际运行已记录的 Groovy 测试文件，后续去 Groovy 任务需要单独确认这些测试是否仍被当前构建链路纳入。
 
+## 已验证：Boot Data 与 MyBatis CRUD 包级空值注解迁移
+
+全仓扫描后，数据链路剩余包级 Spring 空值注解主要位于 `fist-boot-data` 与 `fist-boot-crud-mybatis`。
+
+受影响模块：
+
+- `fist-kit-app/fist-data/fist-boot-data`
+- `fist-kit-app/fist-data/fist-boot-crud-mybatis`
+
+处理结果：
+
+- 两个模块分别增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
+- `fist-boot-data` 的 4 个 `package-info.java` 迁移到 `@NullMarked`。
+- `fist-boot-crud-mybatis` 的 8 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解；`PageParameter`、`BaseRepository`、`Repository` 中的方法级 `org.springframework.lang.Nullable` deprecation 作为显式可空契约专项保留。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis,fist-kit-app/fist-data/fist-boot-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-data -am test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am "-Dtest=QueryTest,UpdateTest,AbstractNodeIdxSupportTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am test
+```
+
+结果：
+
+- `fist-boot-data` 与 `fist-boot-crud-mybatis` deprecation 明细编译均为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- `fist-boot-data -am test` 为 `BUILD SUCCESS`；`fist-boot-data` 模块自身测试共 2 个用例，失败 0。
+- MyBatis CRUD 定向测试共 12 个用例，失败 0。
+- `fist-boot-crud-mybatis -am test` 为 `BUILD SUCCESS`；`fist-boot-crud-mybatis` 模块自身测试共 14 个用例，失败 0。
+
 ## Jackson 3
 
 扫描命令：
@@ -629,7 +663,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 对全仓剩余 `NonNullApi` / `NonNullFields` 做一次静态扫描，按依赖链优先级继续迁移 Gateway、Boot Security、Data CRUD 等模块。
+1. 继续迁移 Gateway、Cloud RPC Feign、Boot Security、API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
