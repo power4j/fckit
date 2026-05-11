@@ -984,6 +984,35 @@ rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-c
 - 剩余 deprecation 明细为依赖链上的 `Breaker`、Apache Commons Lang 过时方法，以及本模块 `SkipAuthorizationFilter` 中 `Validate.notNull(...)`，不属于本轮空值注解迁移。
 - 全仓主代码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`；当前唯一剩余命中是 `fist-cloud-gateway-acl` 的测试文件 `ApiGuardFilterTest.java`。
 
+## 已验证：Gateway ACL 测试空值注解迁移
+
+Gateway Auth Core 主代码迁移后，继续处理全仓最后一个 Spring 空值注解命中。
+
+受影响模块：
+
+- `fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl`
+
+处理结果：
+
+- `ApiGuardFilterTest.java` 从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- `makeAuthContext(...)` 测试辅助方法保留 principal 可为 `null` 的语义，用于构造未登录上下文。
+- 全仓 `*.java` 复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am test
+rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-app fist-kit-cloud fist-kit-infra examples benchmarks -g "*.java" -S
+```
+
+结果：
+
+- `fist-cloud-gateway-acl` deprecation 明细编译为 `BUILD SUCCESS`。
+- `fist-cloud-gateway-acl -am test` 为 `BUILD SUCCESS`；模块自身测试共 6 个用例，失败 0。
+- 全仓 Spring nullability 注解迁移已清零，后续 deprecation 分类可以转向 Apache Commons Lang、Spring JDBC LOB API、Springfox 和 Redisson 等非空值注解问题。
+
 ## 已验证：Redisson 包级空值注解迁移
 
 API Doc 处理后，继续迁移 `fist-redisson` 中剩余的包级 Spring 空值注解。
@@ -1214,7 +1243,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 处理 `fist-cloud-gateway-acl` 测试文件 `ApiGuardFilterTest.java` 中最后一个 `org.springframework.lang.Nullable` 命中，并执行 Gateway ACL 测试验证。
+1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类，优先区分 Spring 7 待删除 API 与第三方库过时 API。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。

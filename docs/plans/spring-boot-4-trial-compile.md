@@ -725,11 +725,27 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-gateway-auth-core` deprecation 明细编译为 `BUILD SUCCESS`；本模块主代码未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。`fist-gateway-auth-core -am test` 为 `BUILD SUCCESS`，模块自身测试共 14 个用例，失败 0。全仓主代码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`；当前唯一剩余命中是 `fist-cloud-gateway-acl` 的测试文件 `ApiGuardFilterTest.java`。
 
+继续处理 `fist-cloud-gateway-acl` 测试文件中最后一个 `org.springframework.lang.Nullable` 命中：
+
+- `ApiGuardFilterTest.java` 从 `org.springframework.lang.Nullable` 迁移到 JSpecify `org.jspecify.annotations.Nullable`。
+- `makeAuthContext(...)` 测试辅助方法保留 principal 可为 `null` 的语义，用于构造未登录上下文。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am test
+rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-app fist-kit-cloud fist-kit-infra examples benchmarks -g "*.java" -S
+```
+
+结果：`fist-cloud-gateway-acl` deprecation 明细编译为 `BUILD SUCCESS`；`fist-cloud-gateway-acl -am test` 为 `BUILD SUCCESS`，模块自身测试共 6 个用例，失败 0。全仓 `*.java` 复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+
 下一步：
 
-1. 处理 `fist-cloud-gateway-acl` 测试文件 `ApiGuardFilterTest.java` 中最后一个 `org.springframework.lang.Nullable` 命中，并执行 Gateway ACL 测试验证。
-2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
-3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
+1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
+2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
 
 ## 本地日志

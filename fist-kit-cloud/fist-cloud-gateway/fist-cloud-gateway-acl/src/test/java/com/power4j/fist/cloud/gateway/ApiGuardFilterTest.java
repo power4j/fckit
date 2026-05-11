@@ -8,8 +8,8 @@ import com.power4j.fist.cloud.gateway.authorization.filter.reactive.GatewayAuthF
 import com.power4j.fist.cloud.security.AccessDeniedHandler;
 import com.power4j.fist.cloud.security.AccessPermittedHandler;
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.Nullable;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.lang.Nullable;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
