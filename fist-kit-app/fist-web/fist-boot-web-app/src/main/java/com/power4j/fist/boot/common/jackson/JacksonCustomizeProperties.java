@@ -4,7 +4,7 @@ import com.power4j.coca.kit.common.datetime.DateTimePattern;
 import com.power4j.fist.boot.common.prop.PropConstant;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,22 +37,19 @@ public class JacksonCustomizeProperties {
 	/**
 	 * 排除的自定义模块
 	 */
-	@Nullable
-	private List<ModuleName> excludeModules = Collections.emptyList();
+	private @Nullable List<ModuleName> excludeModules = Collections.emptyList();
 
 	/**
 	 * 设置默认时间格式,留空则使用Jackson默认值
 	 */
-	@Nullable
-	private String simpleDateFormat = DateTimePattern.DATETIME;
+	private @Nullable String simpleDateFormat = DateTimePattern.DATETIME;
 
 	/**
 	 * 设置默认时区,比如 {@code 'Asia/Shanghai'},特殊值 system 表示使用系统时区,留空则使用Jackson默认值(UTC)
 	 * @see <a
 	 * href=https://docs.oracle.com/cd/E84527_01/wcs/tag-ref/MISC/TimeZones.html>TimeZones</url>
 	 */
-	@Nullable
-	private String timeZoneId = TZ_SYSTEM;
+	private @Nullable String timeZoneId = TZ_SYSTEM;
 
 	public enum ModuleName {
 

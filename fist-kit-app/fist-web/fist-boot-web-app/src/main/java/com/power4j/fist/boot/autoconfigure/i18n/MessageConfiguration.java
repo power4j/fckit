@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -41,11 +41,9 @@ import java.util.Objects;
 @Configuration(proxyBeanMethods = false)
 public class MessageConfiguration implements InitializingBean {
 
-	@Nullable
-	private LocaleResolver localeResolver;
+	private @Nullable LocaleResolver localeResolver;
 
-	@Nullable
-	private MessageSource messageSource;
+	private @Nullable MessageSource messageSource;
 
 	@Autowired(required = false)
 	public void setLocaleResolver(@Nullable LocaleResolver localeResolver) {
