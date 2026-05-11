@@ -13,7 +13,7 @@ import org.redisson.client.codec.Codec;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -31,12 +31,10 @@ public class TopicListenerBeanProcessor implements BeanPostProcessor {
 
 	private final RedissonClient redisson;
 
-	@Nullable
-	private final Codec codec;
+	private final @Nullable Codec codec;
 
-	@Nullable
 	@Override
-	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+	public @Nullable Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		final Class<?> cls = ClassUtils.getUserClass(bean);
 		ReflectionUtils.doWithMethods(cls, method -> {
 			final TopicListener annotation = AnnotationUtils.findAnnotation(method, TopicListener.class);

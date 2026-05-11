@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.Codec;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -20,8 +20,7 @@ public class BlockQueueWriter implements QueueWriter {
 
 	private final RedissonClient redisson;
 
-	@Nullable
-	private final Codec codec;
+	private final @Nullable Codec codec;
 
 	@Override
 	public <T> boolean write(String channel, T data) {

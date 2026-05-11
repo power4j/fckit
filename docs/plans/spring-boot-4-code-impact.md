@@ -888,6 +888,36 @@ API Doc 处理后，继续迁移 `fist-redisson` 中剩余的包级 Spring 空�
 - `fist-redisson -am test` 为 `BUILD SUCCESS`；`fist-redisson` 模块自身没有测试源码。
 - 全仓 `package-info.java` 复扫未命中 `NonNullApi` / `NonNullFields`。
 
+## 已验证：Redisson 方法级空值注解迁移
+
+Web App 方法级迁移后，继续处理 Redisson 模块的显式可空契约。
+
+受影响模块：
+
+- `fist-kit-infra/fist-redisson`
+
+处理结果：
+
+- 4 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- 可选 `Codec` 字段迁移到类型使用位置，例如 `private final @Nullable Codec codec`。
+- `BeanPostProcessor` 覆写方法返回值迁移到类型使用位置，例如 `public @Nullable Object postProcessAfterInitialization(...)`。
+- `fist-redisson` 主代码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson -am test
+rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-infra/fist-redisson/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-redisson` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+- 剩余 deprecation 明细为 Redisson `RBlockingQueue.subscribeOnElements(...)`，不属于本轮空值注解迁移。
+- `fist-redisson -am test` 为 `BUILD SUCCESS`；模块自身没有测试源码；依赖链测试共 11 个用例，失败 0。
+
 ## 已验证：Support Spring 方法级空值注解迁移
 
 全仓包级 `NonNullApi` / `NonNullFields` 迁移完成后，进入方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移。第一批选择 `fist-support-spring`，用于验证返回值、入参、数组和泛型返回值的写法。
@@ -1060,7 +1090,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-boot-crud-mybatis`、`fist-redisson`、`fist-gateway-auth-core`、`fist-boot-security-oauth2-server` 等仍有命中的模块。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-boot-crud-mybatis`、`fist-gateway-auth-core`、`fist-boot-security-oauth2-server`、`fist-boot-apidoc` 等仍有命中的模块。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
