@@ -1013,6 +1013,52 @@ rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-a
 - `fist-cloud-gateway-acl -am test` 为 `BUILD SUCCESS`；模块自身测试共 6 个用例，失败 0。
 - 全仓 Spring nullability 注解迁移已清零，后续 deprecation 分类可以转向 Apache Commons Lang、Spring JDBC LOB API、Springfox 和 Redisson 等非空值注解问题。
 
+## 已验证：Gateway 与 OAuth2 Commons Lang 过时 API 收敛
+
+Spring nullability 注解清零后，继续处理 Gateway、Security 和 OAuth2 编译日志中已经暴露的 Apache Commons Lang `3.20.0` 过时 API。该轮只处理替代关系明确、行为可等价保持的调用，不处理 Spring JDBC LOB API 等设计性迁移。
+
+受影响模块：
+
+- `fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core`
+- `fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive`
+- `fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl`
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server`
+
+处理依据：
+
+- Context7 `/apache/commons-lang` 文档确认 Commons Lang 提供 null-safe 字符串与对象工具。
+- 本地 `commons-lang3-3.20.0-sources.jar` 显示：
+  - `Validate.notNull(T)` 建议使用 `Objects.requireNonNull(T)`。
+  - `StringUtils.startsWith(...)` 建议使用 `Strings.CS.startsWith(...)`。
+  - `StringUtils.equals(...)` 建议使用 `Strings.CS.equals(...)`。
+  - `ObjectUtils.defaultIfNull(...)` 建议使用 `ObjectUtils.getIfNull(...)`。
+
+处理结果：
+
+- Gateway 鉴权决策中的 `Validate.notNull(...)` 迁移到 `Objects.requireNonNull(...)`。
+- Gateway ACL OAuth2 配置中的 `StringUtils.startsWith(...)` 迁移到 `Strings.CS.startsWith(...)`。
+- OAuth2 secure parameter filter 中的 `StringUtils.equals(...)` 迁移到 `Strings.CS.equals(...)`。
+- OAuth2 Resource Owner provider 中的 `ObjectUtils.defaultIfNull(...)` 迁移到 `ObjectUtils.getIfNull(...)`。
+- `DefaultAuthorizationService` 移除继承 `org.apache.commons.lang3.StringUtils` 的内部 `StrUtil`，避免触发 Commons Lang 构造器 deprecation；字符串拆分和拼接改为直接调用静态方法。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl,fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway-acl,fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway-acl -am test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=OAuth2ResourceOwnerBaseAuthenticationProviderTest,DefaultAuthorizationServiceTest,DefaultOauthFailureHandlerTest,WebUtilTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+rg -n "Validate\.notNull\(|StringUtils\.startsWith\(|StringUtils\.equals\(|ObjectUtils\.defaultIfNull\(|extends org\.apache\.commons\.lang3\.StringUtils" fist-kit-cloud/fist-cloud-gateway fist-kit-app/fist-security/fist-boot-security-oauth2-server -g "*.java" -S
+```
+
+结果：
+
+- Gateway 与 OAuth2 组合 deprecation 明细编译为 `BUILD SUCCESS`。
+- 本轮目标调用复扫未命中。
+- Gateway 三个模块组合测试为 `BUILD SUCCESS`，Gateway Auth Core 模块自身测试共 14 个用例、Gateway ACL 模块自身测试共 6 个用例，失败 0。
+- OAuth2 Server 定向测试共 4 个用例，失败 0。
+- OAuth2 Server 剩余 deprecation 明细主要为 `DefaultAuthorizationService` 使用 Spring JDBC LOB API；其他 Commons Lang 过时调用来自 Web/Data 等依赖链模块，后续按模块继续处理。
+
 ## 已验证：Redisson 包级空值注解迁移
 
 API Doc 处理后，继续迁移 `fist-redisson` 中剩余的包级 Spring 空值注解。
@@ -1243,10 +1289,10 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类，优先区分 Spring 7 待删除 API 与第三方库过时 API。
-2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
-4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
+1. 对 OAuth2 `DefaultAuthorizationService` 的 Spring JDBC LOB API deprecation 做专项评估，确认 Spring Framework 7 的推荐替代方案和数据库兼容影响。
+2. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
+3. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+4. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 
 ## 本地证据
 

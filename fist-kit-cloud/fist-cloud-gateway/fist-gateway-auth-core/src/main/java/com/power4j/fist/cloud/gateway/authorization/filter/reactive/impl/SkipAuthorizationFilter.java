@@ -23,9 +23,9 @@ import com.power4j.fist.cloud.gateway.authorization.filter.reactive.GatewayAuthF
 import com.power4j.fist.security.core.authorization.filter.reactive.ServerAuthFilterChain;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Validate;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,7 +44,7 @@ public class SkipAuthorizationFilter implements GatewayAuthFilter {
 
 	@Override
 	public Mono<Void> filter(AuthContext ctx, ServerAuthFilterChain<AuthContext> chain) {
-		Validate.notNull(ctx.getInbound());
+		Objects.requireNonNull(ctx.getInbound());
 		Optional<?> matched = pathMatcher.firstMatch(paths, ctx.getInbound().getRawPath());
 
 		if (matched.isPresent()) {

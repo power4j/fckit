@@ -5,8 +5,7 @@ import com.power4j.fist.boot.security.oauth2.server.resource.introspection.React
 import com.power4j.fist.cloud.security.oauth2.client.UserIntrospectClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.Strings;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -15,6 +14,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.Objects;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -42,11 +43,11 @@ public class Oauth2Configuration {
 	@ConditionalOnProperty(name = "fist.oauth2.resourceserver.opaque-token.introspection-uri")
 	public UserIntrospectClient userIntrospectClient() {
 		final Oauth2ResourceServerProperties.OpaqueTokenConfig config = resourceServerProperties.getOpaqueToken();
-		Validate.notNull(config);
+		Objects.requireNonNull(config);
 
 		final String uri = config.getIntrospectionUri();
 		WebClient client;
-		if (StringUtils.startsWith(uri, LB_SCHEMA)) {
+		if (Strings.CS.startsWith(uri, LB_SCHEMA)) {
 			log.info("Use load-balanced client for: {}", uri);
 			client = lbWebClientBuilder()
 				.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret()))

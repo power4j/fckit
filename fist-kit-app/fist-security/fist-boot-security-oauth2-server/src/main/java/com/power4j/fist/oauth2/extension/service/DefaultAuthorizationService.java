@@ -414,7 +414,7 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 
 	protected String processQuerySql(String sql, Map<String, ColumnMetadata> columnMetadata) {
 		final String lobCmpFunc = getLobCmpFunc();
-		if (StrUtil.isEmpty(lobCmpFunc)) {
+		if (!StringUtils.hasLength(lobCmpFunc)) {
 			return sql;
 		}
 		String cache = querySqlMap.get(sql);
@@ -422,13 +422,13 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 			return cache;
 		}
 		final String operator = " OR ";
-		String[] parts = StrUtil.split(sql, operator);
+		String[] parts = org.apache.commons.lang3.StringUtils.split(sql, operator);
 		if (parts == null || parts.length == 0) {
 			return sql;
 		}
 		List<String> processed = new ArrayList<>(parts.length);
 		for (String part : parts) {
-			String[] expr = StrUtil.split(part, "=");
+			String[] expr = org.apache.commons.lang3.StringUtils.split(part, "=");
 			Validate.isTrue(expr.length == 2);
 			final String columnName = expr[0];
 			final ColumnMetadata metadata = columnMetadata.get(columnName);
@@ -439,7 +439,7 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 				processed.add(String.format("%s(%s, %s)", lobCmpFunc, columnName, expr[1]));
 			}
 		}
-		return StrUtil.join(processed, operator);
+		return org.apache.commons.lang3.StringUtils.join(processed, operator);
 	}
 
 	@Override
@@ -815,10 +815,6 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 		public int getDataType() {
 			return this.dataType;
 		}
-
-	}
-
-	static class StrUtil extends org.apache.commons.lang3.StringUtils {
 
 	}
 

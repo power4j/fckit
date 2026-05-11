@@ -7,7 +7,6 @@ import com.power4j.fist.security.core.authentication.UserConverter;
 import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Validate;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
@@ -50,8 +49,7 @@ public class GatewayAuthorizationManager implements ReactiveAuthorizationManager
 	}
 
 	private Mono<AuthorizationResult> decide(AuthContext context) {
-		final AuthProblem problem = context.getAuthState().getProblem();
-		Validate.notNull(problem);
+		final AuthProblem problem = Objects.requireNonNull(context.getAuthState().getProblem());
 		if (problem.isAuthPass()) {
 			if (log.isDebugEnabled()) {
 				log.debug("[{}] -> {},reason = {}", problem.passStr(), context.getInbound().shortDescription(),

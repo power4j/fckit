@@ -24,8 +24,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.http.HttpHeaders;
+import org.springframework.util.StringUtils;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -62,7 +63,7 @@ public abstract class AbstractSecureParameterDecoderFilter extends OncePerReques
 		}
 
 		String grantType = request.getParameter(GRANT_TYPE);
-		if (StringUtils.equals(REFRESH_TOKEN, grantType)) {
+		if (Strings.CS.equals(REFRESH_TOKEN, grantType)) {
 			chain.doFilter(request, response);
 			return;
 		}
@@ -97,7 +98,7 @@ public abstract class AbstractSecureParameterDecoderFilter extends OncePerReques
 	protected Optional<String> resolveEncFlag(HttpServletRequest request) {
 		String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 		String clientId = WebUtil.parseBasicClientId(header).orElse(null);
-		if (StringUtils.isEmpty(clientId)) {
+		if (!StringUtils.hasLength(clientId)) {
 			return Optional.empty();
 		}
 		return retrieveEncryptFlag(clientId);

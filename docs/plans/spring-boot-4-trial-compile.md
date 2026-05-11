@@ -741,12 +741,31 @@ rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-a
 
 结果：`fist-cloud-gateway-acl` deprecation 明细编译为 `BUILD SUCCESS`；`fist-cloud-gateway-acl -am test` 为 `BUILD SUCCESS`，模块自身测试共 6 个用例，失败 0。全仓 `*.java` 复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
 
+继续处理 Gateway、Security 与 OAuth2 编译日志中已经暴露的 Apache Commons Lang `3.20.0` 过时 API：
+
+- `Validate.notNull(T)` 按本地源码建议迁移到 `Objects.requireNonNull(T)`。
+- `StringUtils.startsWith(...)` 迁移到 `Strings.CS.startsWith(...)`。
+- `StringUtils.equals(...)` 迁移到 `Strings.CS.equals(...)`。
+- `ObjectUtils.defaultIfNull(...)` 迁移到 `ObjectUtils.getIfNull(...)`。
+- `DefaultAuthorizationService` 移除继承 `org.apache.commons.lang3.StringUtils` 的内部工具别名，避免触发 Commons Lang 构造器 deprecation。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl,fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway-acl,fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway-acl -am test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=OAuth2ResourceOwnerBaseAuthenticationProviderTest,DefaultAuthorizationServiceTest,DefaultOauthFailureHandlerTest,WebUtilTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：Gateway 与 OAuth2 组合 deprecation 明细编译为 `BUILD SUCCESS`；本轮目标调用复扫未命中。Gateway 三个模块组合测试为 `BUILD SUCCESS`，Gateway Auth Core 模块自身测试共 14 个用例、Gateway ACL 模块自身测试共 6 个用例，失败 0。OAuth2 Server 定向测试共 4 个用例，失败 0。OAuth2 Server 剩余 deprecation 明细主要为 `DefaultAuthorizationService` 使用 Spring JDBC LOB API；其他 Commons Lang 过时调用来自 Web/Data 等依赖链模块，后续按模块继续处理。
+
 下一步：
 
-1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
-2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
-4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
+1. 对 OAuth2 `DefaultAuthorizationService` 的 Spring JDBC LOB API deprecation 做专项评估，确认 Spring Framework 7 的推荐替代方案和数据库兼容影响。
+2. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
+3. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+4. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 
 ## 本地日志
 

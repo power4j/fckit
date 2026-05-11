@@ -7,7 +7,6 @@ import com.power4j.fist.cloud.security.AccessDeniedHandler;
 import com.power4j.fist.cloud.security.AccessPermittedHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Validate;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.web.server.ServerWebExchange;
@@ -44,8 +43,7 @@ public class ApiGuardFilter implements GlobalFilter {
 	}
 
 	private Mono<Void> decide(AuthContext context, GatewayFilterChain chain) {
-		final AuthProblem problem = context.getAuthState().getProblem();
-		Validate.notNull(problem);
+		final AuthProblem problem = Objects.requireNonNull(context.getAuthState().getProblem());
 		if (problem.isAuthPass()) {
 			if (log.isDebugEnabled()) {
 				log.debug("[{}] -> {},reason = {}", problem.passStr(), context.getInbound().shortDescription(),

@@ -197,7 +197,7 @@ public abstract class OAuth2ResourceOwnerBaseAuthenticationProvider<T extends OA
 			.get(AuthConstants.ClientOpts.KEY_ONLINE_UNLIMITED);
 		boolean unlimited = false;
 		if (unlimitedSetting != null) {
-			unlimited = ObjectUtils.defaultIfNull(BooleanUtils.toBooleanObject(unlimitedSetting.toString()), false);
+			unlimited = ObjectUtils.getIfNull(BooleanUtils.toBooleanObject(unlimitedSetting.toString()), false);
 		}
 		if (unlimited) {
 			return;
@@ -354,8 +354,8 @@ public abstract class OAuth2ResourceOwnerBaseAuthenticationProvider<T extends OA
 	}
 
 	private String fallbackMessage(AuthenticationException authenticationException, String fallback) {
-		return ObjectUtils.defaultIfNull(
-				StringUtils.defaultIfBlank(authenticationException.getLocalizedMessage(), fallback), fallback);
+		return ObjectUtils
+			.getIfNull(StringUtils.defaultIfBlank(authenticationException.getLocalizedMessage(), fallback), fallback);
 	}
 
 	private OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(
