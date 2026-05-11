@@ -21,7 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.Validate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -39,8 +39,7 @@ public class HandlerMethodResource implements ResourceDescribe {
 
 	private String methodName;
 
-	@Nullable
-	private List<Class<?>> parameterTypes;
+	private @Nullable List<Class<?>> parameterTypes;
 
 	private Class<?> returnType;
 

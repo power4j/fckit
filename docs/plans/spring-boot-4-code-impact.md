@@ -891,6 +891,36 @@ Cloud RPC Feign 处理后，继续迁移 `fist-boot-apidoc` 中剩余的包级 S
 - API Doc deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
 - `fist-boot-apidoc -am test` 为 `BUILD SUCCESS`；`fist-boot-apidoc` 模块自身没有测试源码。
 
+## 已验证：API Doc 方法级空值注解迁移
+
+MyBatis CRUD 方法级迁移后，继续处理 API Doc 模块中的显式可空契约。
+
+受影响模块：
+
+- `fist-kit-app/fist-boot-apidoc`
+
+处理结果：
+
+- 2 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- `DocParser` 保留 JSON 输入可为 `null` 的内部解析契约。
+- `HandlerMethodResource` 的可选参数类型列表迁移到 `private @Nullable List<Class<?>> parameterTypes`。
+- `fist-boot-apidoc` 主代码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am test
+rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-app/fist-boot-apidoc/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-boot-apidoc` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+- 剩余 deprecation 明细为 Jackson 2 `JsonNode.fields()`、Apache Commons Lang `Validate.notNull(...)` 和 Springfox 退役相关注解问题，后续按 API Doc 专项处理。
+- `fist-boot-apidoc -am test` 为 `BUILD SUCCESS`；模块自身没有测试源码；依赖链测试共 6 个用例，失败 0。
+
 ## 已验证：Redisson 包级空值注解迁移
 
 API Doc 处理后，继续迁移 `fist-redisson` 中剩余的包级 Spring 空值注解。
@@ -1121,7 +1151,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-gateway-auth-core`、`fist-boot-security-oauth2-server`、`fist-boot-apidoc`、`fist-cloud-gateway-acl` 等仍有命中的模块。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-gateway-auth-core`、`fist-boot-security-oauth2-server`、`fist-cloud-gateway-acl` 等仍有命中的模块。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
