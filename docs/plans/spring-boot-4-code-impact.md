@@ -618,6 +618,33 @@ Boot Security 处理后，继续迁移 `fist-cloud-rpc-feign` 中剩余的包级
 - `test-compile` 为 `BUILD SUCCESS`。
 - `fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`；模块自身测试共 7 个用例，失败 0。
 
+## 已验证：API Doc 包级空值注解迁移
+
+Cloud RPC Feign 处理后，继续迁移 `fist-boot-apidoc` 中剩余的包级 Spring 空值注解。
+
+受影响模块：
+
+- `fist-kit-app/fist-boot-apidoc`
+
+处理结果：
+
+- `fist-boot-apidoc` 增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
+- 3 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解；方法级 `org.springframework.lang.Nullable`、Jackson 2 `JsonNode.fields()` 和 Springfox 退役相关警告作为 API Doc 专项保留。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am test
+```
+
+结果：
+
+- API Doc deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- `fist-boot-apidoc -am test` 为 `BUILD SUCCESS`；`fist-boot-apidoc` 模块自身没有测试源码。
+
 ## Jackson 3
 
 扫描命令：
@@ -752,7 +779,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续迁移 API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
+1. 继续迁移 Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。

@@ -485,9 +485,24 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：Cloud RPC Feign deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`test-compile` 为 `BUILD SUCCESS`；`fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`，模块自身测试共 7 个用例，失败 0。
 
+继续处理 API Doc 模块的包级空值注解 deprecation 警告：
+
+- `fist-boot-apidoc` 增加 `org.jspecify:jspecify` 依赖，3 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解，方法级 `org.springframework.lang.Nullable`、Jackson 2 `JsonNode.fields()` 和 Springfox 退役相关警告后续按 API Doc 专项迁移。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am test
+```
+
+结果：API Doc deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`fist-boot-apidoc -am test` 为 `BUILD SUCCESS`，模块自身没有测试源码。
+
 下一步：
 
-1. 继续迁移 API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
+1. 继续迁移 Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
