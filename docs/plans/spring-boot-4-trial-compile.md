@@ -367,6 +367,21 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-support-spring` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；模块测试共 5 个用例，失败 0。
 
+继续处理 `fist-support-web` 的包级空值注解 deprecation 警告：
+
+- `fist-support-web` 增加 `org.jspecify:jspecify` 依赖。
+- 12 个 `package-info.java` 从 `@NonNullApi` + `@NonNullFields` 迁移到 JSpecify `@NullMarked`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am test
+```
+
+结果：`fist-support-web` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；模块测试共 4 个用例，失败 0。本次 `test` 未实际运行已记录的 `PathMatcherTest.groovy`，后续去 Groovy 任务需要单独确认。
+
 下一步：
 
 1. 按模块继续迁移 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify，迁移时同步检查显式可空契约。

@@ -389,6 +389,46 @@ OAuth2 Server 的 Jackson 2 待删除警告处理后，剩余 deprecation 明细
 - `fist-support-spring` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
 - `fist-support-spring` 模块测试共 5 个用例，失败 0。
 
+## 已验证：`fist-support-web` 包级空值注解迁移
+
+在 `fist-support-spring` 验证通过后，继续按相同模式处理 OAuth2 编译链路中大量出现的 `fist-support-web` 空值注解警告。
+
+受影响文件：
+
+- `fist-kit-app/fist-web/fist-support-web/pom.xml`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/common/api/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/common/error/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/common/jackson/module/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/common/matcher/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/mon/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/mon/event/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/mon/info/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/mon/listener/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/web/event/error/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/web/reactive/log/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/web/servlet/package-info.java`
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/web/servlet/mvc/formatter/package-info.java`
+
+处理结果：
+
+- `fist-support-web` 增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
+- 12 个 `package-info.java` 从 `@NonNullApi` + `@NonNullFields` 迁移到 `@NullMarked`。
+- 当前未扩展到方法级 `@Nullable` 迁移，后续仍需在各模块迁移时检查可空入参、返回值和泛型类型参数。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am test
+```
+
+结果：
+
+- `fist-support-web` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- `fist-support-web` 模块测试共 4 个用例，失败 0。
+- 本次 `test` 未实际运行已记录的 `PathMatcherTest.groovy`，后续去 Groovy 任务需要单独确认该测试是否仍被当前构建链路纳入。
+
 ## Jackson 3
 
 扫描命令：
