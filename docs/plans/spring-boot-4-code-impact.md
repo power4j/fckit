@@ -562,6 +562,33 @@ Security 模块迁移后，OAuth2 Server 依赖链中剩余的 `NonNullApi` / `N
 - Gateway Auth Core 模块测试共 14 个用例，失败 0。
 - Gateway ACL 模块测试共 6 个用例，失败 0。
 
+## 已验证：Boot Security 包级空值注解迁移
+
+Gateway 处理后，继续迁移 `fist-boot-security` 中剩余的包级 Spring 空值注解。
+
+受影响模块：
+
+- `fist-kit-app/fist-security/fist-boot-security`
+
+处理结果：
+
+- `fist-boot-security` 增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
+- 2 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解；`UserConverter` 中的方法级 `org.springframework.lang.Nullable` deprecation 作为显式可空契约专项保留。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security -am test
+```
+
+结果：
+
+- `fist-boot-security` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- `fist-boot-security -am test` 为 `BUILD SUCCESS`；`fist-boot-security` 模块自身没有测试源码，依赖链中 `fist-support-security` 测试共 17 个用例，失败 0。
+
 ## Jackson 3
 
 扫描命令：
@@ -696,7 +723,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续迁移 Cloud RPC Feign、Boot Security、API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
+1. 继续迁移 Cloud RPC Feign、API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
