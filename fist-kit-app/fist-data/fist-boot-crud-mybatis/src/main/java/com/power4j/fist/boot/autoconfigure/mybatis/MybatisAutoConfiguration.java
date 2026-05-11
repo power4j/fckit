@@ -42,7 +42,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -60,11 +60,9 @@ public class MybatisAutoConfiguration implements ApplicationContextAware {
 
 	private final TenantProperties tenantProperties;
 
-	@Nullable
-	private ApplicationContext applicationContext;
+	private @Nullable ApplicationContext applicationContext;
 
-	@Nullable
-	private UserInfoSupplier userInfoSupplier;
+	private @Nullable UserInfoSupplier userInfoSupplier;
 
 	@Autowired(required = false)
 	public void setUserInfoSupplier(UserInfoSupplier userInfoSupplier) {

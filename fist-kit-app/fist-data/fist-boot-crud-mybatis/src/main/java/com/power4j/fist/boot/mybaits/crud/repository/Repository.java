@@ -24,7 +24,7 @@ import com.power4j.fist.boot.mybaits.crud.repository.matcher.Eq;
 import com.power4j.fist.data.crud.repository.PagingAndSortingRepository;
 import com.power4j.fist.data.domain.Pageable;
 import com.power4j.fist.data.domain.Paged;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.List;

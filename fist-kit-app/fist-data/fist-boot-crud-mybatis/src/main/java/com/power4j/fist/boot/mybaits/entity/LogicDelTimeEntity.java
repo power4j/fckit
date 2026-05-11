@@ -21,7 +21,7 @@ import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.power4j.fist.data.constant.DataConstant;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDateTime;
 
@@ -39,9 +39,8 @@ public class LogicDelTimeEntity extends VersionedEntity {
 	/**
 	 * 逻辑删除标志
 	 */
-	@Nullable
 	@TableLogic(value = "null", delval = "now()")
 	@TableField(DataConstant.COLUMN_LOGIC_DEL)
-	private LocalDateTime delFlag;
+	private @Nullable LocalDateTime delFlag;
 
 }

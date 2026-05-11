@@ -17,7 +17,7 @@
 package com.power4j.fist.boot.mybaits.tree;
 
 import com.power4j.fist.data.tree.domain.NodeIdx;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;

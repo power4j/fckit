@@ -35,7 +35,7 @@ import com.power4j.fist.data.domain.Pageable;
 import com.power4j.fist.data.domain.Paged;
 import com.power4j.fist.data.domain.Sort;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -61,8 +61,7 @@ import java.util.stream.StreamSupport;
 public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable> extends CrudRepository<M, T>
 		implements Repository<T, ID> {
 
-	@Nullable
-	private LambdaHelper<T> lambdaHelper;
+	private @Nullable LambdaHelper<T> lambdaHelper;
 
 	@Override
 	public T saveOne(T entity) {
@@ -234,8 +233,7 @@ public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable>
 		return entity;
 	}
 
-	@Nullable
-	Object loadVersionValueById(T entity, TableInfo tableInfo) {
+	@Nullable Object loadVersionValueById(T entity, TableInfo tableInfo) {
 		if (!tableInfo.isWithVersion()) {
 			throw new IllegalStateException("该实体类型不支持乐观锁");
 		}
@@ -304,8 +302,7 @@ public class BaseRepository<M extends BaseMapper<T>, T, ID extends Serializable>
 		return tableInfo;
 	}
 
-	@Nullable
-	Object getFieldValue(Object obj, Field field) {
+	@Nullable Object getFieldValue(Object obj, Field field) {
 		try {
 			field.setAccessible(true);
 			return field.get(obj);

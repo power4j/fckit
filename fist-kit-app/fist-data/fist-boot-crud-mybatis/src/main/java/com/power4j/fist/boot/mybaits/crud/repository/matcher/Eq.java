@@ -19,7 +19,7 @@ package com.power4j.fist.boot.mybaits.crud.repository.matcher;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -32,8 +32,7 @@ public class Eq<T> {
 
 	private final SFunction<T, ?> column;
 
-	@Nullable
-	private final Object value;
+	private final @Nullable Object value;
 
 	/**
 	 * 辅助构造方法

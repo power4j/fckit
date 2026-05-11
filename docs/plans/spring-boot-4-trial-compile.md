@@ -658,9 +658,26 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-redisson` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。剩余 deprecation 明细为 Redisson `RBlockingQueue.subscribeOnElements(...)`。`fist-redisson -am test` 为 `BUILD SUCCESS`，模块自身没有测试源码，依赖链测试共 11 个用例，失败 0。
 
+继续处理 `fist-boot-crud-mybatis` 的方法级 `org.springframework.lang.Nullable` deprecation 警告：
+
+- 7 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 JSpecify `org.jspecify.annotations.Nullable`。
+- 自动配置和实体字段迁移到类型使用位置，例如 `private @Nullable ApplicationContext applicationContext`、`private @Nullable LocalDateTime delFlag`。
+- Repository 内部返回值迁移到类型使用位置，例如 `@Nullable Object loadVersionValueById(...)` 与 `@Nullable Object getFieldValue(...)`。
+- 保留「查询条件可为空」「排除 ID 可为空」「数据库字段值可为空」等原有公共接口契约。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am test
+```
+
+结果：`fist-boot-crud-mybatis` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。剩余 deprecation 明细为既有 `AuditFiller` 注解问题。`fist-boot-crud-mybatis -am test` 为 `BUILD SUCCESS`，模块自身测试共 14 个用例，失败 0。
+
 下一步：
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交，优先处理 `fist-boot-crud-mybatis`、`fist-gateway-auth-core`、`fist-boot-security-oauth2-server`、`fist-boot-apidoc` 等剩余命中模块。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交，优先处理 `fist-gateway-auth-core`、`fist-boot-security-oauth2-server`、`fist-boot-apidoc`、`fist-cloud-gateway-acl` 等剩余命中模块。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
