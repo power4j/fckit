@@ -21,7 +21,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -41,8 +41,7 @@ public class ExceptionInfo implements Serializable {
 
 	private String ex;
 
-	@Nullable
-	private String exMsg;
+	private @Nullable String exMsg;
 
 	private String exStack;
 

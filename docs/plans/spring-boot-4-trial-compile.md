@@ -562,6 +562,22 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-support-security` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`。`fist-support-security -am test` 为 `BUILD SUCCESS`，模块自身测试共 17 个用例，失败 0，依赖链测试共 40 个用例，失败 0。编译日志仍有依赖链上的 `fist-support-web` 方法级 `org.springframework.lang.Nullable` 警告，后续按 Web 支撑模块继续迁移。
 
+继续处理 `fist-support-web` 的方法级 `org.springframework.lang.Nullable` deprecation 警告：
+
+- 20 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 JSpecify `org.jspecify.annotations.Nullable`。
+- DTO、事件对象和异常类字段迁移到类型使用位置。
+- `Breaker` 中可空数组参数使用 `Object @Nullable []`，表达数组本身可为 `null`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am test
+```
+
+结果：`fist-support-web` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。剩余 deprecation 明细为 `Breaker` 自身缺少 `@Deprecated` 标注和 Apache Commons Lang `ObjectUtils.defaultIfNull(...)`。`fist-support-web -am test` 为 `BUILD SUCCESS`，模块自身 Java 测试共 4 个用例，失败 0；本次 `test` 仍未实际运行已记录的 `PathMatcherTest.groovy`。
+
 下一步：
 
 1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交。

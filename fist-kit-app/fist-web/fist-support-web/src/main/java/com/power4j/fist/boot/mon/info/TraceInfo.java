@@ -19,7 +19,7 @@ package com.power4j.fist.boot.mon.info;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -37,10 +37,8 @@ public class TraceInfo implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Nullable
-	private String requestId;
+	private @Nullable String requestId;
 
-	@Nullable
-	private String userId;
+	private @Nullable String userId;
 
 }

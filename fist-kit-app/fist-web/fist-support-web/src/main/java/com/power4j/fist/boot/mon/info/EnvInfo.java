@@ -19,7 +19,7 @@ package com.power4j.fist.boot.mon.info;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -37,19 +37,14 @@ public class EnvInfo implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Nullable
-	private String hostName;
+	private @Nullable String hostName;
 
-	@Nullable
-	private String osName;
+	private @Nullable String osName;
 
-	@Nullable
-	private String osVersion;
+	private @Nullable String osVersion;
 
-	@Nullable
-	private String jvmName;
+	private @Nullable String jvmName;
 
-	@Nullable
-	private String jvmVersion;
+	private @Nullable String jvmVersion;
 
 }

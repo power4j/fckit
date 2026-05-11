@@ -3,8 +3,8 @@ package com.power4j.fist.boot.mon.info;
 import com.power4j.fist.boot.common.error.MsgBundleRejectedException;
 import com.power4j.fist.boot.common.error.RejectedException;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.lang.Nullable;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -18,8 +18,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DefaultExceptionTranslator implements ExceptionTranslator {
 
-	@Nullable
-	private final MessageSourceAccessor messageSourceAccessor;
+	private final @Nullable MessageSourceAccessor messageSourceAccessor;
 
 	@Override
 	public Optional<ApiResponseInfo> translateException(Throwable e) {

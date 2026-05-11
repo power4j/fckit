@@ -649,6 +649,38 @@ rg -n "org\.springframework\.lang\.Nullable" fist-kit-app/fist-security/fist-sup
 - `fist-support-security -am test` 为 `BUILD SUCCESS`；模块自身测试共 17 个用例，失败 0；依赖链测试共 40 个用例，失败 0。
 - 编译日志中仍有依赖链上的 `fist-support-web` 方法级 `org.springframework.lang.Nullable` 警告，后续按 Web 支撑模块继续迁移。
 
+## 已验证：Support Web 方法级空值注解迁移
+
+Support Security 方法级迁移后，继续处理依赖链中剩余的 `fist-support-web` 方法级 Spring 空值注解。
+
+受影响模块：
+
+- `fist-kit-app/fist-web/fist-support-web`
+
+处理结果：
+
+- 20 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- DTO 和事件对象字段迁移到类型使用位置，例如 `private @Nullable String query`、`private @Nullable ExceptionInfo error`。
+- 方法返回值迁移到类型使用位置，例如 `@Nullable Locale resolve()`、`public @Nullable String getHint()`、`private @Nullable String getDescription(...)`。
+- `Breaker` 中可空数组参数从 `@Nullable Object[]` 调整为 `Object @Nullable []`，表达数组本身可为 `null`。
+- `fist-support-web` 主代码复扫未命中 `org.springframework.lang.Nullable`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web -am test
+rg -n "org\.springframework\.lang\.Nullable" fist-kit-app/fist-web/fist-support-web/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-support-web` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+- 剩余 deprecation 明细为 `Breaker` 自身缺少 `@Deprecated` 标注和 Apache Commons Lang `ObjectUtils.defaultIfNull(...)`，不属于本轮空值注解迁移。
+- `fist-support-web -am test` 为 `BUILD SUCCESS`；模块自身 Java 测试共 4 个用例，失败 0。
+- 本次 `test` 仍未实际运行已记录的 `PathMatcherTest.groovy`，后续去 Groovy 任务需要单独处理。
+
 ## 已验证：Cloud RPC Feign 包级空值注解迁移
 
 Boot Security 处理后，继续迁移 `fist-cloud-rpc-feign` 中剩余的包级 Spring 空值注解。

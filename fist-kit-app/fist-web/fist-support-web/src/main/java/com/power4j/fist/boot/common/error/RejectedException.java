@@ -16,8 +16,8 @@
 
 package com.power4j.fist.boot.common.error;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.Nullable;
 
 import java.util.Objects;
 
@@ -33,8 +33,7 @@ public class RejectedException extends RuntimeException {
 
 	private final String code;
 
-	@Nullable
-	private final String hint;
+	private final @Nullable String hint;
 
 	private HttpStatus status;
 
@@ -66,8 +65,7 @@ public class RejectedException extends RuntimeException {
 		return code;
 	}
 
-	@Nullable
-	public String getHint() {
+	public @Nullable String getHint() {
 		return hint;
 	}
 

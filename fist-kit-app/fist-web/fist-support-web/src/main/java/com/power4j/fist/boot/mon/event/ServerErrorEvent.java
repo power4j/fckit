@@ -20,7 +20,7 @@ import com.power4j.fist.boot.mon.info.EnvInfo;
 import com.power4j.fist.boot.mon.info.ExceptionInfo;
 import com.power4j.fist.boot.mon.info.TraceInfo;
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -50,7 +50,6 @@ public class ServerErrorEvent implements Serializable {
 
 	private EnvInfo envInfo;
 
-	@Nullable
-	private ExceptionInfo error;
+	private @Nullable ExceptionInfo error;
 
 }

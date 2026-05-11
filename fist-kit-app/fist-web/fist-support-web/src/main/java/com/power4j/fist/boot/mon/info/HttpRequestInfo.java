@@ -20,7 +20,7 @@ import com.power4j.fist.support.spring.web.servlet.util.HttpServletRequestUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -48,8 +48,7 @@ public class HttpRequestInfo implements Serializable {
 
 	private String path;
 
-	@Nullable
-	private String queryParam;
+	private @Nullable String queryParam;
 
 	private String from;
 

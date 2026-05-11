@@ -17,8 +17,8 @@
 package com.power4j.fist.boot.web.event.error;
 
 import lombok.Data;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.Nullable;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -40,8 +40,7 @@ public class RequestInfo implements Serializable {
 
 	private String uri;
 
-	@Nullable
-	private String query;
+	private @Nullable String query;
 
 	public static RequestInfo from(HttpServletRequest request) {
 		RequestInfo info = new RequestInfo();

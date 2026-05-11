@@ -38,7 +38,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -60,8 +60,7 @@ public class ApiLogAspect {
 
 	private final ExceptionTranslator exceptionTranslator;
 
-	@Nullable
-	private final UserInfoAccessor userInfoAccessor;
+	private final @Nullable UserInfoAccessor userInfoAccessor;
 
 	private final AtomicReference<String> appNameRef = new AtomicReference<>(null);
 
@@ -134,8 +133,7 @@ public class ApiLogAspect {
 		return descriptionResolver.resolve(method).orElse(StringPool.EMPTY);
 	}
 
-	@Nullable
-	String getAppName() {
+	@Nullable String getAppName() {
 		String name = appNameRef.get();
 		if (Objects.nonNull(name)) {
 			return name;

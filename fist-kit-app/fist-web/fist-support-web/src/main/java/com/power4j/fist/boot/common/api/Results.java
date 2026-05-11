@@ -20,7 +20,7 @@ import com.power4j.coca.kit.common.lang.Result;
 import com.power4j.fist.boot.common.error.ErrorCode;
 import com.power4j.fist.boot.common.error.RejectedException;
 import lombok.experimental.UtilityClass;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;

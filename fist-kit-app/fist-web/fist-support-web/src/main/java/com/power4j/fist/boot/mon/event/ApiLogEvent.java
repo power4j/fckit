@@ -24,7 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -55,8 +55,7 @@ public class ApiLogEvent implements Serializable {
 
 	private AuthInfo authInfo;
 
-	@Nullable
-	private ExceptionInfo error;
+	private @Nullable ExceptionInfo error;
 
 	/**
 	 * UTC

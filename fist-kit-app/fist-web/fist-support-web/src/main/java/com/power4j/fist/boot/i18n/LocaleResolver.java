@@ -16,7 +16,7 @@
 
 package com.power4j.fist.boot.i18n;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -31,7 +31,6 @@ public interface LocaleResolver {
 	 * 获取 Locale
 	 * @return 解析失败返回 null
 	 */
-	@Nullable
-	Locale resolve();
+	@Nullable Locale resolve();
 
 }

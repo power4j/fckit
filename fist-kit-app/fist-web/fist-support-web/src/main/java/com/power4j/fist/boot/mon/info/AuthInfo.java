@@ -4,7 +4,7 @@ import com.power4j.fist.boot.security.core.UserInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -18,11 +18,9 @@ import java.util.Objects;
 @AllArgsConstructor
 public class AuthInfo {
 
-	@Nullable
-	private String username;
+	private @Nullable String username;
 
-	@Nullable
-	private String name;
+	private @Nullable String name;
 
 	public static AuthInfo from(@Nullable UserInfo src) {
 		AuthInfo info = new AuthInfo();

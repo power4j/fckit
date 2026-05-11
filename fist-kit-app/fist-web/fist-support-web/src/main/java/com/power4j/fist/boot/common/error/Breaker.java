@@ -18,8 +18,8 @@ package com.power4j.fist.boot.common.error;
 
 import com.power4j.fist.boot.i18n.LocaleResolver;
 import lombok.experimental.UtilityClass;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.lang.Nullable;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -34,17 +34,15 @@ import java.util.Optional;
 @UtilityClass
 public class Breaker {
 
-	@Nullable
-	private static MessageSourceAccessor messageSourceAccessor;
+	private static @Nullable MessageSourceAccessor messageSourceAccessor;
 
-	@Nullable
-	private static LocaleResolver localeResolver;
+	private static @Nullable LocaleResolver localeResolver;
 
 	public static void requestParameterError(@Nullable String hint) throws RejectedException {
 		reject(ErrorCode.A0400, "common.bad-parameter", null, hint);
 	}
 
-	public static void requestParameterError(String msgKey, @Nullable Object[] args, @Nullable String hint)
+	public static void requestParameterError(String msgKey, Object @Nullable [] args, @Nullable String hint)
 			throws RejectedException {
 		reject(ErrorCode.A0400, msgKey, args, hint);
 	}
@@ -71,7 +69,7 @@ public class Breaker {
 	 * @param msgKey 消息模板
 	 * @param args 消息模板参数
 	 */
-	public static void reject(String errorCode, String msgKey, @Nullable Object[] args) throws RejectedException {
+	public static void reject(String errorCode, String msgKey, Object @Nullable [] args) throws RejectedException {
 		reject(errorCode, msgKey, args, null);
 	}
 
@@ -82,7 +80,7 @@ public class Breaker {
 	 * @param args 消息模板参数
 	 * @param hint 错误提示
 	 */
-	public static void reject(String errorCode, String msgKey, @Nullable Object[] args, @Nullable String hint)
+	public static void reject(String errorCode, String msgKey, Object @Nullable [] args, @Nullable String hint)
 			throws RejectedException {
 		Locale locale = Optional.ofNullable(localeResolver).map(LocaleResolver::resolve).orElse(Locale.CHINA);
 		String msg = Objects.requireNonNull(messageSourceAccessor).getMessage(msgKey, args, msgKey, locale);

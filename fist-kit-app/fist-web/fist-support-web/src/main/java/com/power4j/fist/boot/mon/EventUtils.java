@@ -24,7 +24,7 @@ import com.power4j.fist.boot.mon.info.TraceInfo;
 import com.power4j.fist.support.spring.util.ApplicationContextHolder;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 

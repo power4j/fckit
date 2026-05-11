@@ -20,7 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -39,10 +39,8 @@ public class ApiResponseInfo implements Serializable {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	@Nullable
-	private String code;
+	private @Nullable String code;
 
-	@Nullable
-	private String message;
+	private @Nullable String message;
 
 }

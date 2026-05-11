@@ -21,7 +21,7 @@ import com.power4j.fist.support.spring.util.SpringEventUtil;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.function.FailableRunnable;
 import org.apache.commons.lang3.function.FailableSupplier;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -35,8 +35,7 @@ public class Mon {
 
 	private final List<Class<? extends Exception>> caught;
 
-	@Nullable
-	private final String description;
+	private final @Nullable String description;
 
 	/**
 	 * 构造方法

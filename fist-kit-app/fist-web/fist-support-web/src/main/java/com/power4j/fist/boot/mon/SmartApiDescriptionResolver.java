@@ -2,7 +2,7 @@ package com.power4j.fist.boot.mon;
 
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -20,8 +20,7 @@ public class SmartApiDescriptionResolver extends DefaultApiDescriptionResolver {
 		return super.resolve(method).or(() -> Optional.ofNullable(getDescription(method)));
 	}
 
-	@Nullable
-	private String getDescription(Method method) {
+	private @Nullable String getDescription(Method method) {
 		final Operation operation = method.getAnnotation(Operation.class);
 		if (Objects.nonNull(operation)) {
 			return ObjectUtils.firstNonNull(operation.summary(), operation.description());
