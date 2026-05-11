@@ -645,6 +645,34 @@ Cloud RPC Feign 处理后，继续迁移 `fist-boot-apidoc` 中剩余的包级 S
 - API Doc deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
 - `fist-boot-apidoc -am test` 为 `BUILD SUCCESS`；`fist-boot-apidoc` 模块自身没有测试源码。
 
+## 已验证：Redisson 包级空值注解迁移
+
+API Doc 处理后，继续迁移 `fist-redisson` 中剩余的包级 Spring 空值注解。
+
+受影响模块：
+
+- `fist-kit-infra/fist-redisson`
+
+处理结果：
+
+- `fist-redisson` 增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
+- 5 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解；Redisson bean processor、publisher、queue writer 中的方法级 `org.springframework.lang.Nullable` 以及 `RBlockingQueue.subscribeOnElements` deprecation 作为后续专项保留。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson -am test
+```
+
+结果：
+
+- Redisson deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- `fist-redisson -am test` 为 `BUILD SUCCESS`；`fist-redisson` 模块自身没有测试源码。
+- 全仓 `package-info.java` 复扫未命中 `NonNullApi` / `NonNullFields`。
+
 ## Jackson 3
 
 扫描命令：
@@ -779,7 +807,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续迁移 Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
+1. 进入方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理当前 deprecation 编译日志中仍命中的模块。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。

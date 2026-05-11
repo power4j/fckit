@@ -500,9 +500,24 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：API Doc deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`fist-boot-apidoc -am test` 为 `BUILD SUCCESS`，模块自身没有测试源码。
 
+继续处理 Redisson 模块的包级空值注解 deprecation 警告：
+
+- `fist-redisson` 增加 `org.jspecify:jspecify` 依赖，5 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解，Redisson bean processor、publisher、queue writer 中的方法级 `org.springframework.lang.Nullable` 和 `RBlockingQueue.subscribeOnElements` deprecation 后续单独迁移。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson -am test
+```
+
+结果：Redisson deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`fist-redisson -am test` 为 `BUILD SUCCESS`，模块自身没有测试源码；全仓 `package-info.java` 复扫未命中 `NonNullApi` / `NonNullFields`。
+
 下一步：
 
-1. 继续迁移 Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
+1. 进入方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理当前 deprecation 编译日志中仍命中的模块。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
