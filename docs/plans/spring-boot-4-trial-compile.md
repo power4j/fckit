@@ -382,9 +382,26 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-support-web` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；模块测试共 4 个用例，失败 0。本次 `test` 未实际运行已记录的 `PathMatcherTest.groovy`，后续去 Groovy 任务需要单独确认。
 
+继续处理 Security 相关模块的包级空值注解 deprecation 警告：
+
+- `fist-support-security` 增加 `org.jspecify:jspecify` 依赖，11 个 `package-info.java` 迁移到 `@NullMarked`。
+- `fist-boot-security-oauth2-server` 增加 `org.jspecify:jspecify` 依赖，12 个 `package-info.java` 迁移到 `@NullMarked`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security,fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-support-security -am test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=DefaultAuthorizationServiceTest,DefaultOauthFailureHandlerTest,OAuth2ResourceOwnerBaseAuthenticationProviderTest,WebUtilTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：`fist-support-security` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；OAuth2 Server deprecation 明细编译为 `BUILD SUCCESS`，剩余 `NonNullApi` / `NonNullFields` 命中来自依赖链上的 `fist-boot-web-app` 与 `fist-support-data`。`fist-support-security` 模块测试共 17 个用例，失败 0；OAuth2 Server 定向测试共 4 个用例，失败 0。
+
 下一步：
 
-1. 按模块继续迁移 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify，迁移时同步检查显式可空契约。
+1. 继续迁移 `fist-boot-web-app` 与 `fist-support-data` 的 `NonNullApi` / `NonNullFields`，迁移时同步检查显式可空契约。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。

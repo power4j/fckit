@@ -43,6 +43,10 @@
       <artifactId>fist-support-web</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.power4j.tile</groupId>
       <artifactId>tile-crypto</artifactId>
       <exclusions>

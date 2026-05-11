@@ -40,6 +40,10 @@
       <artifactId>fist-support-data</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.power4j.fist3</groupId>
       <artifactId>fist-boot-web-app</artifactId>
       <scope>provided</scope>
