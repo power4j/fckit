@@ -691,9 +691,26 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-boot-apidoc` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。剩余 deprecation 明细为 Jackson 2 `JsonNode.fields()`、Apache Commons Lang `Validate.notNull(...)` 和 Springfox 退役相关注解问题。`fist-boot-apidoc -am test` 为 `BUILD SUCCESS`，模块自身没有测试源码，依赖链测试共 6 个用例，失败 0。
 
+继续处理 `fist-boot-security-oauth2-server` 的方法级 `org.springframework.lang.Nullable` deprecation 警告：
+
+- 5 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 JSpecify `org.jspecify.annotations.Nullable`。
+- 授权查询和 token 生成返回值迁移到类型使用位置，例如 `public @Nullable OAuth2Authorization findById(...)`、`public @Nullable OAuth2AccessToken generate(...)`。
+- `OAuth2RefreshTokenAuthenticationConverter` 保留不匹配 refresh token grant 时返回 `null` 的接口契约。
+- `OAuth2ResourceOwnerBaseAuthenticationToken` 与 `WebUtil` 保留可空入参契约。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=DefaultAuthorizationServiceTest,DefaultOauthFailureHandlerTest,OAuth2ResourceOwnerBaseAuthenticationProviderTest,WebUtilTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：`fist-boot-security-oauth2-server` deprecation 明细编译为 `BUILD SUCCESS`；本模块主代码未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。定向测试共 4 个用例，失败 0。剩余 deprecation 明细主要为 `DefaultAuthorizationService` 使用 Spring JDBC LOB API，以及 Apache Commons Lang 过时方法，不属于本轮空值注解迁移。
+
 下一步：
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交，优先处理 `fist-gateway-auth-core`、`fist-boot-security-oauth2-server`、`fist-cloud-gateway-acl` 等剩余命中模块。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交，优先处理 `fist-gateway-auth-core`、`fist-cloud-gateway-acl` 等剩余命中模块。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。

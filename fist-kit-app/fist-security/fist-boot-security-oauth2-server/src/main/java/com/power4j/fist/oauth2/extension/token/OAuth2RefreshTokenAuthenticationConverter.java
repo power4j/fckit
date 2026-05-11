@@ -18,7 +18,7 @@ package com.power4j.fist.oauth2.extension.token;
 
 import com.power4j.fist.oauth2.extension.utils.OAuth2EndpointUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -45,9 +45,8 @@ import java.util.Set;
  */
 public class OAuth2RefreshTokenAuthenticationConverter implements AuthenticationConverter {
 
-	@Nullable
 	@Override
-	public Authentication convert(HttpServletRequest request) {
+	public @Nullable Authentication convert(HttpServletRequest request) {
 		MultiValueMap<String, String> parameters = OAuth2EndpointUtils.getParameters(request);
 
 		// grant_type (REQUIRED)

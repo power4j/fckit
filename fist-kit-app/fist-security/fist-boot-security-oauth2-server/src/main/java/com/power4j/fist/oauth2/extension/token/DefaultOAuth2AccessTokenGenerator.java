@@ -16,7 +16,7 @@
 
 package com.power4j.fist.oauth2.extension.token;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.oauth2.core.ClaimAccessor;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
@@ -48,9 +48,8 @@ public class DefaultOAuth2AccessTokenGenerator implements OAuth2TokenGenerator<O
 
 	private OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer;
 
-	@Nullable
 	@Override
-	public OAuth2AccessToken generate(OAuth2TokenContext context) {
+	public @Nullable OAuth2AccessToken generate(OAuth2TokenContext context) {
 		if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType()) || !OAuth2TokenFormat.REFERENCE
 			.equals(context.getRegisteredClient().getTokenSettings().getAccessTokenFormat())) {
 			return null;

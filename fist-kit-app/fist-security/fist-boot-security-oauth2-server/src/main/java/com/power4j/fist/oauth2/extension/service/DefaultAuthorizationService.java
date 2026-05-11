@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.SqlParameterValue;
 import org.springframework.jdbc.support.lob.DefaultLobHandler;
 import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.jackson.SecurityJacksonModules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -231,18 +231,16 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 		this.jdbcOperations.update(REMOVE_AUTHORIZATION_SQL, pss);
 	}
 
-	@Nullable
 	@Override
-	public OAuth2Authorization findById(String id) {
+	public @Nullable OAuth2Authorization findById(String id) {
 		Assert.hasText(id, "id cannot be empty");
 		List<SqlParameterValue> parameters = new ArrayList<>();
 		parameters.add(new SqlParameterValue(Types.VARCHAR, id));
 		return findBy(PK_FILTER, parameters);
 	}
 
-	@Nullable
 	@Override
-	public OAuth2Authorization findByToken(String token, @Nullable OAuth2TokenType tokenType) {
+	public @Nullable OAuth2Authorization findByToken(String token, @Nullable OAuth2TokenType tokenType) {
 		Assert.hasText(token, "token cannot be empty");
 		List<SqlParameterValue> parameters = new ArrayList<>();
 		if (tokenType == null) {
@@ -286,8 +284,7 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 		return null;
 	}
 
-	@Nullable
-	private OAuth2Authorization findBy(String filter, List<SqlParameterValue> parameters) {
+	private @Nullable OAuth2Authorization findBy(String filter, List<SqlParameterValue> parameters) {
 		filter = processQuerySql(filter, columnMetadataMap);
 		try (LobCreator lobCreator = getLobHandler().getLobCreator()) {
 			PreparedStatementSetter pss = new LobCreatorArgumentPreparedStatementSetter(lobCreator,
@@ -411,8 +408,7 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 			.build();
 	}
 
-	@Nullable
-	protected String getLobCmpFunc() {
+	protected @Nullable String getLobCmpFunc() {
 		return null;
 	}
 
