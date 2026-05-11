@@ -673,6 +673,43 @@ API Doc 处理后，继续迁移 `fist-redisson` 中剩余的包级 Spring 空�
 - `fist-redisson -am test` 为 `BUILD SUCCESS`；`fist-redisson` 模块自身没有测试源码。
 - 全仓 `package-info.java` 复扫未命中 `NonNullApi` / `NonNullFields`。
 
+## 已验证：Support Spring 方法级空值注解迁移
+
+全仓包级 `NonNullApi` / `NonNullFields` 迁移完成后，进入方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移。第一批选择 `fist-support-spring`，用于验证返回值、入参、数组和泛型返回值的写法。
+
+受影响模块：
+
+- `fist-kit-infra/fist-support-spring`
+
+受影响文件：
+
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/i18n/MsgUtil.java`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/spel/SpringElUtil.java`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/util/ApplicationContextHolder.java`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/web/servlet/util/HttpServletRequestUtil.java`
+
+处理结果：
+
+- 4 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- 方法返回值改为类型使用位置，例如 `public @Nullable ApplicationContext peek()` 与 `public <T> @Nullable T eval(...)`。
+- `MsgUtil` 的消息参数从 Spring 旧写法 `@Nullable Object[]` 调整为 JSpecify 数组写法 `Object @Nullable []`，表示数组本身可为 `null`，避免误写为「数组元素可空」。
+- `fist-support-spring` 主代码复扫未命中 `org.springframework.lang.Nullable`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring -am test
+rg -n "org\.springframework\.lang\.Nullable" fist-kit-infra/fist-support-spring/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-support-spring` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+- `fist-support-spring -am test` 为 `BUILD SUCCESS`；模块测试共 5 个用例，失败 0。
+- `rg` 复扫 `fist-support-spring` 主代码未命中 `org.springframework.lang.Nullable`。
+
 ## Jackson 3
 
 扫描命令：
@@ -707,13 +744,14 @@ rg -l "com\.fasterxml\.jackson" fist-kit-app fist-kit-cloud fist-kit-infra examp
 rg -l "org\.springframework\.lang\.Nullable" fist-kit-app fist-kit-cloud fist-kit-infra examples benchmarks -g "*.java"
 ```
 
-结果：89 个 Java 文件。
+初始结果：89 个 Java 文件。包级 `NonNullApi` / `NonNullFields` 已完成全仓迁移；方法级 `org.springframework.lang.Nullable` 已开始按模块迁移。
 
 处理建议：
 
 - 与项目已有 `@NullMarked` 和 `org.jspecify.annotations.Nullable` 策略统一处理。
 - 公共 API 包优先补齐 `package-info.java`。
 - 不做单纯机械替换，避免泛型可空语义丢失。
+- 数组类型需要区分数组本身可空与元素可空。`Object @Nullable []` 表示数组可为 `null`；`@Nullable Object[]` 在 JSpecify 语义下表示数组元素可空。
 
 ## Springfox 与 API Doc
 
@@ -807,7 +845,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 进入方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理当前 deprecation 编译日志中仍命中的模块。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-support-web`、`fist-support-security`、`fist-support-data` 等当前命中较多且已有测试覆盖的模块。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
@@ -822,4 +860,5 @@ starter 仍有旧坐标需要后续处理：
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`
+- JSpecify Context7 文档：`/jspecify/jspecify`，确认 `@Nullable` 可用于返回值、参数、泛型类型参数和数组维度。
 - OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

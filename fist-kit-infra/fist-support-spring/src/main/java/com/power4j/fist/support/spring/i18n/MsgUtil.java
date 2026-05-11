@@ -2,7 +2,7 @@ package com.power4j.fist.support.spring.i18n;
 
 import com.power4j.fist.support.spring.util.ApplicationContextHolder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -21,7 +21,7 @@ public class MsgUtil {
 	 * @param locale 国际化区域
 	 * @return 解析失败返回empty
 	 */
-	public static Optional<String> resolveMessage(String msgKey, @Nullable Object[] args, Locale locale) {
+	public static Optional<String> resolveMessage(String msgKey, Object @Nullable [] args, Locale locale) {
 		return ApplicationContextHolder.getContextOptional().map(m -> m.getMessage(msgKey, args, null, locale));
 	}
 
@@ -31,7 +31,7 @@ public class MsgUtil {
 	 * @param args 消息参数
 	 * @return 解析失败返回empty
 	 */
-	public static Optional<String> resolveMessage(String msgKey, @Nullable Object[] args) {
+	public static Optional<String> resolveMessage(String msgKey, Object @Nullable [] args) {
 		return resolveMessage(msgKey, args, Locale.getDefault());
 	}
 
@@ -42,7 +42,7 @@ public class MsgUtil {
 	 * @param locale 国际化区域
 	 * @return 无消息文本返回msgKey
 	 */
-	public static String getMessage(String msgKey, @Nullable Object[] args, Locale locale) {
+	public static String getMessage(String msgKey, Object @Nullable [] args, Locale locale) {
 		return resolveMessage(msgKey, args, locale).orElse(msgKey);
 	}
 
@@ -52,7 +52,7 @@ public class MsgUtil {
 	 * @param args 消息参数
 	 * @return 无消息文本返回 msgKey
 	 */
-	public static String getMessage(String msgKey, @Nullable Object[] args) {
+	public static String getMessage(String msgKey, Object @Nullable [] args) {
 		return resolveMessage(msgKey, args).orElse(msgKey);
 	}
 

@@ -19,8 +19,8 @@ package com.power4j.fist.support.spring.web.servlet.util;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.lang.Nullable;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -152,8 +152,7 @@ public class HttpServletRequestUtil {
 	 * @param defaultValue
 	 * @return
 	 */
-	@Nullable
-	public static String getRemoteIp(HttpServletRequest request, @Nullable String defaultValue) {
+	public static @Nullable String getRemoteIp(HttpServletRequest request, @Nullable String defaultValue) {
 		return getRemoteIp(request).orElse(defaultValue);
 	}
 

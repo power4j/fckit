@@ -21,7 +21,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,8 +51,7 @@ public class ApplicationContextHolder implements ApplicationContextAware, Dispos
 		return getContextOptional().orElseThrow(() -> new IllegalStateException("ApplicationContext is null"));
 	}
 
-	@Nullable
-	public ApplicationContext peek() {
+	public @Nullable ApplicationContext peek() {
 		return CONTEXT_REF.get();
 	}
 

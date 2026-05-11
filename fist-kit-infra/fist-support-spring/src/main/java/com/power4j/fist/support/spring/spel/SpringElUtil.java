@@ -23,7 +23,7 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.ParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Spring 表达式工具 <a href=
@@ -49,9 +49,8 @@ public class SpringElUtil {
 	 * @return 执行表达式后的结果,求值发生异常时返回默认值
 	 * @see #evalWithVariable(VariableProvider,ParserContext, String, Class)
 	 */
-	@Nullable
-	public <T> T evalWithVariable(@Nullable VariableProvider variableProvider, @Nullable ParserContext parserContext,
-			String expr, Class<T> clazz, @Nullable T defVal) {
+	public <T> @Nullable T evalWithVariable(@Nullable VariableProvider variableProvider,
+			@Nullable ParserContext parserContext, String expr, Class<T> clazz, @Nullable T defVal) {
 		try {
 			return evalWithVariable(variableProvider, parserContext, expr, clazz);
 		}
@@ -73,9 +72,8 @@ public class SpringElUtil {
 	 * @param clazz 返回结果的类型
 	 * @return 执行表达式后的结果
 	 */
-	@Nullable
-	public <T> T evalWithVariable(@Nullable VariableProvider variableProvider, @Nullable ParserContext parserContext,
-			String expr, Class<T> clazz) {
+	public <T> @Nullable T evalWithVariable(@Nullable VariableProvider variableProvider,
+			@Nullable ParserContext parserContext, String expr, Class<T> clazz) {
 		EvaluationContext context = new StandardEvaluationContext();
 		if (variableProvider != null) {
 			variableProvider.getVariables().forEach(context::setVariable);
@@ -97,9 +95,8 @@ public class SpringElUtil {
 	 * @param clazz 返回结果的类型
 	 * @return 执行表达式后的结果
 	 */
-	@Nullable
-	public <T> T eval(@Nullable EvaluationContext evaluationContext, @Nullable ParserContext parserContext, String expr,
-			Class<T> clazz) {
+	public <T> @Nullable T eval(@Nullable EvaluationContext evaluationContext, @Nullable ParserContext parserContext,
+			String expr, Class<T> clazz) {
 		Expression expression = parser.parseExpression(expr, parserContext);
 		if (evaluationContext != null) {
 			return expression.getValue(evaluationContext, clazz);
