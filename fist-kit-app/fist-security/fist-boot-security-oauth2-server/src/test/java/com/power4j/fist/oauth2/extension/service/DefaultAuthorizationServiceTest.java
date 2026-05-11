@@ -19,6 +19,8 @@ package com.power4j.fist.oauth2.extension.service;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.SqlParameterValue;
+import org.springframework.jdbc.core.support.SqlBinaryValue;
+import org.springframework.jdbc.core.support.SqlCharacterValue;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -29,8 +31,10 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.sql.Types;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,22 +71,50 @@ class DefaultAuthorizationServiceTest {
 		Assertions.assertTrue(String.valueOf(parameters.get(5).getValue()).contains("ROLE_USER"));
 	}
 
+	@Test
+	void shouldMapLobParametersWithSpringJdbcSqlTypeValue() throws Exception {
+		Map<String, Integer> types = new HashMap<>();
+		types.put("access_token_value", Types.BLOB);
+		types.put("access_token_metadata", Types.CLOB);
+		installColumnMetadata(types);
+
+		SqlParameterValue blob = mapToSqlParameter("access_token_value", "token");
+		SqlParameterValue clob = mapToSqlParameter("access_token_metadata", "{}");
+
+		Assertions.assertEquals(Types.BLOB, blob.getSqlType());
+		Assertions.assertInstanceOf(SqlBinaryValue.class, blob.getValue());
+		Assertions.assertEquals(Types.CLOB, clob.getSqlType());
+		Assertions.assertInstanceOf(SqlCharacterValue.class, clob.getValue());
+	}
+
 	private static void installColumnMetadata() throws Exception {
+		installColumnMetadata(Collections.emptyMap());
+	}
+
+	private static void installColumnMetadata(Map<String, Integer> types) throws Exception {
 		Map<String, DefaultAuthorizationService.ColumnMetadata> metadata = new HashMap<>();
 		for (String columnName : Set.of("attributes", "authorization_code_value", "authorization_code_metadata",
 				"access_token_value", "access_token_metadata", "oidc_id_token_value", "oidc_id_token_metadata",
 				"refresh_token_value", "refresh_token_metadata", "user_code_value", "user_code_metadata",
 				"device_code_value", "device_code_metadata")) {
-			metadata.put(columnName, columnMetadata(columnName));
+			metadata.put(columnName, columnMetadata(columnName, types.getOrDefault(columnName, Types.VARCHAR)));
 		}
 		ReflectionTestUtils.setField(DefaultAuthorizationService.class, "columnMetadataMap", metadata);
 	}
 
-	private static DefaultAuthorizationService.ColumnMetadata columnMetadata(String columnName) throws Exception {
+	private static DefaultAuthorizationService.ColumnMetadata columnMetadata(String columnName, int type)
+			throws Exception {
 		Constructor<DefaultAuthorizationService.ColumnMetadata> constructor = DefaultAuthorizationService.ColumnMetadata.class
 			.getDeclaredConstructor(String.class, int.class);
 		constructor.setAccessible(true);
-		return constructor.newInstance(columnName, Types.CLOB);
+		return constructor.newInstance(columnName, type);
+	}
+
+	private static SqlParameterValue mapToSqlParameter(String columnName, String value) throws Exception {
+		Method method = DefaultAuthorizationService.class.getDeclaredMethod("mapToSqlParameter", String.class,
+				String.class);
+		method.setAccessible(true);
+		return (SqlParameterValue) method.invoke(null, columnName, value);
 	}
 
 }

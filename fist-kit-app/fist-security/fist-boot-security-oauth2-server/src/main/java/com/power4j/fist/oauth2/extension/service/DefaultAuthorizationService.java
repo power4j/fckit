@@ -8,9 +8,8 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.SqlParameterValue;
-import org.springframework.jdbc.support.lob.DefaultLobHandler;
-import org.springframework.jdbc.support.lob.LobCreator;
-import org.springframework.jdbc.support.lob.LobHandler;
+import org.springframework.jdbc.core.support.SqlBinaryValue;
+import org.springframework.jdbc.core.support.SqlCharacterValue;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.jackson.SecurityJacksonModules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -38,7 +37,6 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -153,8 +151,6 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 
 	private final JdbcOperations jdbcOperations;
 
-	private final LobHandler lobHandler;
-
 	private RowMapper<OAuth2Authorization> authorizationRowMapper;
 
 	private Function<OAuth2Authorization, List<SqlParameterValue>> authorizationParametersMapper;
@@ -167,24 +163,11 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 	 */
 	public DefaultAuthorizationService(JdbcOperations jdbcOperations,
 			RegisteredClientRepository registeredClientRepository) {
-		this(jdbcOperations, registeredClientRepository, new DefaultLobHandler());
-	}
-
-	/**
-	 * @param jdbcOperations the JDBC operations
-	 * @param registeredClientRepository the registered client repository
-	 * @param lobHandler the handler for large binary fields and large text fields
-	 */
-	public DefaultAuthorizationService(JdbcOperations jdbcOperations,
-			RegisteredClientRepository registeredClientRepository, LobHandler lobHandler) {
 		Assert.notNull(jdbcOperations, "jdbcOperations cannot be null");
 		Assert.notNull(registeredClientRepository, "registeredClientRepository cannot be null");
-		Assert.notNull(lobHandler, "lobHandler cannot be null");
 		this.jdbcOperations = jdbcOperations;
-		this.lobHandler = lobHandler;
 		OAuth2AuthorizationRowMapper authorizationRowMapper = new OAuth2AuthorizationRowMapper(
 				registeredClientRepository);
-		authorizationRowMapper.setLobHandler(lobHandler);
 		this.authorizationRowMapper = authorizationRowMapper;
 		this.authorizationParametersMapper = new OAuth2AuthorizationParametersMapper();
 		initColumnMetadata(jdbcOperations);
@@ -206,20 +189,14 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 		List<SqlParameterValue> parameters = this.authorizationParametersMapper.apply(authorization);
 		SqlParameterValue id = parameters.remove(0);
 		parameters.add(id);
-		try (LobCreator lobCreator = this.lobHandler.getLobCreator()) {
-			PreparedStatementSetter pss = new LobCreatorArgumentPreparedStatementSetter(lobCreator,
-					parameters.toArray());
-			this.jdbcOperations.update(UPDATE_AUTHORIZATION_SQL, pss);
-		}
+		PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(parameters.toArray());
+		this.jdbcOperations.update(UPDATE_AUTHORIZATION_SQL, pss);
 	}
 
 	private void insertAuthorization(OAuth2Authorization authorization) {
 		List<SqlParameterValue> parameters = this.authorizationParametersMapper.apply(authorization);
-		try (LobCreator lobCreator = this.lobHandler.getLobCreator()) {
-			PreparedStatementSetter pss = new LobCreatorArgumentPreparedStatementSetter(lobCreator,
-					parameters.toArray());
-			this.jdbcOperations.update(SAVE_AUTHORIZATION_SQL, pss);
-		}
+		PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(parameters.toArray());
+		this.jdbcOperations.update(SAVE_AUTHORIZATION_SQL, pss);
 	}
 
 	@Override
@@ -286,13 +263,10 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 
 	private @Nullable OAuth2Authorization findBy(String filter, List<SqlParameterValue> parameters) {
 		filter = processQuerySql(filter, columnMetadataMap);
-		try (LobCreator lobCreator = getLobHandler().getLobCreator()) {
-			PreparedStatementSetter pss = new LobCreatorArgumentPreparedStatementSetter(lobCreator,
-					parameters.toArray());
-			List<OAuth2Authorization> result = getJdbcOperations().query(LOAD_AUTHORIZATION_SQL + filter, pss,
-					getAuthorizationRowMapper());
-			return !result.isEmpty() ? result.get(0) : null;
-		}
+		PreparedStatementSetter pss = new ArgumentPreparedStatementSetter(parameters.toArray());
+		List<OAuth2Authorization> result = getJdbcOperations().query(LOAD_AUTHORIZATION_SQL + filter, pss,
+				getAuthorizationRowMapper());
+		return !result.isEmpty() ? result.get(0) : null;
 	}
 
 	/**
@@ -322,10 +296,6 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 
 	protected final JdbcOperations getJdbcOperations() {
 		return this.jdbcOperations;
-	}
-
-	protected final LobHandler getLobHandler() {
-		return this.lobHandler;
 	}
 
 	protected final RowMapper<OAuth2Authorization> getAuthorizationRowMapper() {
@@ -395,9 +365,16 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 
 	private static SqlParameterValue mapToSqlParameter(String columnName, String value) {
 		ColumnMetadata columnMetadata = columnMetadataMap.get(columnName);
-		return (Types.BLOB == columnMetadata.getDataType() && StringUtils.hasText(value))
-				? new SqlParameterValue(Types.BLOB, value.getBytes(StandardCharsets.UTF_8))
-				: new SqlParameterValue(columnMetadata.getDataType(), value);
+		if (value == null) {
+			return new SqlParameterValue(columnMetadata.getDataType(), null);
+		}
+		if (Types.BLOB == columnMetadata.getDataType()) {
+			return new SqlParameterValue(Types.BLOB, new SqlBinaryValue(value.getBytes(StandardCharsets.UTF_8)));
+		}
+		if (Types.CLOB == columnMetadata.getDataType()) {
+			return new SqlParameterValue(Types.CLOB, new SqlCharacterValue(value));
+		}
+		return new SqlParameterValue(columnMetadata.getDataType(), value);
 	}
 
 	private static ObjectMapper createObjectMapper() {
@@ -458,8 +435,6 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 	public static class OAuth2AuthorizationRowMapper implements RowMapper<OAuth2Authorization> {
 
 		private final RegisteredClientRepository registeredClientRepository;
-
-		private LobHandler lobHandler = new DefaultLobHandler();
 
 		private ObjectMapper objectMapper = createObjectMapper();
 
@@ -588,23 +563,18 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 			String columnValue = null;
 			ColumnMetadata columnMetadata = columnMetadataMap.get(columnName);
 			if (Types.BLOB == columnMetadata.getDataType()) {
-				byte[] columnValueBytes = this.lobHandler.getBlobAsBytes(rs, columnName);
+				byte[] columnValueBytes = rs.getBytes(columnName);
 				if (columnValueBytes != null) {
 					columnValue = new String(columnValueBytes, StandardCharsets.UTF_8);
 				}
 			}
 			else if (Types.CLOB == columnMetadata.getDataType()) {
-				columnValue = this.lobHandler.getClobAsString(rs, columnName);
+				columnValue = rs.getString(columnName);
 			}
 			else {
 				columnValue = rs.getString(columnName);
 			}
 			return columnValue;
-		}
-
-		public final void setLobHandler(LobHandler lobHandler) {
-			Assert.notNull(lobHandler, "lobHandler cannot be null");
-			this.lobHandler = lobHandler;
 		}
 
 		public final void setObjectMapper(ObjectMapper objectMapper) {
@@ -614,10 +584,6 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 
 		protected final RegisteredClientRepository getRegisteredClientRepository() {
 			return this.registeredClientRepository;
-		}
-
-		protected final LobHandler getLobHandler() {
-			return this.lobHandler;
 		}
 
 		protected final ObjectMapper getObjectMapper() {
@@ -756,43 +722,6 @@ public class DefaultAuthorizationService implements ManagedOAuth2AuthorizationSe
 			catch (Exception ex) {
 				throw new IllegalArgumentException(ex.getMessage(), ex);
 			}
-		}
-
-	}
-
-	private static final class LobCreatorArgumentPreparedStatementSetter extends ArgumentPreparedStatementSetter {
-
-		private final LobCreator lobCreator;
-
-		private LobCreatorArgumentPreparedStatementSetter(LobCreator lobCreator, Object[] args) {
-			super(args);
-			this.lobCreator = lobCreator;
-		}
-
-		@Override
-		protected void doSetValue(PreparedStatement ps, int parameterPosition, Object argValue) throws SQLException {
-			if (argValue instanceof SqlParameterValue) {
-				SqlParameterValue paramValue = (SqlParameterValue) argValue;
-				if (paramValue.getSqlType() == Types.BLOB) {
-					if (paramValue.getValue() != null) {
-						Assert.isInstanceOf(byte[].class, paramValue.getValue(),
-								"Value of blob parameter must be byte[]");
-					}
-					byte[] valueBytes = (byte[]) paramValue.getValue();
-					this.lobCreator.setBlobAsBytes(ps, parameterPosition, valueBytes);
-					return;
-				}
-				if (paramValue.getSqlType() == Types.CLOB) {
-					if (paramValue.getValue() != null) {
-						Assert.isInstanceOf(String.class, paramValue.getValue(),
-								"Value of clob parameter must be String");
-					}
-					String valueString = (String) paramValue.getValue();
-					this.lobCreator.setClobAsString(ps, parameterPosition, valueString);
-					return;
-				}
-			}
-			super.doSetValue(ps, parameterPosition, argValue);
 		}
 
 	}

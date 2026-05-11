@@ -1289,18 +1289,40 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 对 OAuth2 `DefaultAuthorizationService` 的 Spring JDBC LOB API deprecation 做专项评估，确认 Spring Framework 7 的推荐替代方案和数据库兼容影响。
-2. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
-3. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-4. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+1. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
+2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+
+## OAuth2 授权服务 LOB API
+
+`DefaultAuthorizationService` 原先直接依赖 Spring JDBC `LobHandler`、`LobCreator` 和 `DefaultLobHandler`。Spring Framework 当前 Javadoc 标注这些类型自 6.2 起弃用，推荐使用 `SqlBinaryValue` 和 `SqlCharacterValue`；读取侧建议直接使用 `ResultSet`。
+
+已完成迁移：
+
+- 写入 BLOB 字段时使用 `new SqlBinaryValue(value.getBytes(StandardCharsets.UTF_8))`。
+- 写入 CLOB 字段时使用 `new SqlCharacterValue(value)`。
+- 读取 BLOB 字段时使用 `ResultSet#getBytes(...)`，并按既有约定使用 UTF-8 转回字符串。
+- 读取 CLOB 字段时使用 `ResultSet#getString(...)`。
+- 删除对 `LobHandler`、`LobCreator`、`DefaultLobHandler` 和自定义 `LobCreatorArgumentPreparedStatementSetter` 的依赖。
+- 删除 `DefaultAuthorizationService(JdbcOperations, RegisteredClientRepository, LobHandler)`、`OAuth2AuthorizationRowMapper#setLobHandler(...)` 和相关 protected getter。
+
+影响判断：
+
+- 这是 Boot 4 迁移中的破坏性 API 清理。下游如果显式传入自定义 `LobHandler`，需要改为依赖默认 JDBC 绑定逻辑，或自定义 `authorizationParametersMapper` / `authorizationRowMapper`。
+- 达梦等数据库的 BLOB 查询兼容逻辑仍保留：字段类型仍来自数据库元数据，查询 SQL 仍走 `processQuerySql(...)` 中的 LOB 比较函数处理。
+- 当前本地验证覆盖了参数映射和 Java 编译；真实数据库矩阵仍需要后续用集成环境覆盖 MySQL、PostgreSQL、达梦等实际驱动行为。
 
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
+- OAuth2 LOB API 迁移编译日志：`.codex/oauth2-lob-compile.log`
+- OAuth2 LOB API 迁移测试日志：`.codex/oauth2-lob-test.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
 - Spring Framework Context7 文档：`/spring-projects/spring-framework/v7.0.5`，`JacksonJsonHttpMessageConverter` 使用 Jackson `JsonMapper`
+- Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
+- Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`，`javap` 确认 `LobHandler`、`LobCreator`、`DefaultLobHandler` 带 `@Deprecated(since="6.2")`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`

@@ -760,12 +760,33 @@ rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-a
 
 结果：Gateway 与 OAuth2 组合 deprecation 明细编译为 `BUILD SUCCESS`；本轮目标调用复扫未命中。Gateway 三个模块组合测试为 `BUILD SUCCESS`，Gateway Auth Core 模块自身测试共 14 个用例、Gateway ACL 模块自身测试共 6 个用例，失败 0。OAuth2 Server 定向测试共 4 个用例，失败 0。OAuth2 Server 剩余 deprecation 明细主要为 `DefaultAuthorizationService` 使用 Spring JDBC LOB API；其他 Commons Lang 过时调用来自 Web/Data 等依赖链模块，后续按模块继续处理。
 
+继续处理 OAuth2 `DefaultAuthorizationService` 的 Spring JDBC LOB API deprecation：
+
+- 使用 Context7 查询 Spring Framework 当前 Javadoc，确认 `LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`。
+- 使用本地 `spring-jdbc-7.0.7.jar` 的 `javap` 结果复核：`LobHandler`、`LobCreator`、`DefaultLobHandler` 均带 `@Deprecated(since="6.2")`。
+- `DefaultAuthorizationService` 写入 BLOB 时改为 `SqlBinaryValue`，写入 CLOB 时改为 `SqlCharacterValue`。
+- `OAuth2AuthorizationRowMapper` 读取 BLOB 时改为 `ResultSet#getBytes(...)`，读取 CLOB 时改为 `ResultSet#getString(...)`。
+- 删除 `LobHandler`、`LobCreator`、`DefaultLobHandler` 和自定义 `LobCreatorArgumentPreparedStatementSetter`。
+- 删除公开构造器 `DefaultAuthorizationService(JdbcOperations, RegisteredClientRepository, LobHandler)` 和 `OAuth2AuthorizationRowMapper#setLobHandler(...)`，作为 Boot 4 主版本迁移中的破坏性 API 清理记录。
+- `DefaultAuthorizationServiceTest` 新增 BLOB/CLOB 参数映射测试，确认新实现返回 Spring JDBC `SqlBinaryValue` / `SqlCharacterValue`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=DefaultAuthorizationServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+rg -n "LobHandler|LobCreator|DefaultLobHandler|SqlLobValue|LobCreatorArgumentPreparedStatementSetter|setLobHandler|getLobHandler" fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/main/java fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/test -g "*.java" -g "*.groovy"
+```
+
+结果：OAuth2 Server LOB 迁移编译为 `BUILD SUCCESS`，模块自身未再出现 Spring JDBC LOB API deprecation 警告；依赖链仍有 `fist-support-data` 的 Commons Lang deprecation 警告。`DefaultAuthorizationServiceTest` 共 2 个用例，失败 0。目标 LOB API 复扫未命中。第一次目标测试未带 `-am` 触发本地快照依赖远程解析失败，第二次命令中 Surefire 参数缺少引号被 PowerShell 拆分为无效生命周期阶段；均已用上述命令修正。
+
 下一步：
 
-1. 对 OAuth2 `DefaultAuthorizationService` 的 Spring JDBC LOB API deprecation 做专项评估，确认 Spring Framework 7 的推荐替代方案和数据库兼容影响。
-2. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
-3. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-4. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+1. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
+2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+4. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
 
 ## 本地日志
 
@@ -782,12 +803,16 @@ rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-a
 - `.codex/trial-compile-app-apidoc.log`
 - `.codex/trial-compile-app-crud-mybatis.log`
 - `.codex/trial-compile-app-oauth2-server.log`
+- `.codex/oauth2-lob-compile.log`
+- `.codex/oauth2-lob-test.log`
 
 ## 资料来源
 
 - Spring Boot 4.0 Migration Guide：`https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide`
 - Spring Boot 4.0.6 发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
+- Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
+- Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`
