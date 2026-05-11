@@ -357,6 +357,38 @@ MyBatis CRUD 运行期阻塞解除后，继续检查 OAuth2 Server 编译警告�
 - OAuth2 Server 定向测试共 4 个用例，失败 0。
 - deprecation 明细编译为 `BUILD SUCCESS`；本轮旧 API 关键字 `MappingJackson2HttpMessageConverter`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module`、`com.fasterxml.jackson`、`jackson2` 在日志中未命中。
 
+## 已验证：`fist-support-spring` 包级空值注解迁移
+
+OAuth2 Server 的 Jackson 2 待删除警告处理后，剩余 deprecation 明细主要来自 `org.springframework.lang.NonNullApi` 和 `NonNullFields`。项目已有 JSpecify 版本管理和 `@NullMarked` 先例，因此先选择编译链路中最早出现、范围较小的 `fist-support-spring` 做迁移验证。
+
+受影响文件：
+
+- `fist-kit-infra/fist-support-spring/pom.xml`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/i18n/package-info.java`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/spel/package-info.java`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/util/package-info.java`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/web/reactive/util/package-info.java`
+- `fist-kit-infra/fist-support-spring/src/main/java/com/power4j/fist/support/spring/web/servlet/util/package-info.java`
+
+处理结果：
+
+- `fist-support-spring` 增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
+- 5 个 `package-info.java` 从 `@NonNullApi` + `@NonNullFields` 迁移到 `@NullMarked`。
+- 该迁移只表达包级默认非空，不处理方法级 `@Nullable`，后续需要对每个模块单独检查显式可空契约。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring -am test
+```
+
+结果：
+
+- `fist-support-spring` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- `fist-support-spring` 模块测试共 5 个用例，失败 0。
+
 ## Jackson 3
 
 扫描命令：
@@ -491,7 +523,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 剩余 deprecation 警告做分类，重点处理 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify 的迁移。
+1. 按模块继续迁移 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify，迁移时同步检查显式可空契约。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。

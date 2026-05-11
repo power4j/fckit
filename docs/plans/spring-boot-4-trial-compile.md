@@ -352,10 +352,25 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：OAuth2 Server 依赖链主代码编译通过；定向测试共 4 个用例，失败 0；deprecation 明细编译为 `BUILD SUCCESS`，本轮 Jackson 2 旧 API 关键字在日志中未命中。
 
+继续处理 `fist-support-spring` 的包级空值注解 deprecation 警告：
+
+- `fist-support-spring` 增加 `org.jspecify:jspecify` 依赖。
+- 5 个 `package-info.java` 从 `@NonNullApi` + `@NonNullFields` 迁移到 JSpecify `@NullMarked`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-support-spring -am test
+```
+
+结果：`fist-support-spring` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；模块测试共 5 个用例，失败 0。
+
 下一步：
 
-1. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
-2. 优先处理 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify 的迁移策略。
+1. 按模块继续迁移 `org.springframework.lang.NonNullApi` / `NonNullFields` 到 JSpecify，迁移时同步检查显式可空契约。
+2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
 
