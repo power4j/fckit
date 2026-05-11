@@ -17,7 +17,7 @@
 package com.power4j.fist.data.tree.domain;
 
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -39,11 +39,9 @@ public class TreeNode<ID> implements Node<ID, TreeNode<ID>>, Serializable {
 
 	private ID id;
 
-	@Nullable
-	private ID parentId;
+	private @Nullable ID parentId;
 
-	@Nullable
-	private List<TreeNode<ID>> children;
+	private @Nullable List<TreeNode<ID>> children;
 
 	public static <ID> TreeNode<ID> of(ID id, @Nullable ID parentId) {
 		TreeNode<ID> node = new TreeNode<>();

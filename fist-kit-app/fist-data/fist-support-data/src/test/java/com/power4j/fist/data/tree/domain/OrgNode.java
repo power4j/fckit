@@ -17,7 +17,7 @@
 package com.power4j.fist.data.tree.domain;
 
 import lombok.Data;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,14 +33,11 @@ public class OrgNode implements Node<Long, OrgNode> {
 
 	private Long id;
 
-	@Nullable
-	private Long pid;
+	private @Nullable Long pid;
 
-	@Nullable
-	private String name;
+	private @Nullable String name;
 
-	@Nullable
-	private List<OrgNode> children;
+	private @Nullable List<OrgNode> children;
 
 	public static OrgNode of(long id, @Nullable String name, @Nullable Long parentId) {
 		OrgNode node = new OrgNode();
@@ -50,9 +47,8 @@ public class OrgNode implements Node<Long, OrgNode> {
 		return node;
 	}
 
-	@Nullable
 	@Override
-	public Long getParentId() {
+	public @Nullable Long getParentId() {
 		return pid;
 	}
 

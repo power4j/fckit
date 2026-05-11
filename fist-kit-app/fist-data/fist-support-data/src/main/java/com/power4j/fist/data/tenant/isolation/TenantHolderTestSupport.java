@@ -2,7 +2,7 @@ package com.power4j.fist.data.tenant.isolation;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)

@@ -17,7 +17,7 @@
 package com.power4j.fist.data.tenant.isolation;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -28,10 +28,9 @@ import java.util.Optional;
  */
 public class TenantHolder {
 
-	private static final TransmittableThreadLocal<String> TENANT_ID = new TransmittableThreadLocal<String>() {
-		@Nullable
+	private static final TransmittableThreadLocal<@Nullable String> TENANT_ID = new TransmittableThreadLocal<>() {
 		@Override
-		protected String initialValue() {
+		protected @Nullable String initialValue() {
 			return null;
 		}
 	};

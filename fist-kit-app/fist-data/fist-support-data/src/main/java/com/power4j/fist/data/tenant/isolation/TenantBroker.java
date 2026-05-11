@@ -26,7 +26,7 @@ import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.function.FailableRunnable;
 import org.apache.commons.lang3.function.FailableSupplier;
 import org.apache.commons.lang3.mutable.MutableObject;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -54,7 +54,7 @@ public class TenantBroker {
 	 * @param <T> 返回值类型
 	 */
 	public <T> T applyAs(final @Nullable String tenant, FailableSupplier<T, ? extends Throwable> action,
-			@Nullable final FailableFunction<Throwable, T, ? extends Throwable> errorHandler) {
+			final @Nullable FailableFunction<Throwable, T, ? extends Throwable> errorHandler) {
 		MutableObject<T> ret = new MutableObject<>();
 		FailableRunnable<? extends Throwable> runnable = () -> ret.setValue(action.get());
 		FailableConsumer<Throwable, ? extends Throwable> errorResume;
@@ -86,7 +86,7 @@ public class TenantBroker {
 	 * @param errorHandler 异常处理器
 	 */
 	public void runAs(final @Nullable String tenant, final FailableRunnable<? extends Throwable> action,
-			@Nullable final FailableConsumer<Throwable, ? extends Throwable> errorHandler) {
+			final @Nullable FailableConsumer<Throwable, ? extends Throwable> errorHandler) {
 
 		final String pre = TenantHolder.getTenant().orElse(null);
 		TenantHolder.setTenant(tenant);

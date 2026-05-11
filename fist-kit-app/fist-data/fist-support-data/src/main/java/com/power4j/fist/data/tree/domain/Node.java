@@ -16,7 +16,7 @@
 
 package com.power4j.fist.data.tree.domain;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,8 +35,7 @@ public interface Node<ID, C extends Node<ID, C>> {
 	 * 父节点ID,可为null
 	 * @return 返回父节点ID
 	 */
-	@Nullable
-	ID getParentId();
+	@Nullable ID getParentId();
 
 	/**
 	 * 本节点ID
@@ -62,16 +61,14 @@ public interface Node<ID, C extends Node<ID, C>> {
 	 * 子节点
 	 * @return 返回子节点,无子节点返回null
 	 */
-	@Nullable
-	List<C> getChildren();
+	@Nullable List<C> getChildren();
 
 	/**
 	 * 访问子节点
 	 * @param index 索引
 	 * @return 子节点不存在时返回null
 	 */
-	@Nullable
-	default C childAt(int index) {
+	default @Nullable C childAt(int index) {
 		final List<C> list = getChildren();
 		if (Objects.isNull(list) || list.isEmpty()) {
 			return null;

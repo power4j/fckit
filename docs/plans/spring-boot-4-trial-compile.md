@@ -578,9 +578,25 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-support-web` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。剩余 deprecation 明细为 `Breaker` 自身缺少 `@Deprecated` 标注和 Apache Commons Lang `ObjectUtils.defaultIfNull(...)`。`fist-support-web -am test` 为 `BUILD SUCCESS`，模块自身 Java 测试共 4 个用例，失败 0；本次 `test` 仍未实际运行已记录的 `PathMatcherTest.groovy`。
 
+继续处理 `fist-support-data` 的方法级 `org.springframework.lang.Nullable` deprecation 警告：
+
+- 10 个主代码 Java 文件和 2 个测试夹具文件从 `org.springframework.lang.Nullable` 迁移到 JSpecify `org.jspecify.annotations.Nullable`。
+- 字段、返回值和泛型容器迁移到类型使用位置，例如 `private @Nullable List<HandlerInfo<T>> entry`、`public @Nullable OpHandler<T> getHandler()`、`TransmittableThreadLocal<@Nullable String>`。
+- `final` 参数使用 `final @Nullable Type` 写法，保留原有可传入 `null` 的租户和错误处理器契约。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am test
+```
+
+结果：`fist-support-data` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。剩余 deprecation 明细为 Apache Commons Lang `Validate.notNull(...)`、`MutableObject.getValue()`、`ObjectUtils.defaultIfNull(...)` 和既有 `ValidateUtil` 注解问题。`fist-support-data -am test` 为 `BUILD SUCCESS`，模块自身 Java 测试共 6 个用例，失败 0；本次 `test` 仍未实际运行已记录的 3 个 `.groovy` 测试文件。
+
 下一步：
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，按模块小步提交，优先处理 `fist-boot-crud-mybatis`、`fist-boot-data`、`fist-cloud-rpc-feign`、`fist-redisson` 等剩余命中模块。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。

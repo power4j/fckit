@@ -20,7 +20,6 @@ import jakarta.validation.ValidatorFactory;
 import org.hibernate.validator.messageinterpolation.ResourceBundleMessageInterpolator;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.lang.Nullable;
 import org.springframework.validation.beanvalidation.MessageSourceResourceBundleLocator;
 
 import jakarta.validation.ConstraintViolation;

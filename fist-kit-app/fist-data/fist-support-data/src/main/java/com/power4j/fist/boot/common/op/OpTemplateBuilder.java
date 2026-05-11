@@ -17,7 +17,7 @@
 package com.power4j.fist.boot.common.op;
 
 import org.apache.commons.lang3.Validate;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,11 +49,9 @@ public class OpTemplateBuilder<T> {
 
 	private final Map<String, List<HandlerInfo<T>>> postHandlerMap = new ConcurrentHashMap<>(2);
 
-	@Nullable
-	private List<HandlerInfo<T>> entry;
+	private @Nullable List<HandlerInfo<T>> entry;
 
-	@Nullable
-	private String currentId;
+	private @Nullable String currentId;
 
 	/**
 	 * 建议根据实际情况使用自定义ExecutorService
@@ -162,8 +160,7 @@ public class OpTemplateBuilder<T> {
 		}).collect(Collectors.toList());
 	}
 
-	@Nullable
-	private OpHandler<T> findHandler(@Nullable Class<? extends OpHandler<T>> clazz) {
+	private @Nullable OpHandler<T> findHandler(@Nullable Class<? extends OpHandler<T>> clazz) {
 		if (null == clazz) {
 			return null;
 		}
@@ -177,11 +174,9 @@ public class OpTemplateBuilder<T> {
 
 	static class HandlerInfo<T> {
 
-		@Nullable
-		private final Class<? extends OpHandler<T>> handlerClass;
+		private final @Nullable Class<? extends OpHandler<T>> handlerClass;
 
-		@Nullable
-		private final OpHandler<T> handler;
+		private final @Nullable OpHandler<T> handler;
 
 		private final boolean async;
 
@@ -205,13 +200,11 @@ public class OpTemplateBuilder<T> {
 			this.async = async;
 		}
 
-		@Nullable
-		public OpHandler<T> getHandler() {
+		public @Nullable OpHandler<T> getHandler() {
 			return handler;
 		}
 
-		@Nullable
-		public Class<? extends OpHandler<T>> getHandlerClass() {
+		public @Nullable Class<? extends OpHandler<T>> getHandlerClass() {
 			return handlerClass;
 		}
 

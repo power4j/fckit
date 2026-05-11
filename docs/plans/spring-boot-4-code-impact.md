@@ -681,6 +681,38 @@ rg -n "org\.springframework\.lang\.Nullable" fist-kit-app/fist-web/fist-support-
 - `fist-support-web -am test` 为 `BUILD SUCCESS`；模块自身 Java 测试共 4 个用例，失败 0。
 - 本次 `test` 仍未实际运行已记录的 `PathMatcherTest.groovy`，后续去 Groovy 任务需要单独处理。
 
+## 已验证：Support Data 方法级空值注解迁移
+
+Support Web 方法级迁移后，继续处理数据支撑模块中剩余的显式可空契约。
+
+受影响模块：
+
+- `fist-kit-app/fist-data/fist-support-data`
+
+处理结果：
+
+- 10 个主代码 Java 文件和 2 个测试夹具文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- 字段和返回值迁移到类型使用位置，例如 `private @Nullable List<HandlerInfo<T>> entry`、`public @Nullable OpHandler<T> getHandler()`。
+- 泛型容器显式表达元素可空，例如 `TransmittableThreadLocal<@Nullable String>`。
+- `final` 参数使用 `final @Nullable Type` 写法，保留原有可传入 `null` 的租户和错误处理器契约。
+- `fist-support-data` Java 源码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am test
+rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-app/fist-data/fist-support-data/src -g "*.java" -S
+```
+
+结果：
+
+- `fist-support-data` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+- 剩余 deprecation 明细为 Apache Commons Lang `Validate.notNull(...)`、`MutableObject.getValue()`、`ObjectUtils.defaultIfNull(...)` 和既有 `ValidateUtil` 注解问题，不属于本轮空值注解迁移。
+- `fist-support-data -am test` 为 `BUILD SUCCESS`；模块自身 Java 测试共 6 个用例，失败 0。
+- 本次 `test` 仍未实际运行已记录的 3 个 `.groovy` 测试文件，后续去 Groovy 任务需要单独处理。
+
 ## 已验证：Cloud RPC Feign 包级空值注解迁移
 
 Boot Security 处理后，继续迁移 `fist-cloud-rpc-feign` 中剩余的包级 Spring 空值注解。
@@ -937,7 +969,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-support-web`、`fist-support-security`、`fist-support-data` 等当前命中较多且已有测试覆盖的模块。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-boot-crud-mybatis`、`fist-boot-data`、`fist-cloud-rpc-feign`、`fist-redisson` 等仍有命中的模块。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
