@@ -436,9 +436,27 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-boot-data` 与 `fist-boot-crud-mybatis` deprecation 明细编译均为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`fist-boot-data` 模块测试共 2 个用例，失败 0；MyBatis CRUD 定向测试共 12 个用例，失败 0；`fist-boot-crud-mybatis` 模块全量测试共 14 个用例，失败 0。
 
+继续处理 Gateway 模块的包级空值注解 deprecation 警告：
+
+- `fist-gateway-auth-core` 增加 `org.jspecify:jspecify` 依赖，5 个 `package-info.java` 迁移到 `@NullMarked`。
+- `fist-cloud-gateway-acl` 增加 `org.jspecify:jspecify` 依赖，2 个 `package-info.java` 迁移到 `@NullMarked`。
+- 本轮仍只处理包级默认非空注解，`AuthContext`、`AuthState` 中的方法级 `org.springframework.lang.Nullable` deprecation 后续按显式可空契约单独迁移。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am -DskipTests test-compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am test
+```
+
+结果：Gateway Auth Core 与 Gateway ACL deprecation 明细编译均为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；Gateway 三个子模块组合 `test-compile` 为 `BUILD SUCCESS`；Gateway Auth Core 模块测试共 14 个用例，失败 0；Gateway ACL 模块测试共 6 个用例，失败 0。
+
 下一步：
 
-1. 继续迁移 Gateway、Cloud RPC Feign、Boot Security、API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
+1. 继续迁移 Cloud RPC Feign、Boot Security、API Doc、Redisson 中剩余的 `NonNullApi` / `NonNullFields`。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。
