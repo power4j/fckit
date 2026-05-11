@@ -574,7 +574,7 @@ Gateway 处理后，继续迁移 `fist-boot-security` 中剩余的包级 Spring 
 
 - `fist-boot-security` 增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
 - 2 个 `package-info.java` 迁移到 `@NullMarked`。
-- 本轮仍只处理包级默认非空注解；`UserConverter` 中的方法级 `org.springframework.lang.Nullable` deprecation 作为显式可空契约专项保留。
+- 本轮仍只处理包级默认非空注解；`UserConverter` 中的方法级 `org.springframework.lang.Nullable` deprecation 后续按显式可空契约专项处理。
 
 验证命令：
 
@@ -588,6 +588,35 @@ Gateway 处理后，继续迁移 `fist-boot-security` 中剩余的包级 Spring 
 
 - `fist-boot-security` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
 - `fist-boot-security -am test` 为 `BUILD SUCCESS`；`fist-boot-security` 模块自身没有测试源码，依赖链中 `fist-support-security` 测试共 17 个用例，失败 0。
+
+## 已验证：Boot Security 方法级空值注解迁移
+
+`fist-support-spring` 方法级迁移验证后，继续处理 `fist-boot-security` 中单个公共接口可空返回值。
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-boot-security/src/main/java/com/power4j/fist/security/core/authentication/UserConverter.java`
+
+处理结果：
+
+- `UserConverter` 从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- `convert(Authentication)` 的返回值改为 `@Nullable U`，保留「无用户信息返回 `null`」的接口契约。
+- `fist-boot-security` 主代码复扫未命中 `org.springframework.lang.Nullable`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security -am test
+rg -n "org\.springframework\.lang\.Nullable" fist-kit-app/fist-security/fist-boot-security/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-boot-security` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`。
+- `fist-boot-security -am test` 为 `BUILD SUCCESS`；依赖链测试共 40 个用例，失败 0，`fist-boot-security` 模块自身没有测试源码。
+- 编译日志中仍有依赖链上的 `fist-support-web` 与 `fist-support-security` 方法级 `org.springframework.lang.Nullable` 警告，后续按模块继续迁移。
 
 ## 已验证：Cloud RPC Feign 包级空值注解迁移
 

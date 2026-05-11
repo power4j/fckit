@@ -17,7 +17,7 @@
 package com.power4j.fist.security.core.authentication;
 
 import com.power4j.fist.security.core.authorization.domain.AuthenticatedUser;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 
 /**
@@ -32,7 +32,6 @@ public interface UserConverter<U extends AuthenticatedUser> {
 	 * @param authentication Authentication object
 	 * @return 无用户信息返回 null
 	 */
-	@Nullable
-	U convert(Authentication authentication);
+	@Nullable U convert(Authentication authentication);
 
 }
