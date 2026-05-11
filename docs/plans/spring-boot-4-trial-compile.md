@@ -399,9 +399,27 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`fist-support-security` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；OAuth2 Server deprecation 明细编译为 `BUILD SUCCESS`，剩余 `NonNullApi` / `NonNullFields` 命中来自依赖链上的 `fist-boot-web-app` 与 `fist-support-data`。`fist-support-security` 模块测试共 17 个用例，失败 0；OAuth2 Server 定向测试共 4 个用例，失败 0。
 
+继续处理 Web App 与 Support Data 的包级空值注解 deprecation 警告：
+
+- `fist-boot-web-app` 增加 `org.jspecify:jspecify` 依赖，1 个 `package-info.java` 迁移到 `@NullMarked`。
+- `fist-support-data` 增加 `org.jspecify:jspecify` 依赖，11 个 `package-info.java` 迁移到 `@NullMarked`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app -am test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+```
+
+结果：`fist-boot-web-app` 与 `fist-support-data` deprecation 明细编译均为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；`fist-boot-web-app` 模块自身没有测试源码；`fist-support-data` 模块测试共 6 个用例，失败 0；OAuth2 Server 依赖链 deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。本次 `fist-support-data -am test` 未实际运行已记录的 Groovy 测试文件，后续去 Groovy 任务需要单独确认。
+
 下一步：
 
-1. 继续迁移 `fist-boot-web-app` 与 `fist-support-data` 的 `NonNullApi` / `NonNullFields`，迁移时同步检查显式可空契约。
+1. 对全仓剩余 `NonNullApi` / `NonNullFields` 做一次静态扫描，按依赖链优先级继续迁移 Gateway、Boot Security、Data CRUD 等模块。
 2. 使用 `-Xlint:deprecation` 对 Gateway、Security、OAuth2 的剩余 deprecation 警告做分类。
 3. 每解决一个 P0 编译阻塞点后，重新记录新的首个失败点。
 4. 在主代码 `compile` 有基本通过面后，再进入更完整的单元测试和配置迁移诊断。

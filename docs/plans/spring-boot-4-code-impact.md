@@ -461,6 +461,40 @@ OAuth2 Server 的 Jackson 2 待删除警告处理后，剩余 deprecation 明细
 - `fist-support-security` 模块测试共 17 个用例，失败 0。
 - OAuth2 Server 定向测试共 4 个用例，失败 0。
 
+## 已验证：Web App 与 Support Data 包级空值注解迁移
+
+Security 模块迁移后，OAuth2 Server 依赖链中剩余的 `NonNullApi` / `NonNullFields` 警告来自 `fist-boot-web-app` 与 `fist-support-data`。
+
+受影响模块：
+
+- `fist-kit-app/fist-web/fist-boot-web-app`
+- `fist-kit-app/fist-data/fist-support-data`
+
+处理结果：
+
+- 两个模块分别增加 `org.jspecify:jspecify` 依赖，版本继续由根 POM 管理。
+- `fist-boot-web-app` 的 1 个 `package-info.java` 迁移到 `@NullMarked`。
+- `fist-support-data` 的 11 个 `package-info.java` 迁移到 `@NullMarked`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-boot-web-app -am test
+.\mvnw.cmd -pl fist-kit-app/fist-data/fist-support-data -am test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+```
+
+结果：
+
+- `fist-boot-web-app` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`；模块自身没有测试源码。
+- `fist-support-data` deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- `fist-support-data` 模块测试共 6 个用例，失败 0。
+- OAuth2 Server 依赖链 deprecation 明细编译为 `BUILD SUCCESS`，日志中未命中 `NonNullApi` / `NonNullFields`。
+- 本次 `fist-support-data -am test` 未实际运行已记录的 Groovy 测试文件，后续去 Groovy 任务需要单独确认这些测试是否仍被当前构建链路纳入。
+
 ## Jackson 3
 
 扫描命令：
@@ -595,7 +629,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续迁移 `fist-boot-web-app` 与 `fist-support-data` 的 `NonNullApi` / `NonNullFields`，迁移时同步检查显式可空契约。
+1. 对全仓剩余 `NonNullApi` / `NonNullFields` 做一次静态扫描，按依赖链优先级继续迁移 Gateway、Boot Security、Data CRUD 等模块。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。

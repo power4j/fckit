@@ -18,7 +18,7 @@
  * @author CJ (power4j@outlook.com)
  * @since 1.0
  */
-@NonNullApi
+@NullMarked
 package com.power4j.fist.data.migrate;
 
-import org.springframework.lang.NonNullApi;
+import org.jspecify.annotations.NullMarked;
