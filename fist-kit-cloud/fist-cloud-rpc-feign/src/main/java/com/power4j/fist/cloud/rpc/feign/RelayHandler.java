@@ -18,7 +18,7 @@ package com.power4j.fist.cloud.rpc.feign;
 
 import feign.RequestTemplate;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @author CJ (power4j@outlook.com)

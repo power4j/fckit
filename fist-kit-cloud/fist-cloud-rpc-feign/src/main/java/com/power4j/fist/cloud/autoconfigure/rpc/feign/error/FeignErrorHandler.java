@@ -28,7 +28,7 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -46,11 +46,9 @@ import java.util.Optional;
 @RestControllerAdvice
 public class FeignErrorHandler extends AbstractExceptionHandler {
 
-	@Nullable
-	private MessageSourceAccessor messageSourceAccessor;
+	private @Nullable MessageSourceAccessor messageSourceAccessor;
 
-	@Nullable
-	private LocaleResolver localeResolver;
+	private @Nullable LocaleResolver localeResolver;
 
 	@Autowired(required = false)
 	public void setMessageSource(MessageSource messageSource) {

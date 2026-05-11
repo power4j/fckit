@@ -772,6 +772,37 @@ Boot Security 处理后，继续迁移 `fist-cloud-rpc-feign` 中剩余的包级
 - `test-compile` 为 `BUILD SUCCESS`。
 - `fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`；模块自身测试共 7 个用例，失败 0。
 
+## 已验证：Cloud RPC Feign 方法级空值注解迁移
+
+Boot Data 方法级迁移后，继续处理 Feign 模块中请求透传和错误处理器相关的显式可空契约。
+
+受影响模块：
+
+- `fist-kit-cloud/fist-cloud-rpc-feign`
+
+处理结果：
+
+- 4 个 Java 文件从 `org.springframework.lang.Nullable` 迁移到 `org.jspecify.annotations.Nullable`。
+- `RelayHandler`、`HeaderRelayHandler`、`UserRelayHandler` 保留 `HttpServletRequest` 可为 `null` 的接口契约。
+- `FeignErrorHandler` 的可选 `MessageSourceAccessor` 与 `LocaleResolver` 字段迁移到类型使用位置。
+- `fist-cloud-rpc-feign` 主代码复扫未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am test
+rg -n "org\.springframework\.lang\.Nullable|NonNullApi|NonNullFields" fist-kit-cloud/fist-cloud-rpc-feign/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- `fist-cloud-rpc-feign` deprecation 明细编译为 `BUILD SUCCESS`；本模块未命中 `org.springframework.lang.Nullable`、`NonNullApi`、`NonNullFields`。
+- 编译日志中仍有依赖链上的 `fist-boot-web-app` 方法级 `org.springframework.lang.Nullable` 警告，后续按 Web App 模块单独迁移。
+- `fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`；模块自身测试共 7 个用例，失败 0。
+- 测试编译仍提示 `SecureFeignEncoderPrototypeTest` 使用或覆盖过时 API；这是后续 Feign/SDE 专项的输入，不属于本轮空值注解迁移。
+
 ## 已验证：API Doc 包级空值注解迁移
 
 Cloud RPC Feign 处理后，继续迁移 `fist-boot-apidoc` 中剩余的包级 Spring 空值注解。
@@ -999,7 +1030,7 @@ starter 仍有旧坐标需要后续处理：
 
 ## 下一步
 
-1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-boot-crud-mybatis`、`fist-cloud-rpc-feign`、`fist-redisson`、`fist-gateway-auth-core` 等仍有命中的模块。
+1. 继续方法级 `org.springframework.lang.Nullable` 到 JSpecify `@Nullable` 的显式可空契约迁移，优先处理 `fist-boot-crud-mybatis`、`fist-redisson`、`fist-gateway-auth-core`、`fist-boot-web-app` 等仍有命中的模块。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 每次新增编译错误都追加到本清单，避免提前做全仓机械迁移。
