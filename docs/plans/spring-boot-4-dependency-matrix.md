@@ -13,7 +13,7 @@
 - Spring Cloud Alibaba 当前候选为 `2025.1.0.0`，Maven Central 坐标存在，并管理 Nacos `3.1.1`、Sentinel `1.8.9`。
 - Spring Cloud Alibaba 不再阻塞进入试编译，但仍是阶段 2 的第一优先级风险。原因是 Sentinel POM 中仍出现 `sentinel-spring-cloud-gateway-v6x-adapter`、`sentinel-spring-webmvc-v6x-adapter` 等 Spring 6.x 命名适配器，需验证其在 Spring Boot 4 / Spring Framework 7 / Spring Cloud Gateway 5 下的真实编译结果。
 - `spring-security-jwt` 仅应保留为待删除项，不应作为 Boot 4 目标依赖进入试编译。
-- Groovy/Spock 相关依赖不建议升级，后续按去 Groovy 任务移除。
+- Groovy/Spock 相关依赖已删除，测试改为 Java/JUnit 5。
 
 ## 核验方法
 
@@ -37,7 +37,7 @@
 | SpringDoc OpenAPI BOM | `2.8.17` | `3.0.3` | 坐标存在 | `springdoc-openapi-starter-common`、WebFlux API 适配 |
 | Spring Boot Admin BOM | `3.5.8` | `4.0.4` | 坐标存在 | Admin starter 与 Actuator 端点兼容 |
 | OkHttp BOM | `4.12.0` | `4.12.0` | 暂不升级 | Feign OkHttp 传递依赖验证 |
-| Spock BOM | `2.4-groovy-5.0` | 不升级 | 待移除 | 5 个 Groovy 测试迁移后删除 |
+| Spock BOM | `2.4-groovy-5.0` | 移除 | 已移除 | 5 个 Groovy 测试已迁移到 Java/JUnit 5 |
 | Coca BOM | `0.4.1` | `0.4.1` | 暂不升级 | 仅随工程解析验证 |
 | Tile BOM | `1.8.2` | `1.8.2` | 暂不升级 | 仅随工程解析验证 |
 
@@ -72,8 +72,8 @@
 | `bucket4j_jdk17-*` | `8.18.0` | 暂不主动升级 | 限流 | 与 Boot 4 关联低，阶段 2 编译确认 |
 | `jspecify` | `1.0.0` | `1.0.0` | 空值契约 | 保持 |
 | `junit-pioneer` | `2.3.0` | 暂不主动升级 | 测试 | 随 Boot 4 测试栈验证 |
-| `groovy` / `spock-*` / `groovy-tables` | `2.4-groovy-5.0` 等 | 删除 | 测试链路 | 按去 Groovy 任务处理 |
-| `gmavenplus-plugin` | `4.3.1` | 删除 | 构建插件 | Groovy 测试迁移后移除 |
+| `groovy` / `spock-*` / `groovy-tables` | `2.4-groovy-5.0` 等 | 删除 | 测试链路 | 已删除，测试改为 Java/JUnit 5 |
+| `gmavenplus-plugin` | `4.3.1` | 删除 | 构建插件 | 已删除 |
 
 ## Boot starter 与模块化风险
 
@@ -103,7 +103,7 @@
 暂不主动升级：
 
 - `mybatis-plus.version`：保持 `3.5.16`，starter 切换到 `mybatis-plus-spring-boot4-starter`。
-- `spock-lib.version`、Groovy、`gmavenplus-plugin`：不升级，后续删除。
+- `spock-lib.version`、Groovy、`gmavenplus-plugin`：已删除。
 - `spring-security-jwt.version`：不升级，后续删除。
 - 低关联工具库：先随 Maven 解析与编译结果处理。
 

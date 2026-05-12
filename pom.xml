@@ -66,7 +66,6 @@
     <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     <spring-javaformat.plugin.version>0.0.47</spring-javaformat.plugin.version>
     <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
-    <gmavenplus-plugin.version>4.3.1</gmavenplus-plugin.version>
     <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
     <git-commit-id-plugin.version>10.0.0</git-commit-id-plugin.version>
@@ -103,7 +102,6 @@
     <jspecify.version>1.0.0</jspecify.version>
 
     <junit-pioneer.version>2.3.0</junit-pioneer.version>
-    <spock-lib.version>2.4-groovy-5.0</spock-lib.version>
   </properties>
 
   <modules>
@@ -227,31 +225,6 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>flatten-maven-plugin</artifactId>
           <version>${flatten-maven-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <!-- This plugin is used to compile Groovy code -->
-          <groupId>org.codehaus.gmavenplus</groupId>
-          <artifactId>gmavenplus-plugin</artifactId>
-          <version>${gmavenplus-plugin.version}</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>addSources</goal>
-                <goal>addTestSources</goal>
-                <goal>compile</goal>
-                <goal>compileTests</goal>
-              </goals>
-            </execution>
-          </executions>
-          <dependencies>
-            <dependency>
-              <groupId>org.apache.groovy</groupId>
-              <artifactId>groovy</artifactId>
-              <!-- any version of Groovy \>= 1.5.0 should work here -->
-              <version>5.0.5</version>
-              <scope>runtime</scope>
-            </dependency>
-          </dependencies>
         </plugin>
         <!-- jacoco-maven-plugin -->
         <plugin>

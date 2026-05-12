@@ -15,7 +15,7 @@
 - Jackson 2 包名命中 40 个 Java 文件，仍是最大源码迁移面。
 - `org.springframework.lang.Nullable` 命中 89 个 Java 文件，需要和 JSpecify 策略统一处理。
 - Feign 命中 26 个 Java 文件，SDE Feign 编解码仍需专项评估。
-- Groovy 测试文件共 5 个，后续应迁移到 Java/JUnit 5。
+- Groovy 测试文件共 5 个，已迁移到 Java/JUnit 5，并删除 Groovy/Spock 构建链路。
 - `@MockBean`、`@SpyBean` 和 `org.springframework.security.jwt` 源码直接引用未命中。
 - `javax.*` 命中仅来自 JDK `javax.crypto`，不是 Jakarta EE 迁移问题。
 
@@ -1272,9 +1272,9 @@ rg -l "@FeignClient|feign\." fist-kit-app fist-kit-cloud fist-kit-infra examples
 - SDE Feign 的 `Encoder`、`Decoder`、请求模板和响应体重建逻辑不能自动迁移。
 - 迁移到 Spring HTTP Service Clients 前，需要单独设计 SDE 等价适配层。
 
-## Groovy / Spock
+## 已处理：Groovy / Spock 测试迁移与构建链路移除
 
-当前 `.groovy` 测试文件共 5 个：
+原 `.groovy` 测试文件共 5 个：
 
 - `fist-kit-app/fist-web/fist-support-web/src/test/java/com/power4j/fist/boot/common/matcher/PathMatcherTest.groovy`
 - `fist-kit-app/fist-security/fist-support-security/src/test/java/com/power4j/fist/boot/security/inner/DefaultUserCodecTest.groovy`
@@ -1289,7 +1289,39 @@ rg -l "@FeignClient|feign\." fist-kit-app fist-kit-cloud fist-kit-infra examples
 - `fist-kit-build/pom.xml` 中 Groovy 和 Spock BOM 管理。
 - `fist-kit-infra/fist-support-test/pom.xml` 中 `spock-spring` 和 `groovy-tables`。
 
-处理建议：先将 5 个测试迁移到 Java/JUnit 5，再删除 Groovy、Spock 和 gmavenplus。
+处理结果：
+
+- `PathMatcherTest.groovy` 迁移为 Java/JUnit 5 `PathMatcherTest.java`。
+- `DefaultUserCodecTest.groovy` 迁移为 Java/JUnit 5 `DefaultUserCodecTest.java`。
+- `NodeIdxTreeMakerTest.groovy` 迁移为 Java/JUnit 5 `NodeIdxTreeMakerTest.java`，使用 Java 集合替代 `groovy-tables`。
+- `AdjacencyTreeMakerTest.groovy` 迁移为 Java/JUnit 5 `AdjacencyTreeMakerTest.java`，使用 Java 集合替代 `groovy-tables`。
+- `OpTemplateTest.groovy` 迁移为 Java/JUnit 5 `OpTemplateTest.java`。
+- 根 `pom.xml` 删除 `gmavenplus-plugin.version`、`spock-lib.version` 和 `gmavenplus-plugin` 插件管理。
+- `fist-kit-build/pom.xml` 删除 Groovy 测试依赖和 Spock BOM 管理。
+- `fist-kit-infra/fist-support-test/pom.xml` 删除 `groovy-tables` 与 `spock-spring`。
+
+迁移注意：
+
+- Groovy 属性访问可映射到 JavaBean getter/setter，Java 迁移时需要按真实方法名处理。例如 `OrgNode.parentId` 在 Java 中应使用 `setPid(...)`。
+- Groovy 对嵌套类成员访问更宽松，Java 迁移时需要调整测试辅助基类的成员可见性。
+- 首次在受限网络沙箱内运行 Maven 时发生 Maven Central 解析失败，属于环境问题；已在可联网环境重新运行验证。
+
+验证命令：
+
+```powershell
+rg --files -g "*.groovy"
+rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fist-support-test/pom.xml fist-kit-app fist-kit-cloud fist-kit-infra -g "pom.xml" -g "*.groovy" -S
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-security/fist-support-security,fist-kit-app/fist-data/fist-support-data spring-javaformat:validate
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-security/fist-support-security,fist-kit-app/fist-data/fist-support-data -am "-Dtest=PathMatcherTest,DefaultUserCodecTest,NodeIdxTreeMakerTest,AdjacencyTreeMakerTest,OpTemplateTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：
+
+- 仓库内 `*.groovy` 复扫未命中。
+- Groovy/Spock/gmavenplus 构建配置复扫未命中。
+- 目标模块 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+- 5 个迁移后的 Java 测试共 11 个用例，失败 0。
+- Web/Security/Data 三个目标模块全量测试为 `BUILD SUCCESS`；目标模块自身测试共 38 个用例，失败 0。
 
 ## Boot starter 与自动配置注册
 
@@ -1370,7 +1402,7 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 ## 下一步
 
 1. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
-2. 迁移 5 个 Groovy/Spock 测试，准备移除 gmavenplus / Spock / Groovy 依赖链。
+2. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
 
 ## OAuth2 授权服务 LOB API
 
@@ -1404,6 +1436,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - API Doc Springfox 移除测试日志：`.codex/apidoc-remove-springfox-test.log`
 - MyBatis Plus Boot 4 starter 依赖树日志：`.codex/mybatis-plus-boot4-dependency-tree.log`
 - MyBatis Plus Boot 4 starter 定向测试日志：`.codex/mybatis-plus-boot4-target-test.log`
+- Groovy/Spock 移除定向测试日志：`.codex/groovy-removal-target-tests.log`
+- Groovy/Spock 移除目标模块测试日志：`.codex/groovy-removal-module-tests.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`

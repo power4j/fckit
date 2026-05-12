@@ -186,13 +186,18 @@ OAuth2 `DefaultAuthorizationService` 依赖 `LobHandler`、`LobCreator`、`Defau
 
 验证证据：
 
-- `docs/plans/spring-boot-4-code-impact.md` 已列出 5 个 `.groovy` 测试文件和构建依赖命中点。
-- `docs/plans/spring-boot-4-trial-compile.md` 已标注相关 Maven `test` 未实际运行 Groovy 测试的风险。
+- 5 个 `.groovy` 测试已迁移到 Java/JUnit 5，迁移后定向测试共 11 个用例，失败 0。
+- Web/Security/Data 三个目标模块全量测试为 `BUILD SUCCESS`；目标模块自身测试共 38 个用例，失败 0。
+- 仓库内 `*.groovy` 复扫未命中；Groovy/Spock/gmavenplus 构建配置复扫未命中。
+- 根 `pom.xml`、`fist-kit-build/pom.xml` 和 `fist-support-test/pom.xml` 已删除 Groovy/Spock/gmavenplus 构建链路。
+- 迁移过程中发现 Groovy 属性访问与 JavaBean 方法名不完全等价，例如 `OrgNode.parentId` 迁移到 Java 后需要显式调用 `setPid(...)`。
+- 迁移过程中发现 Groovy 对嵌套类辅助方法访问更宽松，Java 迁移后需要将测试辅助基类成员从私有调整为受保护。
 
 后续复用规则：
 
-- 任何涉及 Groovy/Spock 的批次，都要明确区分「Java 测试通过」和「Groovy 测试已运行」。
-- 删除 Groovy 前必须先完成测试等价迁移。
+- 后续测试统一使用 Java/JUnit 5，不再新增 Groovy/Spock 测试。
+- Groovy 测试迁移不能逐字翻译，需要核对属性访问、方法可见性和数据表构造方式。
+- 删除构建插件前必须完成测试等价迁移并运行目标测试。
 
 ## 经验 7：API Doc 不能只按 Springfox 删除处理
 
@@ -344,6 +349,5 @@ MyBatis CRUD 在 Spring Boot 4 下继续使用 `mybatis-plus-spring-boot3-starte
 
 ## 当前剩余高优先级事项
 
-1. Groovy/Spock 去除：迁移 5 个 `.groovy` 测试后删除 gmavenplus / Spock / Groovy 依赖链。
-2. Feign/SDE 专项：评估 Spring 官方 Feign、Spring Cloud OpenFeign 5.x 和 Spring HTTP Service Clients 的路线。
-3. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。
+1. Feign/SDE 专项：评估 Spring 官方 Feign、Spring Cloud OpenFeign 5.x 和 Spring HTTP Service Clients 的路线。
+2. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。

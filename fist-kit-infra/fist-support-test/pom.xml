@@ -31,33 +31,7 @@
 
   <description>Test support</description>
 
-  <properties>
-    <groovy-tables.version>1.6</groovy-tables.version>
-    <powermock-lib.version>2.0.9</powermock-lib.version>
-  </properties>
-
   <dependencies>
-    <dependency>
-      <groupId>org.tools4j</groupId>
-      <artifactId>groovy-tables</artifactId>
-      <version>${groovy-tables.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.codehaus.groovy</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.spockframework</groupId>
-      <artifactId>spock-spring</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.codehaus.groovy</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>

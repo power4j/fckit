@@ -39,7 +39,7 @@
 暂不修改：
 
 - `mybatis-plus.version`：保持 `3.5.16`。
-- `spock-lib.version`：保持 `2.4-groovy-5.0`，后续按去 Groovy 任务删除。
+- `spock-lib.version`：已随去 Groovy 任务删除。
 - `spring-security-jwt.version`：保持 `1.1.1.RELEASE`，后续按退役任务删除。
 
 后续试运行修正：
@@ -846,11 +846,28 @@ rg -n "springfox|SwaggerDocAutoConfiguration|ApiTraitOperationPlugin|swagger\.pl
 
 结果：API Doc Springfox 复扫未命中；API Doc deprecation 明细编译为 `BUILD SUCCESS`；API Doc 测试为 `BUILD SUCCESS`，模块自身没有测试源码，依赖链 `fist-kit-api` 共 6 个用例，失败 0。Springfox 相关 deprecation 警告已消失；编译日志仍有依赖链 `fist-kit-api` 的 `ElementType.MODULE` 提示，不属于本轮 API Doc 迁移目标。
 
+继续处理 Groovy/Spock 测试迁移：
+
+- 5 个 `.groovy` 测试迁移为 Java/JUnit 5。
+- 根 `pom.xml` 删除 `gmavenplus-plugin.version`、`spock-lib.version` 和 `gmavenplus-plugin` 插件管理。
+- `fist-kit-build/pom.xml` 删除 Groovy 测试依赖和 Spock BOM 管理。
+- `fist-kit-infra/fist-support-test/pom.xml` 删除 `groovy-tables` 与 `spock-spring`。
+
+验证命令：
+
+```powershell
+rg --files -g "*.groovy"
+rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fist-support-test/pom.xml fist-kit-app fist-kit-cloud fist-kit-infra -g "pom.xml" -g "*.groovy" -S
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-security/fist-support-security,fist-kit-app/fist-data/fist-support-data spring-javaformat:validate
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-security/fist-support-security,fist-kit-app/fist-data/fist-support-data -am "-Dtest=PathMatcherTest,DefaultUserCodecTest,NodeIdxTreeMakerTest,AdjacencyTreeMakerTest,OpTemplateTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：仓库内 `*.groovy` 复扫未命中；Groovy/Spock/gmavenplus 构建配置复扫未命中；目标模块 `spring-javaformat:validate` 为 `BUILD SUCCESS`；5 个迁移后的 Java 测试共 11 个用例，失败 0。Web/Security/Data 三个目标模块全量测试为 `BUILD SUCCESS`；目标模块自身测试共 38 个用例，失败 0。
+
 下一步：
 
 1. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
-2. 迁移 5 个 Groovy/Spock 测试，准备移除 gmavenplus / Spock / Groovy 依赖链。
-3. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+2. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
 
 ## 本地日志
 
@@ -878,6 +895,8 @@ rg -n "springfox|SwaggerDocAutoConfiguration|ApiTraitOperationPlugin|swagger\.pl
 - `.codex/apidoc-remove-springfox-test.log`
 - `.codex/mybatis-plus-boot4-dependency-tree.log`
 - `.codex/mybatis-plus-boot4-target-test.log`
+- `.codex/groovy-removal-target-tests.log`
+- `.codex/groovy-removal-module-tests.log`
 
 ## 资料来源
 
