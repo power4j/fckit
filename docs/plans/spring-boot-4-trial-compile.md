@@ -1026,6 +1026,47 @@ npx ctx7@latest docs /alibaba/spring-cloud-alibaba "Spring Cloud Alibaba 2025.1.
 2. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
 3. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
 
+## Gateway ACL 最小 Boot 4 上下文启动验证
+
+继续补充 Gateway 运行级证据。本轮不新增生产启动类，先在 `fist-cloud-gateway-acl` 中增加最小 `@SpringBootTest`，验证 Boot 4 Reactive Web Server、Spring Cloud Gateway 5 WebFlux 自动配置和 `RouteGuardConfiguration` 可以在同一个应用上下文启动。
+
+主要处理：
+
+- 新增 `RouteGuardConfigurationStartupTest`，使用 `webEnvironment = RANDOM_PORT` 和 `spring.main.web-application-type=reactive` 启动最小 Boot 4 Reactive Web 上下文。
+- 测试应用显式导入 `RouteGuardConfiguration`，并提供应用侧最小依赖：`ReactivePermissionDefinitionService<PermissionDefinition>` 与 `UserIntrospectClient`。
+- 断言随机端口已分配，并确认 `ApiGuardFilter`、`RequestIdGlobalFilter` 和 Spring Cloud Gateway 5 的 `RoutePredicateHandlerMapping` 均已进入上下文。
+
+验证命令：
+
+```powershell
+npx ctx7@latest library "Spring Boot" "Spring Boot 4 WebFlux SpringBootTest random port application context"
+npx ctx7@latest docs /spring-projects/spring-boot/v4.0.3 "Spring Boot 4 WebFlux SpringBootTest random port application context"
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am "-Dtest=RouteGuardConfigurationStartupTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am spring-javaformat:validate
+```
+
+结果：
+
+- Context7 确认 Boot 4 的完整运行服务器测试仍使用 `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)`，并通过 `@LocalServerPort` 获取实际端口。
+- 第一次新增测试使用 `assertThat(applicationContext).hasSingleBean(...)`，当前 AssertJ 断言类型不支持该方法，编译失败；改为 `applicationContext.getBeansOfType(...).hasSize(1)` 后继续。
+- 第二次运行测试失败于真实上下文依赖缺口：`GatewayAuthFilterConfiguration` 构造参数缺少 `ReactivePermissionDefinitionService`。测试应用补充该 bean 后恢复。
+- `UserIntrospectClient` 也作为应用侧 bean 显式提供，避免最小上下文依赖 OAuth2 opaque token 自动配置参数。
+- 定向启动测试为 `BUILD SUCCESS`，`RouteGuardConfigurationStartupTest` 1 个用例，失败 0。
+- `fist-cloud-gateway-acl -am test` 为 `BUILD SUCCESS`，目标模块自身 7 个用例，失败 0；依赖模块测试同步通过。
+- `fist-cloud-gateway-acl -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+边界：
+
+- 本轮验证覆盖 Gateway WebFlux 自动配置与项目 ACL 配置的最小应用上下文启动，不覆盖真实路由转发、Sentinel Gateway adapter 或 Nacos Discovery。
+- `RouteGuardConfiguration` 不是完全自包含自动配置，下游应用仍需要提供权限定义服务；如果启用 OAuth2 introspection，也需要提供 introspection URI 或自定义 `UserIntrospectClient`。
+
+## 后续事项
+
+1. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+2. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
+3. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1082,6 +1123,11 @@ npx ctx7@latest docs /alibaba/spring-cloud-alibaba "Spring Cloud Alibaba 2025.1.
 - `.codex/gateway-alibaba-feign-encoder-test.log`
 - `.codex/gateway-alibaba-test-after-feign-fix.log`
 - `.codex/gateway-alibaba-format-validate.log`
+- `.codex/gateway-context-startup-red.log`
+- `.codex/gateway-context-startup-red-2.log`
+- `.codex/gateway-context-startup-green.log`
+- `.codex/gateway-context-startup-module-test.log`
+- `.codex/gateway-context-startup-format-validate.log`
 
 ## 资料来源
 
@@ -1107,6 +1153,7 @@ npx ctx7@latest docs /alibaba/spring-cloud-alibaba "Spring Cloud Alibaba 2025.1.
 - Spring Framework `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-webflux\7.0.7\spring-webflux-7.0.7.jar`，确认 `WebClientAdapter` 和 `WebClientHttpServiceGroupConfigurer`。
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-restclient\4.0.6\spring-boot-restclient-4.0.6.jar`，确认 `RestClientCustomizerHttpServiceGroupConfigurer` 会处理 RestClient-backed HTTP Service group。
 - Spring Cloud Gateway Context7 文档：`/spring-cloud/spring-cloud-gateway/v5.0.0`，确认 Gateway Server WebFlux starter 坐标为 `spring-cloud-starter-gateway-server-webflux`。
+- Spring Boot Context7 文档：`/spring-projects/spring-boot/v4.0.3`，确认运行服务器测试可使用 `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)` 与 `@LocalServerPort`。
 - Spring Cloud Alibaba Context7 文档：`/alibaba/spring-cloud-alibaba`，确认 `2025.1.x` 示例使用 `spring-cloud-starter-gateway-server-webflux`，Sentinel Gateway 需引入 `spring-cloud-alibaba-sentinel-gateway`。
 - OpenFeign `13.6` 本地源码 JAR：`F:\pkg-maven\repository\io\github\openfeign\feign-core\13.6\feign-core-13.6-sources.jar`，确认 `RequestTemplate.method(String)` 弃用并推荐 `RequestTemplate.method(Request.HttpMethod)`。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

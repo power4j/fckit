@@ -489,8 +489,41 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - Sentinel WebMVC adapter、Sentinel Gateway adapter、Nacos Discovery 是不同验证对象，不能互相替代。
 - 对 OpenFeign 过时 API，优先解包本地 sources JAR 或查看 Javadoc，按明确替代项迁移。
 
+## 经验 16：Gateway 启动验证要补齐应用侧契约，而不是只验证 starter
+
+问题：
+
+依赖树和模块单元测试只能证明 Gateway 5 WebFlux starter 可解析、过滤器类可编译，不能证明项目 ACL 配置能在 Boot 4 Reactive Web Server 中启动。`RouteGuardConfiguration` 会导入鉴权过滤器和 OAuth2 配置，实际启动时依赖应用提供权限定义服务与用户 introspection 能力。
+
+错误尝试或风险：
+
+- 第一次新增启动测试使用 `assertThat(applicationContext).hasSingleBean(...)`，当前 AssertJ 对 `ApplicationContext` 只得到普通 `ObjectAssert`，编译失败。上下文 bean 数量断言改为 `applicationContext.getBeansOfType(...).hasSize(1)`。
+- 第二次启动测试失败于 `ReactivePermissionDefinitionService` 缺失。这是有效失败，说明 ACL 配置不是纯 starter 自包含能力。
+- 如果只在测试中关闭鉴权配置，会掩盖下游应用必须提供权限定义服务的契约，不适合作为升级验收证据。
+
+有效方案：
+
+- 使用 Boot 4 文档确认的 `@SpringBootTest(webEnvironment = RANDOM_PORT)` 和 `@LocalServerPort` 做真实 Reactive Web Server 启动测试。
+- 测试应用显式导入 `RouteGuardConfiguration`。
+- 测试应用显式提供最小 `ReactivePermissionDefinitionService<PermissionDefinition>`，返回空权限列表。
+- 测试应用显式提供 `UserIntrospectClient`，使用空 `ReactiveOpaqueTokenIntrospector`，避免最小启动测试依赖外部 OAuth2 introspection 配置。
+- 断言 `ApiGuardFilter`、`RequestIdGlobalFilter` 和 Gateway 5 的 `RoutePredicateHandlerMapping` 进入上下文。
+
+验证证据：
+
+- Context7 `/spring-projects/spring-boot/v4.0.3` 确认随机端口运行服务器测试方式。
+- `RouteGuardConfigurationStartupTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- `fist-cloud-gateway-acl -am test` 为 `BUILD SUCCESS`，目标模块自身 7 个用例，失败 0。
+- `fist-cloud-gateway-acl -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- Starter 坐标验证、模块单元测试和最小应用上下文启动应作为三个层级分别记录。
+- 对自动配置或手工 `@Import` 配置，启动测试要保留真实应用侧契约，只补最小必要 bean，不通过关闭关键配置换取启动成功。
+- Gateway 启动通过不等于 Sentinel Gateway adapter 或 Nacos Discovery 通过；这些仍需要单独测试对象。
+
 ## 当前剩余高优先级事项
 
-1. 评估是否需要补一个最小 Gateway 启动类或示例，验证完整 Boot 4 Gateway 应用上下文。
-2. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
-3. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。
+1. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+2. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。
+3. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。

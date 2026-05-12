@@ -1541,6 +1541,38 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - 第一次新增 HTTP Service Clients 适配后直接编译，`spring-javaformat:validate` 报告新增 Java 文件格式不合规；运行 `spring-javaformat:apply` 后恢复。
 - 本地 JAR 复查发现 Boot 4.0.6 已有 `RestClientCustomizerHttpServiceGroupConfigurer`，因此 HTTP Service group 中挂载拦截器/过滤器时必须做去重。
 
+## 已验证：Gateway ACL 最小应用上下文
+
+`fist-cloud-gateway-acl` 已补充 Boot 4 最小应用上下文启动验证。该验证覆盖 Spring Boot 4 Reactive Web Server、Spring Cloud Gateway 5 WebFlux 自动配置和项目 `RouteGuardConfiguration` 的共同启动。
+
+新增测试：
+
+- `RouteGuardConfigurationStartupTest`
+
+验证内容：
+
+- 使用 `@SpringBootTest(webEnvironment = RANDOM_PORT)` 启动 Reactive Web 上下文。
+- 显式导入 `RouteGuardConfiguration`。
+- 测试应用提供最小应用侧依赖：`ReactivePermissionDefinitionService<PermissionDefinition>` 与 `UserIntrospectClient`。
+- 断言 `ApiGuardFilter`、`RequestIdGlobalFilter` 和 `RoutePredicateHandlerMapping` 均进入应用上下文。
+
+影响判断：
+
+- `RouteGuardConfiguration` 在 Boot 4 / Gateway 5 WebFlux 下可以启动。
+- 该配置不是完全自包含，下游应用仍必须提供权限定义服务。OAuth2 introspection 相关能力需要配置 `fist.oauth2.resourceserver.opaque-token.introspection-uri` 或提供自定义 `UserIntrospectClient`。
+- 本测试不代表 Sentinel Gateway adapter 或 Nacos Discovery 已通过运行验证。
+
+验证结果：
+
+- `RouteGuardConfigurationStartupTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- `fist-cloud-gateway-acl -am test` 为 `BUILD SUCCESS`，目标模块自身 7 个用例，失败 0。
+- `fist-cloud-gateway-acl -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+错误尝试记录：
+
+- 第一次测试使用 `assertThat(applicationContext).hasSingleBean(...)`，当前 AssertJ 断言类型不支持该方法，编译失败；改为 `applicationContext.getBeansOfType(...).hasSize(1)`。
+- 第二次测试失败于 `ReactivePermissionDefinitionService` 缺失，确认 ACL 自动配置需要应用侧权限定义服务；在测试应用中提供空权限服务后通过。
+
 ## OAuth2 授权服务 LOB API
 
 `DefaultAuthorizationService` 原先直接依赖 Spring JDBC `LobHandler`、`LobCreator` 和 `DefaultLobHandler`。Spring Framework 当前 Javadoc 标注这些类型自 6.2 起弃用，推荐使用 `SqlBinaryValue` 和 `SqlCharacterValue`；读取侧建议直接使用 `ResultSet`。

@@ -47,7 +47,7 @@
 | --- | --- | --- | --- | --- |
 | Sentinel | `fist-cloud-rpc-feign` 使用 `spring-cloud-starter-alibaba-sentinel` | BOM 管理 Sentinel `1.8.9` | 坐标存在，兼容性未确认 | 先编译 `fist-kit-cloud/fist-cloud-rpc-feign` |
 | Nacos | 当前仓库主要通过 BOM 暴露能力，真实内部项目样本可能使用 | BOM 管理 Nacos client `3.1.1` | 坐标存在，库侧直接命中较少 | 后续用户侧手册记录通用检查项 |
-| Gateway | `fist-cloud-gateway-*` 使用 Spring Cloud Gateway | Alibaba BOM 管理 `sentinel-spring-cloud-gateway-v6x-adapter` | 命名显示仍偏 Spring 6.x，需谨慎 | 编译 Gateway 模块并检查 Sentinel 传递依赖 |
+| Gateway | `fist-cloud-gateway-*` 使用 Spring Cloud Gateway | Alibaba BOM 管理 `sentinel-spring-cloud-gateway-v6x-adapter` | Gateway 5 WebFlux starter 与 ACL 最小上下文已通过；Sentinel Gateway adapter 未验证 | 如下游使用 Sentinel Gateway，单独引入并验证 `spring-cloud-alibaba-sentinel-gateway` |
 | LoadBalancer | `fist-cloud-rpc-feign`、Gateway 测试使用 LoadBalancer | Spring Cloud 候选为 `2025.1.1` | 坐标存在 | 编译 LoadBalancer 自动配置与 Gateway 测试夹具 |
 | OpenFeign | `fist-cloud-rpc-feign`、SDE Feign 示例使用 | Spring Cloud 候选为 `2025.1.1` | 已验证延续方案，SDE 适配通过端到端测试 | 后续仅评估 Spring HTTP Service Clients 替代路线 |
 
@@ -82,7 +82,7 @@
 | 当前依赖 | 当前使用点 | Boot 4 风险 | 处理方式 |
 | --- | --- | --- | --- |
 | `spring-boot-starter-web` | Web、SDE 示例、SDE client、SDE starter | Boot 4 starter 模块化后可能需迁移到 `spring-boot-starter-webmvc` | 阶段 2 先试编译，阶段 3 用 OpenRewrite dry-run 对照 |
-| `spring-boot-starter-webflux` | Web、Gateway、SDE client、示例 | 需确认 WebFlux starter 坐标与测试依赖变化 | 阶段 2 编译 Web/Gateway/SDE |
+| `spring-boot-starter-webflux` | Web、Gateway、SDE client、示例 | 需确认 WebFlux starter 坐标与测试依赖变化 | Gateway ACL 已通过 Boot 4 随机端口 Reactive 上下文启动验证，Web/SDE 继续按模块验证 |
 | `spring-boot-starter-json` | `fist-boot-web-app` | Jackson 3 默认，Jackson 2 兼容仅迁移期使用 | Jackson 专项处理 |
 | `spring-boot-starter-test` | build 与示例、数据模块 | Boot 4 测试 starter 拆分可能影响 JUnit/AssertJ/Mockito | 已确认 SDE MVC 测试需额外使用 `spring-boot-webmvc-test` |
 | `spring-boot-starter-security` | Gateway 测试、安全模块 | Spring Security 7 DSL/API 变化 | Security 专项处理 |
