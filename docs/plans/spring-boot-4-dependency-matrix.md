@@ -49,7 +49,7 @@
 | Nacos | 当前仓库主要通过 BOM 暴露能力，真实内部项目样本可能使用 | BOM 管理 Nacos client `3.1.1` | 坐标存在，库侧直接命中较少 | 后续用户侧手册记录通用检查项 |
 | Gateway | `fist-cloud-gateway-*` 使用 Spring Cloud Gateway | Alibaba BOM 管理 `sentinel-spring-cloud-gateway-v6x-adapter` | 命名显示仍偏 Spring 6.x，需谨慎 | 编译 Gateway 模块并检查 Sentinel 传递依赖 |
 | LoadBalancer | `fist-cloud-rpc-feign`、Gateway 测试使用 LoadBalancer | Spring Cloud 候选为 `2025.1.1` | 坐标存在 | 编译 LoadBalancer 自动配置与 Gateway 测试夹具 |
-| OpenFeign | `fist-cloud-rpc-feign`、SDE Feign 示例使用 | Spring Cloud 候选为 `2025.1.1` | 坐标存在，SDE 适配未验证 | 编译 Feign 模块并记录 API 破坏点 |
+| OpenFeign | `fist-cloud-rpc-feign`、SDE Feign 示例使用 | Spring Cloud 候选为 `2025.1.1` | 已验证延续方案，SDE 适配通过端到端测试 | 后续仅评估 Spring HTTP Service Clients 替代路线 |
 
 准入判断：Spring Cloud Alibaba 通过「坐标存在」准入，不再阻塞阶段 2；但没有通过「功能兼容」验收。若阶段 2 在 Alibaba / Sentinel / Nacos / Gateway 组合上出现基础解析或编译失败，需要立即暂停源码迁移，优先给出移除或替换相关集成的方案。
 
@@ -65,6 +65,7 @@
 | `spring-boot-admin-*` | `3.5.8` | `4.0.4` | 管理端 | 坐标存在，需验证 Actuator 兼容 |
 | `mybatis-plus-*` | `3.5.16` | `3.5.16` | 数据访问 | Boot 4 下使用 `mybatis-plus-spring-boot4-starter` 和 `mybatis-plus-spring-boot4-starter-test` |
 | `mybatis-spring` | `3.0.5` | `4.0.0` | 数据访问 | 跟随 MyBatis Plus Boot 4 starter，适配 Spring Framework 7 |
+| `spring-boot-restclient` | 新增 | `4.0.6` | SDE RestClient 自动配置 | Boot 4 中 `RestClientCustomizer` 位于该模块，需作为 SDE boot starter 普通依赖传递 |
 | `excel-spring-boot-starter` | `3.4.3` | 待查兼容性 | Boot starter | 需阶段 2 解析和编译确认 |
 | `swagger-core-jakarta` | `2.2.49` | 暂不主动升级 | OpenAPI | 先由 SpringDoc 3 BOM 约束验证 |
 | `springfox-*` | `3.0.0` | 移除 | 旧 API 文档 | Boot 4 主路径只保留 SpringDoc 3，`fist-boot-apidoc` 已删除 Springfox 支持 |
@@ -82,7 +83,7 @@
 | `spring-boot-starter-web` | Web、SDE 示例、SDE client、SDE starter | Boot 4 starter 模块化后可能需迁移到 `spring-boot-starter-webmvc` | 阶段 2 先试编译，阶段 3 用 OpenRewrite dry-run 对照 |
 | `spring-boot-starter-webflux` | Web、Gateway、SDE client、示例 | 需确认 WebFlux starter 坐标与测试依赖变化 | 阶段 2 编译 Web/Gateway/SDE |
 | `spring-boot-starter-json` | `fist-boot-web-app` | Jackson 3 默认，Jackson 2 兼容仅迁移期使用 | Jackson 专项处理 |
-| `spring-boot-starter-test` | build 与示例、数据模块 | Boot 4 测试 starter 拆分可能影响 JUnit/AssertJ/Mockito | 阶段 2 先 `compile`，后续再 `test-compile` |
+| `spring-boot-starter-test` | build 与示例、数据模块 | Boot 4 测试 starter 拆分可能影响 JUnit/AssertJ/Mockito | 已确认 SDE MVC 测试需额外使用 `spring-boot-webmvc-test` |
 | `spring-boot-starter-security` | Gateway 测试、安全模块 | Spring Security 7 DSL/API 变化 | Security 专项处理 |
 | `spring-boot-starter-validation` | 数据模块 | Jakarta Validation 兼容需确认 | 阶段 2 编译数据模块 |
 

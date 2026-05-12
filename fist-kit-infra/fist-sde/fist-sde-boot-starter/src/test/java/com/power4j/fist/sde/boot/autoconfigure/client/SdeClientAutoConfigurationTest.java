@@ -13,10 +13,10 @@ import feign.codec.Encoder;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.boot.web.client.RestClientCustomizer;
-import org.springframework.boot.web.reactive.function.client.WebClientCustomizer;
+import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -63,7 +63,7 @@ class SdeClientAutoConfigurationTest {
 	void shouldRegisterWebClientAdapterOnClasspath() {
 		this.runner.withPropertyValues("fist.sde.enabled=true", "fist.sde.client.enabled=true")
 			.run((context) -> assertThat(context).hasSingleBean(SecureWebClientExchangeFilterFunction.class)
-				.hasSingleBean(WebClientCustomizer.class));
+				.hasSingleBean(WebClient.Builder.class));
 	}
 
 	@Configuration(proxyBeanMethods = false)

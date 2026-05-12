@@ -1401,8 +1401,60 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 ## 下一步
 
-1. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+1. 在 Feign/SDE 延续方案已验证的基础上，继续评估 Spring HTTP Service Clients 是否需要新增等价适配层。
 2. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+
+## 已验证：Feign/SDE 与 Boot 4 客户端模块化适配
+
+继续推进 Feign/SDE 专项后，确认当前短期路线可延续 Spring Cloud OpenFeign 5.x；同时，SDE boot starter 和示例工程暴露了 Boot 4 客户端与 Web 测试模块化变化。
+
+受影响模块：
+
+- `fist-kit-infra/fist-sde/fist-sde-boot-starter`
+- `examples/fist-sde/example-feign`
+- `examples/fist-sde/example-restclient`
+- `examples/fist-sde/example-webclient`
+
+处理结果：
+
+- `SdeRestClientAutoConfiguration` 将 `RestClientCustomizer` 迁移到 `org.springframework.boot.restclient.RestClientCustomizer`。
+- `fist-sde-boot-starter` 新增普通依赖 `org.springframework.boot:spring-boot-restclient`，避免下游自动配置条件推断阶段缺失返回类型。
+- `SdeWebClientAutoConfiguration` 移除 Boot 3 `WebClientCustomizer` 依赖；Boot 4.0.6 本地 JAR 未提供等价类，当前改为在缺少 `WebClient.Builder` 时提供挂载 SDE filter 的 builder。
+- SDE MVC 测试将 `AutoConfigureMockMvc` 迁移到 `org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc`，并新增 `spring-boot-webmvc-test` 测试依赖。
+- SDE 示例将 `WebServerApplicationContext` 迁移到 `org.springframework.boot.web.server.context.WebServerApplicationContext`。
+- SDE Feign 示例将 `SpringEncoder` / `SpringDecoder` 构造参数从 Boot 3 `HttpMessageConverters` 迁移到 OpenFeign 5 `ObjectProvider<FeignHttpMessageConverters>`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am dependency:tree "-Dincludes=org.springframework.cloud:spring-cloud-openfeign-core,org.springframework.cloud:spring-cloud-starter-openfeign,io.github.openfeign:feign-core,io.github.openfeign:feign-okhttp"
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am test
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am clean test-compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am test
+.\mvnw.cmd -Pexamples -pl examples/fist-sde/example-feign -am test
+.\mvnw.cmd -Pexamples -pl examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am test
+.\mvnw.cmd -Pexamples -pl fist-kit-infra/fist-sde/fist-sde-boot-starter,examples/fist-sde/example-feign,examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am spring-javaformat:validate
+```
+
+结果：
+
+- 依赖树确认当前组合为 `spring-cloud-starter-openfeign:5.0.1`、`spring-cloud-openfeign-core:5.0.1`、`feign-core:13.6`、`feign-okhttp:13.6`。
+- `fist-sde-client -am test` 为 `BUILD SUCCESS`，模块自身客户端适配测试共 8 个用例，失败 0。
+- `fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`，模块自身 Feign/SDE prototype 行为测试共 7 个用例，失败 0。
+- `fist-sde-boot-starter -am test` 为 `BUILD SUCCESS`，模块自身测试共 29 个用例，失败 0。
+- `example-sde-feign -am test` 为 `BUILD SUCCESS`，示例端到端测试 1 个用例，失败 0。
+- `example-sde-restclient` 和 `example-sde-webclient` 示例测试为 `BUILD SUCCESS`，两个示例各 1 个用例，失败 0。
+
+错误尝试记录：
+
+- 第一次直接运行 `example-sde-feign -am test` 被 SDE boot starter 测试编译阻塞，根因是 Boot 4 的 `AutoConfigureMockMvc` 移入 `spring-boot-webmvc-test`。
+- 补充 clean 后发现主源码中 `RestClientCustomizer` 旧包和 `WebClientCustomizer` 缺失；后者在 Boot 4.0.6 本地 JAR 中没有等价类。
+- 将 `spring-boot-restclient` 作为 optional 依赖后，starter 自身测试通过，但下游 RestClient 示例运行期因 `RestClientCustomizer` 缺失失败；最终改为普通依赖。
+- `example-sde-feign` 进入自身编译后暴露 OpenFeign 5 的 `SpringEncoder` / `SpringDecoder` 构造参数变化。
+- RestClient/WebClient 示例进一步暴露 `WebServerApplicationContext` 包迁移。
 
 ## OAuth2 授权服务 LOB API
 

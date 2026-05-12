@@ -866,8 +866,42 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 
 下一步：
 
-1. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+1. 在 Feign/SDE 延续方案已验证的基础上，继续评估 Spring HTTP Service Clients 是否需要新增等价适配层。
 2. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+
+## Feign/SDE 专项验证
+
+继续执行 Feign/SDE 专项，覆盖 Spring Cloud OpenFeign 5.x、SDE Feign 编解码、SDE boot starter、Feign / RestClient / WebClient 示例。
+
+主要处理：
+
+- `SdeRestClientAutoConfiguration` 迁移到 Boot 4 的 `org.springframework.boot.restclient.RestClientCustomizer`。
+- `fist-sde-boot-starter` 新增普通依赖 `spring-boot-restclient`。
+- `SdeWebClientAutoConfiguration` 不再使用 Boot 3 的 `WebClientCustomizer`，改为在缺少 `WebClient.Builder` 时提供带 SDE filter 的 builder。
+- `AutoConfigureMockMvc` 迁移到 `org.springframework.boot.webmvc.test.autoconfigure`，测试依赖补充 `spring-boot-webmvc-test`。
+- `DemoSecureFeignConfiguration` 使用 OpenFeign 5 的 `FeignHttpMessageConverters`。
+- 示例 runner 使用 Boot 4 的 `org.springframework.boot.web.server.context.WebServerApplicationContext`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am dependency:tree "-Dincludes=org.springframework.cloud:spring-cloud-openfeign-core,org.springframework.cloud:spring-cloud-starter-openfeign,io.github.openfeign:feign-core,io.github.openfeign:feign-okhttp"
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am test
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am clean test-compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am test
+.\mvnw.cmd -Pexamples -pl examples/fist-sde/example-feign -am test
+.\mvnw.cmd -Pexamples -pl examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am test
+.\mvnw.cmd -Pexamples -pl fist-kit-infra/fist-sde/fist-sde-boot-starter,examples/fist-sde/example-feign,examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am spring-javaformat:validate
+```
+
+结果：
+
+- 依赖树解析到 `spring-cloud-openfeign-core:5.0.1`、`feign-core:13.6`、`feign-okhttp:13.6`。
+- SDE client、Cloud RPC Feign、SDE boot starter、SDE Feign 示例、SDE RestClient 示例、SDE WebClient 示例均为 `BUILD SUCCESS`。
+- 失败尝试已记录到 `spring-boot-4-upgrade-lessons.md`，包括 optional 依赖导致下游 `NoClassDefFoundError`、OpenFeign 5 构造参数变化、Boot 4 测试模块拆分和 WebServer 包迁移。
 
 ## 本地日志
 
@@ -897,6 +931,16 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 - `.codex/mybatis-plus-boot4-target-test.log`
 - `.codex/groovy-removal-target-tests.log`
 - `.codex/groovy-removal-module-tests.log`
+- `.codex/feign-sde-dependency-tree.log`
+- `.codex/feign-sde-client-compile.log`
+- `.codex/feign-sde-client-test.log`
+- `.codex/feign-sde-cloud-rpc-feign-compile.log`
+- `.codex/feign-sde-cloud-rpc-feign-test.log`
+- `.codex/sde-boot-starter-clean-test-compile-after-feign-sde.log`
+- `.codex/sde-boot-starter-test-after-feign-sde.log`
+- `.codex/feign-sde-example-feign-test-after-openfeign5.log`
+- `.codex/feign-sde-example-rest-webclient-test-after-restclient-dep.log`
+- `.codex/feign-sde-format-validate.log`
 
 ## 资料来源
 
@@ -911,4 +955,8 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - MyBatis Plus Context7 文档：`/baomidou/mybatis-plus-doc`，Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
+- Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webmvc-test\4.0.6\spring-boot-webmvc-test-4.0.6.jar`，确认 `AutoConfigureMockMvc` 新位置。
+- Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-restclient\4.0.6\spring-boot-restclient-4.0.6.jar`，确认 `RestClientCustomizer` 新位置。
+- Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-web-server\4.0.6\spring-boot-web-server-4.0.6.jar`，确认 `WebServerApplicationContext` 新位置。
+- Spring Cloud OpenFeign Context7 文档：`/spring-cloud/spring-cloud-openfeign`，确认自定义 `Encoder` / `Decoder` 仍可通过 Feign 配置注入。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

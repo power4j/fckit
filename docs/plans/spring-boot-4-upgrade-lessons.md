@@ -276,18 +276,55 @@ API Doc 中 `DocParser` 使用 Jackson 2 `JsonNode.fields()` 解析 Swagger JSON
 - 短期先验证 Spring Cloud OpenFeign 5.x 延续方案。
 - 中期单独设计 SDE 在 Spring HTTP Service Clients 下的等价适配层。
 - Feign/SDE 专项需要用示例工程和端到端行为验证。
+- Spring Cloud OpenFeign 5.x 的 `SpringEncoder` / `SpringDecoder` 不再接收 Boot 3 的 `HttpMessageConverters`，示例配置需要改为 `ObjectProvider<FeignHttpMessageConverters>`。
+- SDE Feign 生产适配继续保留 `SecureFeignEncoder` / `SecureFeignDecoder`，在 OpenFeign `13.6` 下通过请求体重写、响应体重建和端到端示例验证。
 
 验证证据：
 
 - `docs/plans/spring-boot-4-research-report-0.2.md` 已将 Feign 与 SDE 作为评审修订项。
 - `docs/plans/spring-boot-4-code-impact.md` 已列出 26 个 Feign 相关 Java 文件命中。
+- Context7 `/spring-cloud/spring-cloud-openfeign` 文档确认 OpenFeign 仍支持按 `@FeignClient(configuration = ...)` 注入自定义 Feign 组件，并支持通过 bean / 属性覆盖 `Encoder`、`Decoder`。
+- 依赖树确认当前组合为 `spring-cloud-openfeign-core:5.0.1`、`feign-core:13.6`、`feign-okhttp:13.6`。
+- `fist-sde-client -am test`、`fist-cloud-rpc-feign -am test`、`examples/fist-sde/example-feign -am test` 均为 `BUILD SUCCESS`。
 
 后续复用规则：
 
 - Feign 迁移不能只看依赖坐标和注解。
 - SDE 的编解码行为必须作为功能契约验证。
+- Feign 示例和下游自定义配置需要从 Boot 3 `HttpMessageConverters` 迁移到 OpenFeign 5 的 `FeignHttpMessageConverters`。
 
-## 经验 10：文档和提交需要与升级批次同步
+## 经验 10：Boot 4 客户端和 Web 测试模块化会在 SDE 示例中连续暴露
+
+问题：
+
+SDE boot starter 和 SDE 示例同时覆盖 Spring MVC、RestClient、WebClient 和 OpenFeign。进入示例端到端验证后，Boot 4 模块化和包迁移会先于业务断言失败。
+
+错误尝试或风险：
+
+- 首次直接运行 `examples/fist-sde/example-feign -am test`，失败点并不是 Feign，而是 `fist-sde-boot-starter` 测试源码缺少 Boot 4 的 `AutoConfigureMockMvc` 位置。
+- 只运行未 `clean` 的测试可能复用旧 target，掩盖主源码中 `RestClientCustomizer` / `WebClientCustomizer` 的真实编译问题。
+- 将 `spring-boot-restclient` 作为 optional 依赖后，SDE boot starter 自身可编译，但下游 RestClient 示例在自动配置条件推断阶段出现 `NoClassDefFoundError: org/springframework/boot/restclient/RestClientCustomizer`。
+
+有效方案：
+
+- `AutoConfigureMockMvc` 迁移到 `org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc`，并显式加入 `spring-boot-webmvc-test` 测试依赖。
+- `RestClientCustomizer` 迁移到 `org.springframework.boot.restclient.RestClientCustomizer`，并将 `spring-boot-restclient` 作为 SDE boot starter 普通依赖传递给下游。
+- Boot 4.0.6 本地 JAR 未提供 `WebClientCustomizer` 等价类；SDE WebClient 自动配置改为在缺少 `WebClient.Builder` 时提供已挂载 SDE filter 的 builder。
+- 示例中的 `WebServerApplicationContext` 迁移到 `org.springframework.boot.web.server.context.WebServerApplicationContext`。
+
+验证证据：
+
+- 本地 Boot 4.0.6 JAR 确认 `AutoConfigureMockMvc` 位于 `spring-boot-webmvc-test`，`RestClientCustomizer` 位于 `spring-boot-restclient`，`WebServerApplicationContext` 位于 `spring-boot-web-server`。
+- `fist-sde-boot-starter -am clean test-compile` 和 `fist-sde-boot-starter -am test` 均为 `BUILD SUCCESS`。
+- `examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am test` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- Boot 4 模块化问题必须用 `clean test-compile` 暴露，不能只依赖增量测试。
+- 公开自动配置方法返回类型所在 artifact 不能随意标记 optional，否则下游在条件推断阶段仍可能因类缺失失败。
+- WebClient 相关迁移需要单独写明行为变化：Boot 4.0.6 没有 `WebClientCustomizer`，当前只在缺少 `WebClient.Builder` 时提供带 SDE filter 的 builder。
+
+## 经验 11：文档和提交需要与升级批次同步
 
 问题：
 
@@ -316,7 +353,7 @@ Spring Boot 4 升级周期长，单次批次容易只提交代码，遗漏调研
 - 新批次完成后，先补文档，再提交。
 - 错误命令、未覆盖测试和剩余风险必须写入文档。
 
-## 经验 11：MyBatis Plus Boot 4 starter 是公开依赖坐标变化
+## 经验 12：MyBatis Plus Boot 4 starter 是公开依赖坐标变化
 
 问题：
 
@@ -349,5 +386,5 @@ MyBatis CRUD 在 Spring Boot 4 下继续使用 `mybatis-plus-spring-boot3-starte
 
 ## 当前剩余高优先级事项
 
-1. Feign/SDE 专项：评估 Spring 官方 Feign、Spring Cloud OpenFeign 5.x 和 Spring HTTP Service Clients 的路线。
+1. Spring HTTP Service Clients 专项：在 Feign/SDE 延续方案已验证的基础上，评估是否需要新增等价适配层。
 2. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。
