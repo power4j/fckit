@@ -21,10 +21,10 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.springframework.http.HttpMethod;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.zip.CRC32;
 
 /**
@@ -44,8 +44,8 @@ public class RestResource implements ResourceDescribe {
 
 	@Override
 	public String getResourceSign() {
-		Validate.notNull(getMethod());
-		Validate.notNull(getRequestMappingPattern());
+		Objects.requireNonNull(getMethod());
+		Objects.requireNonNull(getRequestMappingPattern());
 		String context = getMethod().name().toLowerCase() + StringPool.AT + getRequestMappingPattern();
 		String hi = DigestUtils.sha1Hex(context);
 		String lo = u32Hex(crc32(context.getBytes(StandardCharsets.UTF_8)));

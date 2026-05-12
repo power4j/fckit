@@ -799,9 +799,31 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 结果：Web/Data 组合 deprecation 明细编译为 `BUILD SUCCESS`；本轮目标调用复扫未命中。Web 两个模块当前没有自身测试源码；`fist-support-data` 模块自身 Java 测试共 6 个用例，失败 0；`fist-boot-data` 模块自身测试共 2 个用例，失败 0。剩余 deprecation 明细为既有 `Breaker`、`ValidateUtil`、`InTenant` 和 `PageData` unchecked 使用。
 
+继续处理 API Doc 中替代关系明确的低风险 API 警告：
+
+- `DocParser` 将 Jackson 2 `JsonNode.fields()` 迁移到 `JsonNode.properties()`。
+- `HandlerMethodResource` 和 `RestResource` 将 Commons Lang `Validate.notNull(T)` 迁移到 JDK `Objects.requireNonNull(T)`。
+- Springfox 插件和自动配置分支尚未删除；本轮不改变用户可见 API 文档能力。
+
+验证依据：
+
+- 本地 `jackson-databind-2.21.3.jar` 的 `javap` 结果确认 `JsonNode` 同时提供 `fields()` 和 `properties()`。
+- 本地 `tools.jackson.core:jackson-databind:3.1.2` 的 `javap` 结果确认 Jackson 3 `JsonNode` 保留 `properties()`，不再提供 `fields()`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc spring-javaformat:apply
+rg -n "Validate\.notNull|\.fields\(" fist-kit-app/fist-boot-apidoc/src/main/java -g "*.java" -S
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am test
+```
+
+结果：API Doc 目标调用复扫未命中；API Doc deprecation 明细编译为 `BUILD SUCCESS`；API Doc 测试为 `BUILD SUCCESS`，模块自身没有测试源码，依赖链 `fist-kit-api` 共 6 个用例，失败 0。剩余 deprecation 明细只来自 Springfox 相关类缺少 `@Deprecated` 注解，需要在 Springfox 去留决策中处理。编译日志另有依赖链 `fist-kit-api` 的 `ElementType.MODULE` 提示，不属于本轮 API Doc deprecation 收敛目标。
+
 下一步：
 
-1. 处理 API Doc 模块中剩余的 Apache Commons Lang、Jackson 2 和 Springfox 退役相关问题。
+1. 评审 API Doc 中 Springfox 支持的去留，决定是完全删除 Springfox 分支，还是在过渡期显式标记弃用。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
@@ -825,6 +847,9 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - `.codex/oauth2-lob-test.log`
 - `.codex/web-data-commons-deprecation-compile.log`
 - `.codex/web-data-commons-deprecation-test.log`
+- `.codex/apidoc-special-compile-before.log`
+- `.codex/apidoc-special-compile.log`
+- `.codex/apidoc-special-test.log`
 
 ## 资料来源
 
@@ -834,6 +859,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
 - Apache Commons Lang Context7 文档：`/websites/commons_apache_proper_commons-lang_apidocs`，`ObjectUtils.defaultIfNull(T, T)` 弃用并推荐 `ObjectUtils.getIfNull(Object, Object)`
 - Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`
+- Jackson Databind `2.21.3` 本地 JAR：`F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`
+- Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

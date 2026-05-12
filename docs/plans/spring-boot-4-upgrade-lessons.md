@@ -213,15 +213,48 @@ API Doc 模块仍有 Springfox 退役、Jackson 2 API 和 Commons Lang 调用问
 
 验证证据：
 
-- `fist-boot-apidoc` 当前主代码可编译，但仍有 Jackson 2、Commons Lang 和 Springfox 退役相关警告。
-- `docs/plans/spring-boot-4-code-impact.md` 已将 API Doc 专项列为下一步。
+- API Doc 低风险 API 迁移后，`JsonNode.fields()` 和 `Validate.notNull(...)` 复扫未命中。
+- 本地 Jackson 2.21.3 字节码确认 `JsonNode` 同时提供 `fields()` 和 `properties()`；本地 Jackson 3.1.2 字节码确认 `JsonNode` 保留 `properties()` 且不再提供 `fields()`。
+- `fist-boot-apidoc -am` deprecation 明细编译为 `BUILD SUCCESS`；测试为 `BUILD SUCCESS`，依赖链 `fist-kit-api` 共 6 个用例，失败 0。
+- 剩余 API Doc deprecation 明细只来自 Springfox 相关类缺少 `@Deprecated` 注解，需要在 Springfox 去留决策中处理；编译日志另有依赖链 `fist-kit-api` 的 `ElementType.MODULE` 提示，不属于本轮 API Doc deprecation 收敛目标。
 
 后续复用规则：
 
 - 任何用户可见文档能力的删除，都需要记录破坏性变更和替代路径。
 - API Doc 专项必须同时更新代码影响文档和试编译文档。
 
-## 经验 8：Feign/SDE 不能只验证基础 `@FeignClient`
+## 经验 8：Jackson 2 到 3 的方法替换需要跨版本验证
+
+问题：
+
+API Doc 中 `DocParser` 使用 Jackson 2 `JsonNode.fields()` 解析 Swagger JSON。Jackson 3 已切换到 `tools.jackson.*` 包，并且 `JsonNode.fields()` 不再是可用 API。
+
+错误尝试或风险：
+
+- 只按 Jackson 2 deprecation 警告替换，可能选到 Jackson 3 不存在的中间 API。
+- Context7 返回的 Jackson 3 文档偏通用迁移说明，没有直接给出 `fields()` 的替代项，不能据此直接下结论。
+- 如果把 API Doc 中的 Springfox 相关代码和 Jackson 低风险替换混在一个提交里，会增加评审难度。
+
+有效方案：
+
+- 使用本地 Jackson 2.21.3 JAR 验证 `JsonNode.properties()` 已存在，可作为兼容替代项。
+- 使用本地 Jackson 3.1.2 JAR 验证 `JsonNode.properties()` 仍存在，且 `fields()` 已不存在。
+- 本轮只替换 `fields()` 和 `Validate.notNull(T)`，不删除 Springfox 分支。
+
+验证证据：
+
+- `javap` 检查 `F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`。
+- `javap` 检查 `F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`。
+- `rg -n "Validate\.notNull|\.fields\(" fist-kit-app/fist-boot-apidoc/src/main/java -g "*.java" -S` 复扫未命中。
+- `fist-boot-apidoc -am` 编译和测试均为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- Jackson 迁移不能只做包名替换，需要确认替代 API 同时覆盖当前版本和目标版本。
+- 文档能力模块要把「低风险 API 替换」和「用户可见能力删除」拆分提交。
+- Springfox 去留需要单独记录破坏性变更、替代路径和下游影响。
+
+## 经验 9：Feign/SDE 不能只验证基础 `@FeignClient`
 
 问题：
 
@@ -248,7 +281,7 @@ API Doc 模块仍有 Springfox 退役、Jackson 2 API 和 Commons Lang 调用问
 - Feign 迁移不能只看依赖坐标和注解。
 - SDE 的编解码行为必须作为功能契约验证。
 
-## 经验 9：文档和提交需要与升级批次同步
+## 经验 10：文档和提交需要与升级批次同步
 
 问题：
 
@@ -279,7 +312,7 @@ Spring Boot 4 升级周期长，单次批次容易只提交代码，遗漏调研
 
 ## 当前剩余高优先级事项
 
-1. API Doc 专项：处理 Springfox、Jackson 2 `JsonNode.fields()` 和 API Doc 中残留的 Commons Lang 过时调用。
+1. API Doc 专项：评审 Springfox 支持的去留，决定完全删除 Springfox 分支，或在过渡期显式标记弃用。
 2. Groovy/Spock 去除：迁移 5 个 `.groovy` 测试后删除 gmavenplus / Spock / Groovy 依赖链。
 3. Feign/SDE 专项：评估 Spring 官方 Feign、Spring Cloud OpenFeign 5.x 和 Spring HTTP Service Clients 的路线。
 4. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。

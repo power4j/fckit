@@ -20,7 +20,6 @@ import com.power4j.coca.kit.common.text.StringPool;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.Validate;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -55,8 +54,8 @@ public class HandlerMethodResource implements ResourceDescribe {
 	}
 
 	private String buildMethodSignature() {
-		Validate.notNull(methodName);
-		Validate.notNull(returnType);
+		Objects.requireNonNull(methodName);
+		Objects.requireNonNull(returnType);
 		StringBuilder builder = new StringBuilder();
 		builder.append(StringPool.BRACKET_L).append(clazz.getSimpleName()).append(StringPool.BRACKET_R);
 		builder.append(methodName);

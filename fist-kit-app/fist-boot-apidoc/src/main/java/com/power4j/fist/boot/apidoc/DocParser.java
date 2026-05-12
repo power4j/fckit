@@ -9,11 +9,11 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -60,15 +60,15 @@ public class DocParser {
 		}
 		final JsonNode root = objectMapper.readTree(json);
 
-		Iterator<Map.Entry<String, JsonNode>> pathIter = Optional.ofNullable(root.get(KEY_PATHS))
-			.map(JsonNode::fields)
+		Set<Map.Entry<String, JsonNode>> paths = Optional.ofNullable(root.get(KEY_PATHS))
+			.map(JsonNode::properties)
 			.orElse(null);
-		if (Objects.isNull(pathIter)) {
+		if (Objects.isNull(paths)) {
 			return Collections.emptyList();
 		}
 		final List<ApiModel> permissionInfos = new ArrayList<>(16);
-		pathIter.forEachRemaining(path -> {
-			path.getValue().fields().forEachRemaining(kv -> {
+		paths.forEach(path -> {
+			path.getValue().properties().forEach(kv -> {
 				final ApiModel apiModel = new ApiModel();
 				apiModel.setPath(path.getKey());
 				apiModel.setMethod(kv.getKey().toLowerCase());

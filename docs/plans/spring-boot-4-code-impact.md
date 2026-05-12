@@ -1213,6 +1213,35 @@ rg -l "org\.springframework\.lang\.Nullable" fist-kit-app fist-kit-cloud fist-ki
 - 若删除 Springfox，需要同步删除插件类和自动配置分支。
 - API 文档模块应单独验证用户可见行为。
 
+当前进展：
+
+- `DocParser` 中的 Jackson 2 `JsonNode.fields()` 已迁移到 `JsonNode.properties()`。
+- `HandlerMethodResource` 和 `RestResource` 中的 `Validate.notNull(T)` 已迁移到 `Objects.requireNonNull(T)`。
+- Springfox 插件和自动配置分支尚未删除；当前只处理替代关系明确、行为风险较低的 API 警告。
+
+处理依据：
+
+- 本地 `jackson-databind-2.21.3.jar` 的 `javap` 结果确认 `JsonNode` 同时提供 `fields()` 和 `properties()`。
+- 本地 `tools.jackson.core:jackson-databind:3.1.2` 的 `javap` 结果确认 Jackson 3 `JsonNode` 保留 `properties()`，不再提供 `fields()`。
+- Commons Lang 迁移沿用前序批次规则：`Validate.notNull(T)` 使用 JDK `Objects.requireNonNull(T)` 替代。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc spring-javaformat:apply
+rg -n "Validate\.notNull|\.fields\(" fist-kit-app/fist-boot-apidoc/src/main/java -g "*.java" -S
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am test
+```
+
+结果：
+
+- API Doc 目标调用复扫未命中 `Validate.notNull` 和 `.fields(`。
+- API Doc deprecation 明细编译为 `BUILD SUCCESS`。
+- API Doc 测试为 `BUILD SUCCESS`；模块自身没有测试源码，依赖链 `fist-kit-api` 共 6 个用例，失败 0。
+- 剩余 deprecation 明细只来自 `ApiTraitOperationPlugin` 和 `SwaggerDocAutoConfiguration` 缺少 `@Deprecated` 注解，属于 Springfox 退役决策范围。
+- 编译日志另有依赖链 `fist-kit-api` 的 `ElementType.MODULE` 提示，不属于本轮 API Doc deprecation 收敛目标。
+
 ## Feign 与 SDE
 
 扫描命令：
@@ -1332,7 +1361,7 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 ## 下一步
 
-1. 处理 API Doc 模块中剩余的 Apache Commons Lang、Jackson 2 和 Springfox 退役相关问题。
+1. 评审 API Doc 中 Springfox 支持的去留，决定是完全删除 Springfox 分支，还是在过渡期显式标记弃用。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 
@@ -1362,6 +1391,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - OAuth2 LOB API 迁移测试日志：`.codex/oauth2-lob-test.log`
 - Web/Data Commons Lang 迁移编译日志：`.codex/web-data-commons-deprecation-compile.log`
 - Web/Data Commons Lang 迁移测试日志：`.codex/web-data-commons-deprecation-test.log`
+- API Doc 低风险 API 迁移编译日志：`.codex/apidoc-special-compile.log`
+- API Doc 低风险 API 迁移测试日志：`.codex/apidoc-special-test.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
@@ -1369,6 +1400,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
 - Apache Commons Lang Context7 文档：`/websites/commons_apache_proper_commons-lang_apidocs`，`ObjectUtils.defaultIfNull(T, T)` 弃用并推荐 `ObjectUtils.getIfNull(Object, Object)`
 - Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`，`javap` 确认 `LobHandler`、`LobCreator`、`DefaultLobHandler` 带 `@Deprecated(since="6.2")`
+- Jackson Databind `2.21.3` 本地 JAR：`F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`，`javap` 确认 `JsonNode` 同时提供 `fields()` 和 `properties()`
+- Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`，`javap` 确认 `JsonNode` 保留 `properties()` 且不再提供 `fields()`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`
