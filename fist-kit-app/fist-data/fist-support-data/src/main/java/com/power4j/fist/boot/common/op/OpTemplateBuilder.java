@@ -16,7 +16,6 @@
 
 package com.power4j.fist.boot.common.op;
 
-import org.apache.commons.lang3.Validate;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -82,25 +81,25 @@ public class OpTemplateBuilder<T> {
 	}
 
 	public OpTemplateBuilder<T> add(OpHandler<T> handler) {
-		Validate.notNull(handler);
+		Objects.requireNonNull(handler);
 		checkoutCurrentEntry().add(HandlerInfo.of(handler, false));
 		return this;
 	}
 
 	public OpTemplateBuilder<T> addAsync(OpHandler<T> handler) {
-		Validate.notNull(handler);
+		Objects.requireNonNull(handler);
 		checkoutCurrentEntry().add(HandlerInfo.of(handler, true));
 		return this;
 	}
 
 	public OpTemplateBuilder<T> add(Class<? extends OpHandler<T>> clazz) {
-		Validate.notNull(clazz);
+		Objects.requireNonNull(clazz);
 		checkoutCurrentEntry().add(HandlerInfo.of(clazz, false));
 		return this;
 	}
 
 	public OpTemplateBuilder<T> addAsync(Class<? extends OpHandler<T>> clazz) {
-		Validate.notNull(clazz);
+		Objects.requireNonNull(clazz);
 		checkoutCurrentEntry().add(HandlerInfo.of(clazz, true));
 		return this;
 	}

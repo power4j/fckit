@@ -21,8 +21,10 @@ import com.power4j.fist.data.domain.Sort;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Objects;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -78,7 +80,7 @@ public class PageParameter implements Serializable {
 	}
 
 	public int getPageNumberOrDefault(int value) {
-		int pn = ObjectUtils.defaultIfNull(this.pageNumber, value);
+		int pn = ObjectUtils.getIfNull(this.pageNumber, value);
 		if (pn < FIRST_PAGE) {
 			pn = FIRST_PAGE;
 		}
@@ -86,7 +88,7 @@ public class PageParameter implements Serializable {
 	}
 
 	public int getPageSizeOrDefault(int value) {
-		int ps = ObjectUtils.defaultIfNull(this.pageSize, value);
+		int ps = ObjectUtils.getIfNull(this.pageSize, value);
 		if (ps < 0) {
 			ps = DEFAULT_PAGE_SIZE;
 		}
@@ -94,8 +96,8 @@ public class PageParameter implements Serializable {
 	}
 
 	public PageRequest toPageRequest() {
-		if (StringUtils.isNotEmpty(field)) {
-			Sort.Direction direction = StringUtils.equalsIgnoreCase(order, ORDER_VALUE_DESC) ? Sort.Direction.DESC
+		if (Objects.nonNull(field) && !field.isEmpty()) {
+			Sort.Direction direction = Strings.CI.equals(order, ORDER_VALUE_DESC) ? Sort.Direction.DESC
 					: Sort.Direction.ASC;
 			return PageRequest.of(pageNumber, pageSize, Sort.of(direction, field));
 		}

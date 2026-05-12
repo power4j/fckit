@@ -65,7 +65,7 @@ public class TenantBroker {
 			errorResume = ex -> ret.setValue(errorHandler.apply(ex));
 		}
 		runAs(tenant, runnable, errorResume);
-		return ret.getValue();
+		return ret.get();
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class TenantBroker {
 
 		final String pre = TenantHolder.getTenant().orElse(null);
 		TenantHolder.setTenant(tenant);
-		DEBUG.get().push(ObjectUtils.defaultIfNull(tenant, "null"));
+		DEBUG.get().push(ObjectUtils.getIfNull(tenant, "null"));
 		Failable.tryWithResources(action, errorHandler, () -> {
 			TenantHolder.setTenant(pre);
 			DEBUG.get().pop();

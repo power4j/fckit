@@ -1287,9 +1287,52 @@ starter 仍有旧坐标需要后续处理：
 | `org.springframework.security.jwt` | 未命中 | `spring-security-jwt` 主要是 BOM 暴露和下游兼容问题 |
 | Jakarta `javax.*` | 仅命中 `javax.crypto` | 当前不是 Jakarta EE 迁移风险 |
 
+## 已验证：Web/Data Commons Lang 过时 API 收敛
+
+继续处理 Web/Data 编译日志中已经暴露的 Apache Commons Lang `3.20.0` 过时 API。该轮只处理替代关系明确的调用，不处理项目自身 deprecation 语义。
+
+受影响模块：
+
+- `fist-kit-app/fist-web/fist-support-web`
+- `fist-kit-app/fist-web/fist-boot-web-app`
+- `fist-kit-app/fist-data/fist-support-data`
+- `fist-kit-app/fist-data/fist-boot-data`
+
+处理依据：
+
+- Context7 `/websites/commons_apache_proper_commons-lang_apidocs` 文档确认 `ObjectUtils.defaultIfNull(T, T)` 已弃用，推荐使用 `ObjectUtils.getIfNull(Object, Object)`。
+- 本地 `commons-lang3-3.20.0.jar` 的 `javap` 结果确认 `MutableObject#getValue()` 带 `@Deprecated`，`Mutable` 接口提供 `get()` 默认方法。
+- 本地 `commons-lang3-3.20.0.jar` 的 `javap` 结果确认 `Strings.CI.equals(...)` 可用于大小写不敏感比较。
+
+处理结果：
+
+- `Validate.notNull(T)` 迁移到 `Objects.requireNonNull(T)`。
+- `ObjectUtils.defaultIfNull(...)` 迁移到 `ObjectUtils.getIfNull(...)`。
+- `StringUtils.equalsIgnoreCase(...)` 和 `String#equalsIgnoreCase(...)` 迁移到 `Strings.CI.equals(...)`。
+- `MutableObject#getValue()` 迁移到 `MutableObject#get()`。
+- `TenantInvokeAspect` 删除未使用的 `MutableObject<Throwable>`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data,fist-kit-app/fist-data/fist-boot-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data,fist-kit-app/fist-data/fist-boot-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data,fist-kit-app/fist-data/fist-boot-data -am test
+rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getValue\(" fist-kit-app/fist-web/fist-boot-web-app/src/main/java fist-kit-app/fist-web/fist-support-web/src/main/java fist-kit-app/fist-data/fist-boot-data/src/main/java fist-kit-app/fist-data/fist-support-data/src/main/java -g "*.java" -S
+```
+
+结果：
+
+- Web/Data 组合 deprecation 明细编译为 `BUILD SUCCESS`。
+- 本轮目标调用复扫未命中。
+- Web 两个模块当前没有自身测试源码。
+- `fist-support-data` 模块自身 Java 测试共 6 个用例，失败 0。
+- `fist-boot-data` 模块自身测试共 2 个用例，失败 0。
+- 剩余 deprecation 明细为既有 `Breaker`、`ValidateUtil`、`InTenant` 和 `PageData` unchecked 使用。
+
 ## 下一步
 
-1. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
+1. 处理 API Doc 模块中剩余的 Apache Commons Lang、Jackson 2 和 Springfox 退役相关问题。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 
@@ -1317,11 +1360,14 @@ starter 仍有旧坐标需要后续处理：
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
 - OAuth2 LOB API 迁移编译日志：`.codex/oauth2-lob-compile.log`
 - OAuth2 LOB API 迁移测试日志：`.codex/oauth2-lob-test.log`
+- Web/Data Commons Lang 迁移编译日志：`.codex/web-data-commons-deprecation-compile.log`
+- Web/Data Commons Lang 迁移测试日志：`.codex/web-data-commons-deprecation-test.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
 - Spring Framework Context7 文档：`/spring-projects/spring-framework/v7.0.5`，`JacksonJsonHttpMessageConverter` 使用 Jackson `JsonMapper`
 - Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
+- Apache Commons Lang Context7 文档：`/websites/commons_apache_proper_commons-lang_apidocs`，`ObjectUtils.defaultIfNull(T, T)` 弃用并推荐 `ObjectUtils.getIfNull(Object, Object)`
 - Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`，`javap` 确认 `LobHandler`、`LobCreator`、`DefaultLobHandler` 带 `@Deprecated(since="6.2")`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`

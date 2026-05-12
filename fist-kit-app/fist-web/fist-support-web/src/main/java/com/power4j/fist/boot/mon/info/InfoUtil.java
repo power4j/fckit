@@ -25,7 +25,7 @@ public class InfoUtil {
 	}
 
 	public EnvInfo getEnvInfo() {
-		return ENV_INFO_CACHE.updateAndGet(o -> ObjectUtils.defaultIfNull(o, resolveEnvInfo()));
+		return ENV_INFO_CACHE.updateAndGet(o -> ObjectUtils.getIfNull(o, InfoUtil::resolveEnvInfo));
 	}
 
 	/**

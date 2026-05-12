@@ -73,7 +73,7 @@ public class ApiLogAspect {
 
 		// @formatter:off
 		ApiLogEvent event = ApiLogEvent.builder()
-				.appName(ObjectUtils.defaultIfNull(getAppName(), "unknown"))
+				.appName(ObjectUtils.getIfNull(getAppName(), "unknown"))
 				.operation(getDescription(point))
 				.requestInfo(requestInfo)
 				.time(DateTimeKit.utcNow())

@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -114,7 +115,7 @@ public class JacksonConfig {
 			return;
 		}
 		log.info("Set time zone :{}", timeZoneId);
-		if (JacksonCustomizeProperties.TZ_SYSTEM.equalsIgnoreCase(timeZoneId)) {
+		if (Strings.CI.equals(JacksonCustomizeProperties.TZ_SYSTEM, timeZoneId)) {
 			builder.defaultTimeZone(TimeZone.getTimeZone(ZoneId.systemDefault()));
 			return;
 		}
@@ -131,7 +132,7 @@ public class JacksonConfig {
 
 	private void applyModules(JsonMapper.Builder builder) {
 		List<JacksonCustomizeProperties.ModuleName> excludeModules = ObjectUtils
-			.defaultIfNull(jacksonCustomizeProperties.getExcludeModules(), Collections.emptyList());
+			.getIfNull(jacksonCustomizeProperties.getExcludeModules(), Collections.emptyList());
 		List<JacksonModule> modules = MODULE_MAP.entrySet()
 			.stream()
 			.filter(kv -> !excludeModules.contains(kv.getKey()))

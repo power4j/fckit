@@ -42,7 +42,7 @@ public class EventUtils {
 		String appName = getAppName().orElse("Unknown");
 		ServerErrorEvent errorEvent = new ServerErrorEvent();
 		errorEvent.setAppName(appName);
-		errorEvent.setDescription(ObjectUtils.defaultIfNull(description, ""));
+		errorEvent.setDescription(ObjectUtils.getIfNull(description, ""));
 		errorEvent.setTime(DateTimeKit.utcNow());
 		errorEvent.setEnvInfo(InfoUtil.getEnvInfo());
 		errorEvent.setError(ExceptionInfo.from(e));

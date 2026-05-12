@@ -781,9 +781,27 @@ rg -n "LobHandler|LobCreator|DefaultLobHandler|SqlLobValue|LobCreatorArgumentPre
 
 结果：OAuth2 Server LOB 迁移编译为 `BUILD SUCCESS`，模块自身未再出现 Spring JDBC LOB API deprecation 警告；依赖链仍有 `fist-support-data` 的 Commons Lang deprecation 警告。`DefaultAuthorizationServiceTest` 共 2 个用例，失败 0。目标 LOB API 复扫未命中。第一次目标测试未带 `-am` 触发本地快照依赖远程解析失败，第二次命令中 Surefire 参数缺少引号被 PowerShell 拆分为无效生命周期阶段；均已用上述命令修正。
 
+继续处理 Web/Data 编译日志中已经暴露的 Apache Commons Lang `3.20.0` 过时 API：
+
+- `fist-support-data`：`Validate.notNull(T)` 迁移到 `Objects.requireNonNull(T)`；`MutableObject.getValue()` 迁移到 `MutableObject.get()`；`ObjectUtils.defaultIfNull(...)` 迁移到 `ObjectUtils.getIfNull(...)`。
+- `fist-boot-data`：`ObjectUtils.defaultIfNull(...)` 迁移到 `ObjectUtils.getIfNull(...)`；`StringUtils.equalsIgnoreCase(...)` 迁移到 `Strings.CI.equals(...)`；删除未使用的 `MutableObject<Throwable>`。
+- `fist-support-web`：`ObjectUtils.defaultIfNull(...)` 迁移到 `ObjectUtils.getIfNull(...)`。
+- `fist-boot-web-app`：`ObjectUtils.defaultIfNull(...)` 迁移到 `ObjectUtils.getIfNull(...)`；`String#equalsIgnoreCase(...)` 统一迁移到 `Strings.CI.equals(...)`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data,fist-kit-app/fist-data/fist-boot-data spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data,fist-kit-app/fist-data/fist-boot-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data,fist-kit-app/fist-data/fist-boot-data -am test
+rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getValue\(" fist-kit-app/fist-web/fist-boot-web-app/src/main/java fist-kit-app/fist-web/fist-support-web/src/main/java fist-kit-app/fist-data/fist-boot-data/src/main/java fist-kit-app/fist-data/fist-support-data/src/main/java -g "*.java" -S
+```
+
+结果：Web/Data 组合 deprecation 明细编译为 `BUILD SUCCESS`；本轮目标调用复扫未命中。Web 两个模块当前没有自身测试源码；`fist-support-data` 模块自身 Java 测试共 6 个用例，失败 0；`fist-boot-data` 模块自身测试共 2 个用例，失败 0。剩余 deprecation 明细为既有 `Breaker`、`ValidateUtil`、`InTenant` 和 `PageData` unchecked 使用。
+
 下一步：
 
-1. 继续按模块收敛 Web/Data 中的 Apache Commons Lang 过时 API。
+1. 处理 API Doc 模块中剩余的 Apache Commons Lang、Jackson 2 和 Springfox 退役相关问题。
 2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
 3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 4. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
@@ -805,6 +823,8 @@ rg -n "LobHandler|LobCreator|DefaultLobHandler|SqlLobValue|LobCreatorArgumentPre
 - `.codex/trial-compile-app-oauth2-server.log`
 - `.codex/oauth2-lob-compile.log`
 - `.codex/oauth2-lob-test.log`
+- `.codex/web-data-commons-deprecation-compile.log`
+- `.codex/web-data-commons-deprecation-test.log`
 
 ## 资料来源
 
@@ -812,6 +832,7 @@ rg -n "LobHandler|LobCreator|DefaultLobHandler|SqlLobValue|LobCreatorArgumentPre
 - Spring Boot 4.0.6 发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
 - Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
+- Apache Commons Lang Context7 文档：`/websites/commons_apache_proper_commons-lang_apidocs`，`ObjectUtils.defaultIfNull(T, T)` 弃用并推荐 `ObjectUtils.getIfNull(Object, Object)`
 - Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
