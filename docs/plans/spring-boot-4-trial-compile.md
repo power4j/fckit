@@ -1108,6 +1108,41 @@ rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alib
 1. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
 2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
 
+## Redisson 订阅 API 废弃迁移
+
+继续处理 `fist-redisson` 的 `RBlockingQueue.subscribeOnElements(...)` deprecation 警告。
+
+范围：
+
+- `fist-kit-infra/fist-redisson`
+
+调研结论：
+
+- Context7 Redisson 文档未直接给出 `subscribeOnElements` 的替代项，只返回 `RBlockingQueue` 普通队列操作和 `RReliableQueue` listener 示例。
+- 本地 Redisson `4.3.1` JAR 显示 `RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废弃。
+- 同一接口保留 `RBlockingQueue.subscribeOnElements(Function<V, CompletionStage<Void>>)`，该重载未废弃。
+
+处理结果：
+
+- `QueueConsumerBeanProcessor` 改用 `Function<V, CompletionStage<Void>>` 重载。
+- 回调内部继续执行原有类型校验、日志和 `@QueueConsumer` 方法调用。
+- 回调正常结束时返回 `CompletableFuture.completedFuture(null)`。
+- 新增 `QueueConsumerBeanProcessorTest`，通过 mock `RBlockingQueue` 捕获 `Function` 回调，验证订阅 API 形态和消费方法调用行为。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-redisson -am "-Dtest=QueueConsumerBeanProcessorTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+当前结果：
+
+- RED：新增测试在旧实现下失败，原因是旧实现实际调用 `Consumer` 重载。
+- GREEN：迁移后定向测试为 `BUILD SUCCESS`，`QueueConsumerBeanProcessorTest` 1 个用例，失败 0。
+- `fist-redisson -am test` 为 `BUILD SUCCESS`，目标模块自身 1 个用例，失败 0。
+- `fist-redisson -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，deprecation 明细日志未再出现 `subscribeOnElements` 或过时提示。
+- `fist-redisson -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1174,6 +1209,10 @@ rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alib
 - `.codex/sentinel-removal-cloud-dependency-tree.log`
 - `.codex/sentinel-removal-cloud-test.log`
 - `.codex/sentinel-removal-format-validate.log`
+- `.codex/redisson-subscribe-api-green.log`
+- `.codex/redisson-subscribe-api-module-test.log`
+- `.codex/redisson-subscribe-api-deprecation-compile.log`
+- `.codex/redisson-subscribe-api-format-validate.log`
 
 ## 资料来源
 
@@ -1202,4 +1241,6 @@ rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alib
 - Spring Boot Context7 文档：`/spring-projects/spring-boot/v4.0.3`，确认运行服务器测试可使用 `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)` 与 `@LocalServerPort`。
 - Spring Cloud Alibaba Context7 文档：`/alibaba/spring-cloud-alibaba`，确认 `2025.1.x` 示例使用 `spring-cloud-starter-gateway-server-webflux`，Sentinel Gateway 需引入 `spring-cloud-alibaba-sentinel-gateway`。
 - OpenFeign `13.6` 本地源码 JAR：`F:\pkg-maven\repository\io\github\openfeign\feign-core\13.6\feign-core-13.6-sources.jar`，确认 `RequestTemplate.method(String)` 弃用并推荐 `RequestTemplate.method(Request.HttpMethod)`。
+- Redisson Context7 文档：`/redisson/redisson`，未直接覆盖 `RBlockingQueue.subscribeOnElements` 替代项。
+- Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `subscribeOnElements(Consumer<V>)` 废弃，`subscribeOnElements(Function<V, CompletionStage<Void>>)` 未废弃。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

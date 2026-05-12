@@ -556,6 +556,41 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 删除未使用 starter 后，必须用依赖树证明传递依赖已消失，并用相关模块测试证明行为不依赖该 starter。
 - `.flattened-pom.xml` 如未被 Git 跟踪，只作为本地生成物观察，不作为提交对象。
 
+## 经验 18：第三方废弃 API 要先区分废弃重载和废弃类型
+
+问题：
+
+`fist-redisson` 在 Redisson `4.3.1` 下仍调用 `RBlockingQueue.subscribeOnElements(Consumer<V>)`。该重载已废弃，但 `RBlockingQueue` 本身和同名 `Function<V, CompletionStage<Void>>` 重载仍可用。
+
+错误尝试或风险：
+
+- Context7 Redisson 文档只返回了普通 `RBlockingQueue` 和 `RReliableQueue` 示例，没有直接给出 `subscribeOnElements` 的废弃替代项。若只根据文档中出现 `RReliableQueue` 就迁移队列类型，会改变当前阻塞队列订阅语义。
+- 第一次新增测试时，测试桩误用 `RedisNamespace#getPrefix()`，编译失败。真实 API 是 `getValue()`。
+- GREEN 阶段第一次运行被 `spring-javaformat:validate` 拦截，说明生产代码 import 顺序仍需按项目格式插件处理。
+- 测试回调实际执行时，嵌套消费类和消费方法的可见性会影响 `ReflectionUtils.invokeMethod(...)`。方法改为 public 后仍失败，原因是嵌套类本身也不是 public。测试夹具需要模拟真实可访问 bean。
+- 测试中直接验证废弃 `Consumer` 重载会让测试源码本身产生 deprecation 警告，最终保留对 `Function` 重载的捕获验证即可。
+
+有效方案：
+
+- 先用 Context7 查询 Redisson 文档；文档未覆盖目标 API 时，再检查本地 `redisson-4.3.1.jar`。
+- 使用 `javap -v org.redisson.api.RBlockingQueue` 确认只有 `subscribeOnElements(Consumer<V>)` 带 `@Deprecated`，`subscribeOnElements(Function<V, CompletionStage<Void>>)` 未废弃。
+- 为 `QueueConsumerBeanProcessor` 增加单元测试，mock `RBlockingQueue`，捕获 `Function<Object, CompletionStage<Void>>` 回调，并执行回调确认 `@QueueConsumer` 方法仍被调用。
+- 生产代码改为 `queue.subscribeOnElements(obj -> { ...; return CompletableFuture.completedFuture(null); })`，保持原有同步处理逻辑。
+
+验证证据：
+
+- RED：`QueueConsumerBeanProcessorTest` 期望调用 `Function<Object, CompletionStage<Void>>` 重载，当前代码调用 `Consumer` 重载，测试失败。
+- GREEN：迁移后定向测试为 `BUILD SUCCESS`，`QueueConsumerBeanProcessorTest` 1 个用例，失败 0。
+- `fist-redisson -am test` 为 `BUILD SUCCESS`，目标模块自身 1 个用例，失败 0。
+- `fist-redisson -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，deprecation 明细日志未再出现 `subscribeOnElements` 或过时提示。
+- `fist-redisson -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 第三方 API deprecation 不等于功能整体废弃；先定位到类、方法和重载级别。
+- 文档检索没有命中具体替代项时，应检查当前依赖版本的本地 JAR、sources JAR 或 Javadoc。
+- 单元测试应验证可观察行为和目标 API 形态，避免测试代码自身继续引用废弃 API。
+
 ## 当前剩余高优先级事项
 
 1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

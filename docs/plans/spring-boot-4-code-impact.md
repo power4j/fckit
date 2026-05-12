@@ -1640,6 +1640,34 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - `fist-boot-security-oauth2-server -am test` 为 `BUILD SUCCESS`，目标模块自身共 7 个用例，失败 0。
 - `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## Redisson 队列订阅 API
+
+Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废弃，但 `RBlockingQueue.subscribeOnElements(Function<V, CompletionStage<Void>>)` 仍保留。`fist-redisson` 的队列消费者注册属于方法重载迁移，不需要切换到 `RReliableQueue`。
+
+受影响文件：
+
+- `fist-kit-infra/fist-redisson/src/main/java/com/power4j/fist/boot/autoconfigure/redisson/queue/QueueConsumerBeanProcessor.java`
+- `fist-kit-infra/fist-redisson/src/test/java/com/power4j/fist/boot/autoconfigure/redisson/queue/QueueConsumerBeanProcessorTest.java`
+
+处理结果：
+
+- `QueueConsumerBeanProcessor` 改用 `Function<V, CompletionStage<Void>>` 重载。
+- 正常消费完成后返回 `CompletableFuture.completedFuture(null)`。
+- 新增单元测试覆盖订阅重载选择和 `@QueueConsumer` 方法调用。
+
+影响判断：
+
+- 订阅队列类型、队列名称生成、消息类型校验和反射调用逻辑保持不变。
+- 该迁移清除 Redisson 队列订阅处的生产代码 deprecation 来源。
+
+验证结果：
+
+- RED：新增测试在旧实现下失败，原因是旧实现调用 `Consumer` 重载。
+- GREEN：迁移后 `QueueConsumerBeanProcessorTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- `fist-redisson -am test` 为 `BUILD SUCCESS`，目标模块自身 1 个用例，失败 0。
+- `fist-redisson -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，deprecation 明细日志未再出现 `subscribeOnElements` 或过时提示。
+- `fist-redisson -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
@@ -1670,6 +1698,8 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`，`javap` 确认 `JsonNode` 保留 `properties()` 且不再提供 `fields()`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - MyBatis Plus Context7 文档：`/baomidou/mybatis-plus-doc`，Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`
+- Redisson Context7 文档：`/redisson/redisson`，未直接覆盖 `RBlockingQueue.subscribeOnElements` 替代项。
+- Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `subscribeOnElements(Consumer<V>)` 废弃，`subscribeOnElements(Function<V, CompletionStage<Void>>)` 未废弃。
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql`。
 - JSpecify Context7 文档：`/jspecify/jspecify`，确认 `@Nullable` 可用于返回值、参数、泛型类型参数和数组维度。

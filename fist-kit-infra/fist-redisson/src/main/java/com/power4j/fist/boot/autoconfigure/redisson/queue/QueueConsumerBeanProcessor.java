@@ -18,6 +18,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -63,6 +64,7 @@ public class QueueConsumerBeanProcessor implements BeanPostProcessor {
 										typeValidator.getTarget(), obj.getClass().getName()));
 					}
 					ReflectionUtils.invokeMethod(method, bean, obj);
+					return CompletableFuture.completedFuture(null);
 				});
 			}
 		}, ReflectionUtils.USER_DECLARED_METHODS);
