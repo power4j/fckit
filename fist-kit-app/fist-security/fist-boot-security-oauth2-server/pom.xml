@@ -63,5 +63,10 @@
       <artifactId>spring-security-oauth2-authorization-server</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

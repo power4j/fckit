@@ -866,8 +866,8 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 
 下一步：
 
-1. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
-2. 继续验证 Gateway / Spring Cloud Alibaba 组合，明确 Sentinel、Nacos 和 LoadBalancer 的 Boot 4 兼容边界。
+1. 进入 Feign/SDE 专项验证。
+2. 为 OAuth2 LOB 迁移补充数据库矩阵验证。
 
 ## Feign/SDE 专项验证
 
@@ -940,6 +940,41 @@ npx ctx7@latest docs /spring-projects/spring-boot/v4.0.0 "Spring Boot 4 HTTP ser
 - SDE RestClient / WebClient 示例测试为 `BUILD SUCCESS`，两个示例各 1 个用例，失败 0。
 - HTTP Service Clients 相关模块与示例的 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## OAuth2 LOB 本地数据库验证
+
+继续补充 OAuth2 `DefaultAuthorizationService` 的本地数据库验证。该批次不引入 Testcontainers，只使用项目已有风格的 H2 测试依赖，并复用 Spring Authorization Server 7 内置 `oauth2-authorization-schema.sql`。
+
+主要处理：
+
+- `fist-boot-security-oauth2-server` 增加 `com.h2database:h2` 测试依赖。
+- `DefaultAuthorizationServiceTest` 增加 H2 集成测试，覆盖官方 BLOB schema 下的 `save(...)`、`findById(...)` 和 access token 查询。
+- 同一测试类增加 CLOB schema 变体，将官方 schema 中 `blob DEFAULT NULL` 替换为 `clob DEFAULT NULL`，覆盖 `SqlCharacterValue` 写入和 `ResultSet#getString(...)` 读取。
+
+验证命令：
+
+```powershell
+npx ctx7@latest library "Spring Framework" "Spring Framework 7 JDBC SqlBinaryValue SqlCharacterValue LOB support migration from LobHandler"
+npx ctx7@latest docs /websites/spring_io_spring-framework_current_javadoc-api "Spring Framework 7 JDBC SqlBinaryValue SqlCharacterValue LobHandler deprecated"
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=DefaultAuthorizationServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am spring-javaformat:validate
+```
+
+结果：
+
+- Context7 当前 Javadoc 确认 `LobHandler` / `LobCreator` 自 Spring Framework 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`。
+- 第一次测试命令缺少 `-Dsurefire.failIfNoSpecifiedTests=false`，上游 `fist-support-test` 因没有同名测试失败；修正后继续。
+- 第二次测试进入目标模块后被 `spring-javaformat:validate` 拦截，执行 `spring-javaformat:apply` 后恢复。
+- 修正后 `DefaultAuthorizationServiceTest` 共 4 个用例，失败 0；H2 官方 BLOB schema 和 CLOB schema 变体均通过。
+- OAuth2 Server 模块全量测试为 `BUILD SUCCESS`，模块自身共 7 个用例，失败 0。
+- OAuth2 Server 依赖链 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+- MySQL、PostgreSQL、达梦未在本地执行。当前仓库没有对应数据库服务和 Testcontainers 依赖，需后续单独决定是否引入矩阵测试环境。
+
+## 后续事项
+
+1. 继续验证 Gateway / Spring Cloud Alibaba 组合，明确 Sentinel、Nacos 和 LoadBalancer 的 Boot 4 兼容边界。
+2. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -957,6 +992,10 @@ npx ctx7@latest docs /spring-projects/spring-boot/v4.0.0 "Spring Boot 4 HTTP ser
 - `.codex/trial-compile-app-oauth2-server.log`
 - `.codex/oauth2-lob-compile.log`
 - `.codex/oauth2-lob-test.log`
+- `.codex/oauth2-lob-h2-test.log`
+- `.codex/oauth2-lob-format-apply.log`
+- `.codex/oauth2-lob-module-test.log`
+- `.codex/oauth2-lob-format-validate.log`
 - `.codex/web-data-commons-deprecation-compile.log`
 - `.codex/web-data-commons-deprecation-test.log`
 - `.codex/apidoc-special-compile-before.log`
@@ -994,6 +1033,7 @@ npx ctx7@latest docs /spring-projects/spring-boot/v4.0.0 "Spring Boot 4 HTTP ser
 - Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
 - Apache Commons Lang Context7 文档：`/websites/commons_apache_proper_commons-lang_apidocs`，`ObjectUtils.defaultIfNull(T, T)` 弃用并推荐 `ObjectUtils.getIfNull(Object, Object)`
 - Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`
+- Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `oauth2-authorization-schema.sql`
 - Jackson Databind `2.21.3` 本地 JAR：`F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`
 - Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`

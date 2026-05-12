@@ -162,6 +162,7 @@ OAuth2 `DefaultAuthorizationService` 依赖 `LobHandler`、`LobCreator`、`Defau
 - OAuth2 LOB 编译为 `BUILD SUCCESS`，模块自身未再出现 Spring JDBC LOB API deprecation 警告。
 - `DefaultAuthorizationServiceTest` 新增 BLOB/CLOB 参数映射测试，确认使用 `SqlBinaryValue` / `SqlCharacterValue`。
 - OAuth2 定向测试组合运行 5 个用例，失败 0。
+- 后续 H2 集成测试补充后，`DefaultAuthorizationServiceTest` 扩展到 4 个用例，覆盖官方 BLOB schema 和 CLOB schema 变体，失败 0。
 
 后续复用规则：
 
@@ -421,7 +422,39 @@ MyBatis CRUD 在 Spring Boot 4 下继续使用 `mybatis-plus-spring-boot3-starte
 - Boot starter 迁移需要同时检查生产依赖、测试依赖和自动配置顺序。
 - 下游升级手册需要明确 Boot 3 starter 到 Boot 4 starter 的替换规则。
 
+## 经验 14：数据库矩阵应先拆成本地可执行层和真实驱动层
+
+问题：
+
+OAuth2 LOB 迁移需要验证数据库行为，但当前仓库没有 MySQL、PostgreSQL、达梦的本地服务或 Testcontainers 依赖。如果直接把所有数据库列为同一批验收项，会阻塞已经可以本地验证的 Spring JDBC 绑定行为。
+
+错误尝试或风险：
+
+- 第一次运行 `DefaultAuthorizationServiceTest` 时只传 `-Dtest=DefaultAuthorizationServiceTest`，上游模块没有同名测试，Surefire 报告 `No tests matching pattern`。带 `-am` 的定向测试需要同时传 `-Dsurefire.failIfNoSpecifiedTests=false`。
+- 新增 H2 集成测试后直接运行目标测试，先被 `spring-javaformat:validate` 拦截。测试代码也必须先按项目格式化规则处理。
+- 如果只记录「MySQL / PostgreSQL / 达梦待验证」，会遗漏已经通过的 BLOB/CLOB 本地证据，也无法区分代码问题和环境缺口。
+
+有效方案：
+
+- 第一层使用 H2 做本地可执行验证：复用 Spring Authorization Server 7 内置 `oauth2-authorization-schema.sql`，覆盖 BLOB 写入、读取和 access token 查询。
+- 第二层使用 H2 schema 变体验证 CLOB 分支：将官方 schema 中 `blob DEFAULT NULL` 替换为 `clob DEFAULT NULL`，覆盖 `SqlCharacterValue` 和 `ResultSet#getString(...)`。
+- 第三层保留真实驱动矩阵：MySQL、PostgreSQL、达梦需要外部数据库或 Testcontainers 决策后再执行。
+
+验证证据：
+
+- Spring Authorization Server `7.0.5` JAR 内置 `org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql`。
+- 官方 schema 注释明确：PostgreSQL 需要将 `blob` 改为 `text`、`timestamp` 改为 `timestamptz`；MySQL 需要在 JDBC URL 增加时间语义相关参数。
+- `DefaultAuthorizationServiceTest` 共 4 个用例，失败 0；H2 BLOB schema 和 CLOB schema 变体均通过。
+- `fist-boot-security-oauth2-server -am test` 为 `BUILD SUCCESS`，目标模块自身共 7 个用例，失败 0。
+- `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 数据库兼容性验证应先交付本地可执行证据，再明确真实驱动矩阵的环境前置条件。
+- Maven reactor 定向测试使用 `-am` 时，若指定 `-Dtest`，同时传 `-Dsurefire.failIfNoSpecifiedTests=false`。
+- 数据库 schema 迁移结论必须引用官方 schema、驱动文档或实际测试日志，不能只凭 SQL 类型名称推断。
+
 ## 当前剩余高优先级事项
 
-1. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。
-2. Gateway / Spring Cloud Alibaba 组合：验证 Gateway、Sentinel、Nacos 和 LoadBalancer 在 Boot 4 组合下的编译与运行边界。
+1. Gateway / Spring Cloud Alibaba 组合：验证 Gateway、Sentinel、Nacos 和 LoadBalancer 在 Boot 4 组合下的编译与运行边界。
+2. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

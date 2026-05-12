@@ -1514,13 +1514,34 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 
 - 这是 Boot 4 迁移中的破坏性 API 清理。下游如果显式传入自定义 `LobHandler`，需要改为依赖默认 JDBC 绑定逻辑，或自定义 `authorizationParametersMapper` / `authorizationRowMapper`。
 - 达梦等数据库的 BLOB 查询兼容逻辑仍保留：字段类型仍来自数据库元数据，查询 SQL 仍走 `processQuerySql(...)` 中的 LOB 比较函数处理。
-- 当前本地验证覆盖了参数映射和 Java 编译；真实数据库矩阵仍需要后续用集成环境覆盖 MySQL、PostgreSQL、达梦等实际驱动行为。
+- 当前本地验证已覆盖 Spring Authorization Server 7 官方 H2 schema 下的 BLOB 写入、读取和 access token 查询，也覆盖了将 LOB 字段改为 CLOB 后的写入与读取。
+- MySQL、PostgreSQL、达梦等真实驱动仍需接入外部数据库或引入 Testcontainers 后再验证；当前仓库未配置这些测试依赖和数据库服务。
+
+本地数据库矩阵：
+
+| 数据库 / schema | 验证方式 | 结果 | 说明 |
+| --- | --- | --- | --- |
+| H2 + Authorization Server 7 官方 `oauth2-authorization-schema.sql` | `DefaultAuthorizationService.save(...)`、`findById(...)`、`findByToken(..., ACCESS_TOKEN)` | 通过 | 覆盖 `SqlBinaryValue` 写入、`ResultSet#getBytes(...)` 读取和 BLOB token 查询 |
+| H2 + CLOB schema 变体 | 将官方 schema 中 `blob DEFAULT NULL` 替换为 `clob DEFAULT NULL` 后执行 `save(...)`、`findById(...)` | 通过 | 覆盖 `SqlCharacterValue` 写入和 `ResultSet#getString(...)` 读取 |
+| MySQL | 未执行 | 待验证 | 官方 schema 注释要求 JDBC URL 增加 `preserveInstants=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true` |
+| PostgreSQL | 未执行 | 待验证 | 官方 schema 注释要求将 `blob` 改为 `text`，将 `timestamp` 改为 `timestamptz` |
+| 达梦 | 未执行 | 待验证 | 需验证既有 `getLobCmpFunc()` 兼容策略和驱动元数据返回类型 |
+
+验证结果：
+
+- `DefaultAuthorizationServiceTest` 定向测试为 `BUILD SUCCESS`，共 4 个用例，失败 0。
+- `fist-boot-security-oauth2-server -am test` 为 `BUILD SUCCESS`，目标模块自身共 7 个用例，失败 0。
+- `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
 - OAuth2 LOB API 迁移编译日志：`.codex/oauth2-lob-compile.log`
 - OAuth2 LOB API 迁移测试日志：`.codex/oauth2-lob-test.log`
+- OAuth2 LOB H2 集成测试日志：`.codex/oauth2-lob-h2-test.log`
+- OAuth2 LOB 格式化日志：`.codex/oauth2-lob-format-apply.log`
+- OAuth2 LOB 模块全量测试日志：`.codex/oauth2-lob-module-test.log`
+- OAuth2 LOB 格式校验日志：`.codex/oauth2-lob-format-validate.log`
 - Web/Data Commons Lang 迁移编译日志：`.codex/web-data-commons-deprecation-compile.log`
 - Web/Data Commons Lang 迁移测试日志：`.codex/web-data-commons-deprecation-test.log`
 - API Doc 低风险 API 迁移编译日志：`.codex/apidoc-special-compile.log`
@@ -1543,6 +1564,6 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
 - MyBatis Plus Context7 文档：`/baomidou/mybatis-plus-doc`，Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
-- Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`
+- Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql`。
 - JSpecify Context7 文档：`/jspecify/jspecify`，确认 `@Nullable` 可用于返回值、参数、泛型类型参数和数组维度。
 - OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`
