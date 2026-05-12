@@ -63,7 +63,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Original code comes from <a href="https://github.com/pig-mesh/pig">pig-mesh/pig</a>
@@ -83,9 +82,6 @@ public abstract class OAuth2ResourceOwnerBaseAuthenticationProvider<T extends OA
 
 	private final AuthenticationManager authenticationManager;
 
-	@Deprecated
-	private Supplier<String> refreshTokenGenerator;
-
 	/**
 	 * Constructs an {@code OAuth2AuthorizationCodeAuthenticationProvider} using the
 	 * provided parameters.
@@ -101,12 +97,6 @@ public abstract class OAuth2ResourceOwnerBaseAuthenticationProvider<T extends OA
 		this.authenticationManager = authenticationManager;
 		this.authorizationService = authorizationService;
 		this.tokenGenerator = tokenGenerator;
-	}
-
-	@Deprecated
-	public void setRefreshTokenGenerator(Supplier<String> refreshTokenGenerator) {
-		Assert.notNull(refreshTokenGenerator, "refreshTokenGenerator cannot be null");
-		this.refreshTokenGenerator = refreshTokenGenerator;
 	}
 
 	public abstract UsernamePasswordAuthenticationToken buildToken(Map<String, Object> reqParameters);
@@ -273,22 +263,14 @@ public abstract class OAuth2ResourceOwnerBaseAuthenticationProvider<T extends OA
 		if (registeredClient.getAuthorizationGrantTypes().contains(AuthorizationGrantType.REFRESH_TOKEN) &&
 		// Do not issue refresh token to public client
 				!clientPrincipal.getClientAuthenticationMethod().equals(ClientAuthenticationMethod.NONE)) {
-
-			if (ObjectUtils.isNotEmpty(this.refreshTokenGenerator)) {
-				Instant issuedAt = Instant.now();
-				Instant expiresAt = issuedAt.plus(registeredClient.getTokenSettings().getRefreshTokenTimeToLive());
-				refreshToken = new OAuth2RefreshToken(this.refreshTokenGenerator.get(), issuedAt, expiresAt);
+			tokenContext = tokenContextBuilder.tokenType(OAuth2TokenType.REFRESH_TOKEN).build();
+			OAuth2Token generatedRefreshToken = this.tokenGenerator.generate(tokenContext);
+			if (!(generatedRefreshToken instanceof OAuth2RefreshToken)) {
+				OAuth2Error error = new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR,
+						"The token generator failed to generate the refresh token.", ERROR_URI);
+				throw new OAuth2AuthenticationException(error);
 			}
-			else {
-				tokenContext = tokenContextBuilder.tokenType(OAuth2TokenType.REFRESH_TOKEN).build();
-				OAuth2Token generatedRefreshToken = this.tokenGenerator.generate(tokenContext);
-				if (!(generatedRefreshToken instanceof OAuth2RefreshToken)) {
-					OAuth2Error error = new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR,
-							"The token generator failed to generate the refresh token.", ERROR_URI);
-					throw new OAuth2AuthenticationException(error);
-				}
-				refreshToken = (OAuth2RefreshToken) generatedRefreshToken;
-			}
+			refreshToken = (OAuth2RefreshToken) generatedRefreshToken;
 			authorizationBuilder.refreshToken(refreshToken);
 		}
 

@@ -1668,6 +1668,34 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-redisson -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，deprecation 明细日志未再出现 `subscribeOnElements` 或过时提示。
 - `fist-redisson -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## OAuth2 Resource Owner 自有废弃 API
+
+`OAuth2ResourceOwnerBaseAuthenticationProvider` 原先保留 `refreshTokenGenerator` 字段和 `setRefreshTokenGenerator(...)` 方法，并已标记 `@Deprecated`。Spring Authorization Server 7 的 token 自定义路径是 `OAuth2TokenGenerator` 或 `DelegatingOAuth2TokenGenerator`，该历史扩展点在 Boot 4 主版本迁移中删除。
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/main/java/com/power4j/fist/oauth2/extension/support/OAuth2ResourceOwnerBaseAuthenticationProvider.java`
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/test/java/com/power4j/fist/oauth2/extension/support/OAuth2ResourceOwnerBaseAuthenticationProviderTest.java`
+
+处理结果：
+
+- 删除 `refreshTokenGenerator` 字段和 `setRefreshTokenGenerator(...)`。
+- 刷新令牌生成统一走既有 `OAuth2TokenGenerator`。
+- 新增反射测试，防止该 provider 继续暴露带 `@Deprecated` 的字段或方法。
+
+影响判断：
+
+- 这是 Boot 4 主版本迁移中的破坏性 API 清理。下游如果仍调用 `setRefreshTokenGenerator(...)`，需要改为提供自定义 `OAuth2TokenGenerator`。
+- 令牌生成流程保留原有 Spring Authorization Server 扩展模型。
+
+验证结果：
+
+- RED：新增反射测试在旧实现下失败，原因是 provider 仍存在废弃字段或方法。
+- GREEN：迁移后 `OAuth2ResourceOwnerBaseAuthenticationProviderTest` 定向测试为 `BUILD SUCCESS`，2 个用例，失败 0。
+- `fist-boot-security-oauth2-server -am test` 为 `BUILD SUCCESS`，目标模块自身 8 个用例，失败 0。
+- `fist-boot-security-oauth2-server -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，本轮目标关键字 `setRefreshTokenGenerator` / `refreshTokenGenerator` 未再出现。
+- `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
@@ -1702,5 +1730,6 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `subscribeOnElements(Consumer<V>)` 废弃，`subscribeOnElements(Function<V, CompletionStage<Void>>)` 未废弃。
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql`。
+- Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认自定义 token 生成应通过 `OAuth2TokenGenerator` / `DelegatingOAuth2TokenGenerator` 配置。
 - JSpecify Context7 文档：`/jspecify/jspecify`，确认 `@Nullable` 可用于返回值、参数、泛型类型参数和数组维度。
 - OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

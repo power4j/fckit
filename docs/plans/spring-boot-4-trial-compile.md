@@ -1143,6 +1143,42 @@ rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alib
 - `fist-redisson -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，deprecation 明细日志未再出现 `subscribeOnElements` 或过时提示。
 - `fist-redisson -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## OAuth2 Resource Owner 自有废弃 API 清理
+
+继续处理 `fist-boot-security-oauth2-server` 中自有 `@Deprecated` 入口：
+
+- `OAuth2ResourceOwnerBaseAuthenticationProvider.refreshTokenGenerator`
+- `OAuth2ResourceOwnerBaseAuthenticationProvider#setRefreshTokenGenerator(...)`
+
+调研结论：
+
+- Context7 Spring Authorization Server 文档确认，自定义 token 生成应配置 `OAuth2TokenGenerator` 或 `DelegatingOAuth2TokenGenerator`。
+- 当前 `refreshTokenGenerator` 仅在 provider 内部使用，仓库内没有外部调用点。
+- 编译 deprecation 日志不会列出未被调用的自有废弃 API，需要源码复扫或反射测试兜住。
+
+处理结果：
+
+- 删除 `refreshTokenGenerator` 字段和 `setRefreshTokenGenerator(...)`。
+- 刷新令牌生成统一使用既有 `this.tokenGenerator.generate(...)` 分支。
+- `OAuth2ResourceOwnerBaseAuthenticationProviderTest` 增加反射测试，要求 provider 不再暴露带 `@Deprecated` 的字段或方法。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=OAuth2ResourceOwnerBaseAuthenticationProviderTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am test
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am spring-javaformat:validate
+```
+
+结果：
+
+- RED：新增反射测试在旧实现下失败，原因是 provider 仍存在废弃字段或方法。
+- GREEN：迁移后定向测试为 `BUILD SUCCESS`，`OAuth2ResourceOwnerBaseAuthenticationProviderTest` 2 个用例，失败 0。
+- OAuth2 Server 模块测试为 `BUILD SUCCESS`，目标模块自身 8 个用例，失败 0。
+- deprecation 明细编译为 `BUILD SUCCESS`，本轮目标关键字 `setRefreshTokenGenerator` / `refreshTokenGenerator` 未再出现；日志中仍有依赖链既有 `Breaker` 和 `ValidateUtil` 提示。
+- 格式校验为 `BUILD SUCCESS`。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1213,6 +1249,11 @@ rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alib
 - `.codex/redisson-subscribe-api-module-test.log`
 - `.codex/redisson-subscribe-api-deprecation-compile.log`
 - `.codex/redisson-subscribe-api-format-validate.log`
+- `.codex/oauth2-resource-owner-deprecated-red.log`
+- `.codex/oauth2-resource-owner-deprecated-green.log`
+- `.codex/oauth2-resource-owner-deprecated-module-test.log`
+- `.codex/oauth2-resource-owner-deprecated-compile.log`
+- `.codex/oauth2-resource-owner-deprecated-format-validate.log`
 
 ## 资料来源
 
@@ -1223,6 +1264,7 @@ rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alib
 - Apache Commons Lang Context7 文档：`/websites/commons_apache_proper_commons-lang_apidocs`，`ObjectUtils.defaultIfNull(T, T)` 弃用并推荐 `ObjectUtils.getIfNull(Object, Object)`
 - Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `oauth2-authorization-schema.sql`
+- Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认自定义 token 生成应通过 `OAuth2TokenGenerator` / `DelegatingOAuth2TokenGenerator` 配置。
 - Jackson Databind `2.21.3` 本地 JAR：`F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`
 - Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`

@@ -591,6 +591,39 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 文档检索没有命中具体替代项时，应检查当前依赖版本的本地 JAR、sources JAR 或 Javadoc。
 - 单元测试应验证可观察行为和目标 API 形态，避免测试代码自身继续引用废弃 API。
 
+## 经验 19：自有废弃 API 在主版本升级中应优先删除
+
+问题：
+
+`OAuth2ResourceOwnerBaseAuthenticationProvider` 仍暴露废弃字段 `refreshTokenGenerator` 和废弃方法 `setRefreshTokenGenerator(...)`。该入口绕过 Spring Authorization Server 的 `OAuth2TokenGenerator`，属于历史扩展点。
+
+错误尝试或风险：
+
+- 第一次 RED 运行被 `spring-javaformat:validate` 拦截，原因是测试新增 import 后未格式化。
+- 删除生产代码后第一次 GREEN 运行再次被格式插件拦截，说明删除 import 和代码块后仍需要执行格式化。
+- 仅依赖 `-Dmaven.compiler.showDeprecation=true` 不一定能发现自有废弃 API；如果没有外部调用，编译日志不会把该字段和方法列出来。
+
+有效方案：
+
+- 使用 `rg` 复扫源码中的 `@Deprecated`、`setRefreshTokenGenerator` 和 `refreshTokenGenerator`。
+- 使用 Context7 查询 Spring Authorization Server 当前文档，确认自定义 token 生成应通过 `OAuth2TokenGenerator` 或 `DelegatingOAuth2TokenGenerator`。
+- 增加反射测试，要求 `OAuth2ResourceOwnerBaseAuthenticationProvider` 不再暴露带 `@Deprecated` 的字段或方法。
+- 删除 `refreshTokenGenerator` 字段和 `setRefreshTokenGenerator(...)`，刷新令牌统一由 `this.tokenGenerator.generate(...)` 生成。
+
+验证证据：
+
+- RED：`OAuth2ResourceOwnerBaseAuthenticationProviderTest.shouldNotExposeDeprecatedMembers` 在旧实现下失败。
+- GREEN：迁移后定向测试为 `BUILD SUCCESS`，`OAuth2ResourceOwnerBaseAuthenticationProviderTest` 2 个用例，失败 0。
+- `fist-boot-security-oauth2-server -am test` 为 `BUILD SUCCESS`，目标模块自身 8 个用例，失败 0。
+- `fist-boot-security-oauth2-server -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，本轮目标关键字 `setRefreshTokenGenerator` / `refreshTokenGenerator` 未再出现。
+- `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 主版本升级阶段，自有 `@Deprecated` API 应按「删除或给出保留理由」处理，不能只依赖编译器调用点告警。
+- 对 Spring Authorization Server token 相关扩展，优先使用官方 `OAuth2TokenGenerator` 扩展点。
+- 反射类测试适合防止公共废弃入口在迁移后残留。
+
 ## 当前剩余高优先级事项
 
 1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

@@ -31,14 +31,33 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author Codex
  * @since 3.13
  */
 class OAuth2ResourceOwnerBaseAuthenticationProviderTest {
+
+	@Test
+	void shouldNotExposeDeprecatedMembers() {
+		boolean hasDeprecatedField = Stream.of(OAuth2ResourceOwnerBaseAuthenticationProvider.class.getDeclaredFields())
+			.map(Field::getDeclaredAnnotations)
+			.flatMap(Stream::of)
+			.anyMatch(Deprecated.class::isInstance);
+		boolean hasDeprecatedMethod = Stream
+			.of(OAuth2ResourceOwnerBaseAuthenticationProvider.class.getDeclaredMethods())
+			.map(Method::getDeclaredAnnotations)
+			.flatMap(Stream::of)
+			.anyMatch(Deprecated.class::isInstance);
+
+		Assertions.assertFalse(hasDeprecatedField);
+		Assertions.assertFalse(hasDeprecatedMethod);
+	}
 
 	@Test
 	void shouldPreserveBadCredentialsMessageWhenWrappedAsOAuth2Error() {
