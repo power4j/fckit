@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Spring Boot 4 升级中将 `fist-boot-crud-mybatis` 的 MyBatis Plus starter 切换为 `mybatis-plus-spring-boot4-starter`，测试依赖切换为 `mybatis-plus-spring-boot4-starter-test`。
+
 ### Removed
 
 - Spring Boot 4 升级中移除 `fist-boot-apidoc` 的 Springfox 支持，API 文档扩展统一保留 SpringDoc 3 路径。

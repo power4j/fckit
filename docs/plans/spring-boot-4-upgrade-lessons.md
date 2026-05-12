@@ -311,9 +311,39 @@ Spring Boot 4 升级周期长，单次批次容易只提交代码，遗漏调研
 - 新批次完成后，先补文档，再提交。
 - 错误命令、未覆盖测试和剩余风险必须写入文档。
 
+## 经验 11：MyBatis Plus Boot 4 starter 是公开依赖坐标变化
+
+问题：
+
+MyBatis CRUD 在 Spring Boot 4 下继续使用 `mybatis-plus-spring-boot3-starter` 时，运行期无法创建 MyBatis mapper，根因是旧 starter 的自动配置顺序仍指向 Boot 3 的 `DataSourceAutoConfiguration` 包名。
+
+错误尝试或风险：
+
+- 只看 `mybatis-plus.version` 仍为 `3.5.16`，容易误判为没有用户可见依赖变化。
+- 如果下游显式声明 Boot 3 starter 或锁定 `mybatis-spring` 3.x，升级到 Spring Framework 7 后仍会出现自动配置顺序或类型组合问题。
+
+有效方案：
+
+- `fist-boot-crud-mybatis` 使用 `mybatis-plus-spring-boot4-starter`。
+- 测试依赖使用 `mybatis-plus-spring-boot4-starter-test`。
+- 根 `mybatis-spring.version` 使用 `4.0.0`。
+- `CHANGELOG.md` 记录该公开依赖坐标变化。
+
+验证证据：
+
+- Context7 `/baomidou/mybatis-plus-doc` 文档确认 Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`，该 starter 自 MyBatis Plus `3.5.13` 开始提供。
+- 依赖树验证显示当前模块解析到 `mybatis-plus-spring-boot4-starter:3.5.16`、`mybatis-plus-spring-boot4-starter-test:3.5.16` 和 `mybatis-spring:4.0.0`，未解析到 Boot 3 starter。
+- `fist-boot-crud-mybatis` `test-compile` 为 `BUILD SUCCESS`。
+- `QueryTest`、`UpdateTest`、`AbstractNodeIdxSupportTest` 定向测试共 12 个用例，失败 0。
+
+后续复用规则：
+
+- 依赖版本号不变不代表没有公开依赖变化，starter artifactId 变化必须写入发布说明。
+- Boot starter 迁移需要同时检查生产依赖、测试依赖和自动配置顺序。
+- 下游升级手册需要明确 Boot 3 starter 到 Boot 4 starter 的替换规则。
+
 ## 当前剩余高优先级事项
 
 1. Groovy/Spock 去除：迁移 5 个 `.groovy` 测试后删除 gmavenplus / Spock / Groovy 依赖链。
 2. Feign/SDE 专项：评估 Spring 官方 Feign、Spring Cloud OpenFeign 5.x 和 Spring HTTP Service Clients 的路线。
 3. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。
-4. MyBatis Plus Boot 4 starter：确认对下游公开依赖坐标和发布说明的影响。

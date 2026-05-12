@@ -314,6 +314,14 @@ fist-kit-app/fist-data/fist-boot-crud-mybatis/src/test/java/com/power4j/fist/boo
 
 结果：MyBatis CRUD `test-compile` 为 `BUILD SUCCESS`；定向运行测试共 12 个用例，失败 0。
 
+下游影响：
+
+- `fist-boot-crud-mybatis` 的传递依赖从 `mybatis-plus-spring-boot3-starter` 切换为 `mybatis-plus-spring-boot4-starter`，测试依赖同步切换为 `mybatis-plus-spring-boot4-starter-test`。
+- 下游若显式排除、覆盖或直接依赖 MyBatis Plus Boot starter，需要同步使用 Boot 4 starter 坐标。
+- `mybatis-spring.version` 升级到 `4.0.0`，下游若依赖旧版 `mybatis-spring` 3.x，需要跟随 Spring Framework 7 组合升级。
+- Context7 `/baomidou/mybatis-plus-doc` 文档确认 Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`，该 starter 自 MyBatis Plus `3.5.13` 开始提供。
+- 依赖树验证显示当前模块解析到 `mybatis-plus-spring-boot4-starter:3.5.16`、`mybatis-plus-spring-boot4-starter-test:3.5.16` 和 `mybatis-spring:4.0.0`，未解析到 Boot 3 starter。
+
 ## 已处理：OAuth2 Server Jackson 3 与 Spring Framework 7 JSON converter 迁移
 
 MyBatis CRUD 运行期阻塞解除后，继续检查 OAuth2 Server 编译警告，确认以下 Jackson 2 相关 API 属于 Spring 7 / Authorization Server 7 迁移期高风险点：
@@ -1361,8 +1369,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 ## 下一步
 
-1. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-2. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+1. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+2. 迁移 5 个 Groovy/Spock 测试，准备移除 gmavenplus / Spock / Groovy 依赖链。
 
 ## OAuth2 授权服务 LOB API
 
@@ -1394,6 +1402,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - API Doc 低风险 API 迁移测试日志：`.codex/apidoc-special-test.log`
 - API Doc Springfox 移除编译日志：`.codex/apidoc-remove-springfox-compile.log`
 - API Doc Springfox 移除测试日志：`.codex/apidoc-remove-springfox-test.log`
+- MyBatis Plus Boot 4 starter 依赖树日志：`.codex/mybatis-plus-boot4-dependency-tree.log`
+- MyBatis Plus Boot 4 starter 定向测试日志：`.codex/mybatis-plus-boot4-target-test.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
@@ -1404,6 +1414,7 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - Jackson Databind `2.21.3` 本地 JAR：`F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`，`javap` 确认 `JsonNode` 同时提供 `fields()` 和 `properties()`
 - Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`，`javap` 确认 `JsonNode` 保留 `properties()` 且不再提供 `fields()`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
+- MyBatis Plus Context7 文档：`/baomidou/mybatis-plus-doc`，Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`
 - JSpecify Context7 文档：`/jspecify/jspecify`，确认 `@Nullable` 可用于返回值、参数、泛型类型参数和数组维度。

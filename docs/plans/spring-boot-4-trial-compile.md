@@ -335,6 +335,14 @@ fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core/src/main/java/com/power
 
 结果：`test-compile` 为 `BUILD SUCCESS`；定向测试共 12 个用例，失败 0。
 
+下游可见影响：
+
+- `fist-boot-crud-mybatis` 暴露的 MyBatis Plus starter 从 Boot 3 坐标切换为 Boot 4 坐标。
+- 下游工程如果显式声明 `mybatis-plus-spring-boot3-starter` 或 `mybatis-plus-spring-boot3-starter-test`，升级 Boot 4 时需要切换到 `mybatis-plus-spring-boot4-starter` 和 `mybatis-plus-spring-boot4-starter-test`。
+- 下游工程如果锁定 `mybatis-spring` 3.x，需要升级到 `4.0.0` 以匹配 Spring Framework 7。
+- Context7 `/baomidou/mybatis-plus-doc` 文档确认 Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`，该 starter 自 MyBatis Plus `3.5.13` 开始提供。
+- 依赖树验证显示当前模块解析到 `mybatis-plus-spring-boot4-starter:3.5.16`、`mybatis-plus-spring-boot4-starter-test:3.5.16` 和 `mybatis-spring:4.0.0`，未解析到 Boot 3 starter。
+
 继续处理 OAuth2 Server 的 Jackson 2 待删除 API 警告：
 
 - `DefaultOauthFailureHandler` 使用的 `MappingJackson2HttpMessageConverter` 已迁移到 Spring Framework 7 的 `JacksonJsonHttpMessageConverter`。
@@ -840,8 +848,8 @@ rg -n "springfox|SwaggerDocAutoConfiguration|ApiTraitOperationPlugin|swagger\.pl
 
 下一步：
 
-1. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-2. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+1. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+2. 迁移 5 个 Groovy/Spock 测试，准备移除 gmavenplus / Spock / Groovy 依赖链。
 3. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
 
 ## 本地日志
@@ -868,6 +876,8 @@ rg -n "springfox|SwaggerDocAutoConfiguration|ApiTraitOperationPlugin|swagger\.pl
 - `.codex/apidoc-special-test.log`
 - `.codex/apidoc-remove-springfox-compile.log`
 - `.codex/apidoc-remove-springfox-test.log`
+- `.codex/mybatis-plus-boot4-dependency-tree.log`
+- `.codex/mybatis-plus-boot4-target-test.log`
 
 ## 资料来源
 
@@ -880,5 +890,6 @@ rg -n "springfox|SwaggerDocAutoConfiguration|ApiTraitOperationPlugin|swagger\.pl
 - Jackson Databind `2.21.3` 本地 JAR：`F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`
 - Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`
+- MyBatis Plus Context7 文档：`/baomidou/mybatis-plus-doc`，Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

@@ -33,7 +33,7 @@
 | Spring Boot | `3.5.14` | `4.0.6` | 坐标存在 | starter 拆分、Jackson 3、测试依赖、配置属性 |
 | Spring Cloud | `2025.0.2` | `2025.1.1` | 坐标存在 | Gateway、OpenFeign、LoadBalancer API |
 | Spring Cloud Alibaba | `2023.0.3.4` | `2025.1.0.0` | 坐标存在，功能兼容待验证 | Nacos、Sentinel、Gateway、LoadBalancer、OpenFeign 组合 |
-| MyBatis Plus BOM | `3.5.16` | `3.5.16` | 坐标存在，无更新候选 | `mybatis-plus-spring-boot3-starter` 在 Boot 4 下是否仍可用 |
+| MyBatis Plus BOM | `3.5.16` | `3.5.16` | 坐标存在，已切换 Boot 4 starter | 下游需使用 `mybatis-plus-spring-boot4-starter` |
 | SpringDoc OpenAPI BOM | `2.8.17` | `3.0.3` | 坐标存在 | `springdoc-openapi-starter-common`、WebFlux API 适配 |
 | Spring Boot Admin BOM | `3.5.8` | `4.0.4` | 坐标存在 | Admin starter 与 Actuator 端点兼容 |
 | OkHttp BOM | `4.12.0` | `4.12.0` | 暂不升级 | Feign OkHttp 传递依赖验证 |
@@ -63,8 +63,8 @@
 | `oauth2-oidc-sdk` | `11.37` | 暂不主动升级 | OAuth2 支撑库 | 随 Authorization Server 7 验证 |
 | `springdoc-openapi-*` | `2.8.17` | `3.0.3` | API 文档 | 坐标存在，需验证自定义 OperationCustomizer |
 | `spring-boot-admin-*` | `3.5.8` | `4.0.4` | 管理端 | 坐标存在，需验证 Actuator 兼容 |
-| `mybatis-plus-*` | `3.5.16` | `3.5.16` | 数据访问 | 无更新候选，重点验证 `boot3` starter 是否兼容 Boot 4 |
-| `mybatis-spring` | `3.0.5` | 暂不主动升级 | 数据访问 | 先随 MyBatis Plus 验证 |
+| `mybatis-plus-*` | `3.5.16` | `3.5.16` | 数据访问 | Boot 4 下使用 `mybatis-plus-spring-boot4-starter` 和 `mybatis-plus-spring-boot4-starter-test` |
+| `mybatis-spring` | `3.0.5` | `4.0.0` | 数据访问 | 跟随 MyBatis Plus Boot 4 starter，适配 Spring Framework 7 |
 | `excel-spring-boot-starter` | `3.4.3` | 待查兼容性 | Boot starter | 需阶段 2 解析和编译确认 |
 | `swagger-core-jakarta` | `2.2.49` | 暂不主动升级 | OpenAPI | 先由 SpringDoc 3 BOM 约束验证 |
 | `springfox-*` | `3.0.0` | 移除 | 旧 API 文档 | Boot 4 主路径只保留 SpringDoc 3，`fist-boot-apidoc` 已删除 Springfox 支持 |
@@ -102,7 +102,7 @@
 
 暂不主动升级：
 
-- `mybatis-plus.version`：保持 `3.5.16`，验证 `boot3` starter 是否仍可解析。
+- `mybatis-plus.version`：保持 `3.5.16`，starter 切换到 `mybatis-plus-spring-boot4-starter`。
 - `spock-lib.version`、Groovy、`gmavenplus-plugin`：不升级，后续删除。
 - `spring-security-jwt.version`：不升级，后续删除。
 - 低关联工具库：先随 Maven 解析与编译结果处理。
@@ -127,3 +127,4 @@
 - Spring Boot Admin Maven Central：`https://repo.maven.apache.org/maven2/de/codecentric/spring-boot-admin-dependencies/`
 - Redisson Maven Central：`https://repo.maven.apache.org/maven2/org/redisson/redisson/`
 - MyBatis Plus BOM Maven Central：`https://repo.maven.apache.org/maven2/com/baomidou/mybatis-plus-bom/`
+- MyBatis Plus Context7 文档：`/baomidou/mybatis-plus-doc`，确认 Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`，该 starter 自 `3.5.13` 开始提供
