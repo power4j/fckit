@@ -66,6 +66,7 @@
 | `mybatis-plus-*` | `3.5.16` | `3.5.16` | 数据访问 | Boot 4 下使用 `mybatis-plus-spring-boot4-starter` 和 `mybatis-plus-spring-boot4-starter-test` |
 | `mybatis-spring` | `3.0.5` | `4.0.0` | 数据访问 | 跟随 MyBatis Plus Boot 4 starter，适配 Spring Framework 7 |
 | `spring-boot-restclient` | 新增 | `4.0.6` | SDE RestClient 自动配置 | Boot 4 中 `RestClientCustomizer` 位于该模块，需作为 SDE boot starter 普通依赖传递 |
+| `spring-web` HTTP Service Clients | 跟随 Spring Framework | `7.0.7` | SDE HTTP service 方法级上下文 | 复用 RestClient/WebClient 底层适配，新增 `HttpRequestValues.Processor` 传递 `@SecureExchange` 策略 |
 | `excel-spring-boot-starter` | `3.4.3` | 待查兼容性 | Boot starter | 需阶段 2 解析和编译确认 |
 | `swagger-core-jakarta` | `2.2.49` | 暂不主动升级 | OpenAPI | 先由 SpringDoc 3 BOM 约束验证 |
 | `springfox-*` | `3.0.0` | 移除 | 旧 API 文档 | Boot 4 主路径只保留 SpringDoc 3，`fist-boot-apidoc` 已删除 Springfox 支持 |

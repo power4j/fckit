@@ -866,8 +866,8 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 
 下一步：
 
-1. 在 Feign/SDE 延续方案已验证的基础上，继续评估 Spring HTTP Service Clients 是否需要新增等价适配层。
-2. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+1. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+2. 继续验证 Gateway / Spring Cloud Alibaba 组合，明确 Sentinel、Nacos 和 LoadBalancer 的 Boot 4 兼容边界。
 
 ## Feign/SDE 专项验证
 
@@ -902,6 +902,43 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 - 依赖树解析到 `spring-cloud-openfeign-core:5.0.1`、`feign-core:13.6`、`feign-okhttp:13.6`。
 - SDE client、Cloud RPC Feign、SDE boot starter、SDE Feign 示例、SDE RestClient 示例、SDE WebClient 示例均为 `BUILD SUCCESS`。
 - 失败尝试已记录到 `spring-boot-4-upgrade-lessons.md`，包括 optional 依赖导致下游 `NoClassDefFoundError`、OpenFeign 5 构造参数变化、Boot 4 测试模块拆分和 WebServer 包迁移。
+
+## Spring HTTP Service Clients 专项验证
+
+继续评估 Spring HTTP Service Clients 后，结论是：当前不把它作为 Feign 的强制替代；SDE 只需要补齐 HTTP service 接口方法级 `@SecureExchange` 到底层 RestClient/WebClient 请求属性的传递。
+
+主要处理：
+
+- 新增 `SecureHttpServiceClientContextProcessor`，实现 Spring Framework 7 `HttpRequestValues.Processor`。
+- 新增 `SecureHttpServiceSupport`，统一定义请求属性 key，并从请求属性中解析 `SecureExchangeClientContext`。
+- `SecureRestClientInterceptor` 与 `SecureWebClientExchangeFilterFunction` 优先使用请求级 SDE 上下文。
+- SDE boot starter 注册 `RestClientHttpServiceGroupConfigurer` 与 `WebClientHttpServiceGroupConfigurer`，为 HTTP Service group 添加方法级上下文处理器，并对拦截器/过滤器挂载做去重。
+
+验证命令：
+
+```powershell
+npx ctx7@latest library "Spring Framework" "Spring Framework HTTP Service Clients @HttpExchange RestClientAdapter WebClientAdapter Spring Boot 4 migration"
+npx ctx7@latest docs /websites/spring_io_spring-framework_reference "HTTP Interface Clients @HttpExchange RestClientAdapter WebClientAdapter reactive WebClientAdapter migration from OpenFeign"
+npx ctx7@latest docs /spring-projects/spring-boot/v4.0.0 "Spring Boot 4 HTTP service clients RestClientBuilderConfigurer WebClient builder declarative HTTP clients"
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client,fist-kit-infra/fist-sde/fist-sde-boot-starter -am spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am test
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am test
+.\mvnw.cmd -Pexamples -pl examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am test
+.\mvnw.cmd -Pexamples -pl fist-kit-infra/fist-sde/fist-sde-client,fist-kit-infra/fist-sde/fist-sde-boot-starter,examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am spring-javaformat:validate
+```
+
+结果：
+
+- Spring Framework 文档确认 HTTP Service Clients 的代理工厂和底层 adapter 模型。
+- Spring Boot 文档确认 HTTP Service group 可通过 RestClient/WebClient group configurer 扩展。
+- `fist-sde-client -am compile` 与 `fist-sde-boot-starter -am compile` 均为 `BUILD SUCCESS`。
+- 首次 `fist-sde-client -am compile` 被 `spring-javaformat:validate` 阻断，格式化后恢复。
+- `fist-sde-client -am test` 为 `BUILD SUCCESS`，模块自身测试共 11 个用例，失败 0。
+- `fist-sde-boot-starter -am test` 为 `BUILD SUCCESS`，模块自身测试共 29 个用例，失败 0。
+- SDE RestClient / WebClient 示例测试为 `BUILD SUCCESS`，两个示例各 1 个用例，失败 0。
+- HTTP Service Clients 相关模块与示例的 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
 ## 本地日志
 
@@ -941,6 +978,13 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 - `.codex/feign-sde-example-feign-test-after-openfeign5.log`
 - `.codex/feign-sde-example-rest-webclient-test-after-restclient-dep.log`
 - `.codex/feign-sde-format-validate.log`
+- `.codex/http-service-client-compile.log`
+- `.codex/http-service-boot-starter-compile.log`
+- `.codex/http-service-sde-client-test.log`
+- `.codex/http-service-sde-boot-starter-test.log`
+- `.codex/http-service-processor-test.log`
+- `.codex/http-service-sde-examples-rest-webclient-test.log`
+- `.codex/http-service-format-validate.log`
 
 ## 资料来源
 
@@ -959,4 +1003,9 @@ rg -n "groovy|spock|gmavenplus" pom.xml fist-kit-build/pom.xml fist-kit-infra/fi
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-restclient\4.0.6\spring-boot-restclient-4.0.6.jar`，确认 `RestClientCustomizer` 新位置。
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-web-server\4.0.6\spring-boot-web-server-4.0.6.jar`，确认 `WebServerApplicationContext` 新位置。
 - Spring Cloud OpenFeign Context7 文档：`/spring-cloud/spring-cloud-openfeign`，确认自定义 `Encoder` / `Decoder` 仍可通过 Feign 配置注入。
+- Spring Framework Context7 文档：`/websites/spring_io_spring-framework_reference`，确认 HTTP Service Clients 使用 `HttpServiceProxyFactory` 与 RestClient/WebClient adapter。
+- Spring Boot Context7 文档：`/spring-projects/spring-boot/v4.0.0`，确认 HTTP Service group 可通过 RestClient/WebClient group configurer 自定义。
+- Spring Framework `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-web\7.0.7\spring-web-7.0.7.jar`，确认 `HttpRequestValues.Processor`、`RestClientAdapter` 和 HTTP service registry 类型。
+- Spring Framework `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-webflux\7.0.7\spring-webflux-7.0.7.jar`，确认 `WebClientAdapter` 和 `WebClientHttpServiceGroupConfigurer`。
+- Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-restclient\4.0.6\spring-boot-restclient-4.0.6.jar`，确认 `RestClientCustomizerHttpServiceGroupConfigurer` 会处理 RestClient-backed HTTP Service group。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

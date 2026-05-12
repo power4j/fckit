@@ -16,7 +16,9 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.support.RestClientHttpServiceGroupConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.support.WebClientHttpServiceGroupConfigurer;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -56,14 +58,16 @@ class SdeClientAutoConfigurationTest {
 	void shouldRegisterRestClientAdapterOnClasspath() {
 		this.runner.withPropertyValues("fist.sde.enabled=true", "fist.sde.client.enabled=true")
 			.run((context) -> assertThat(context).hasSingleBean(SecureRestClientInterceptor.class)
-				.hasSingleBean(RestClientCustomizer.class));
+				.hasSingleBean(RestClientCustomizer.class)
+				.hasSingleBean(RestClientHttpServiceGroupConfigurer.class));
 	}
 
 	@Test
 	void shouldRegisterWebClientAdapterOnClasspath() {
 		this.runner.withPropertyValues("fist.sde.enabled=true", "fist.sde.client.enabled=true")
 			.run((context) -> assertThat(context).hasSingleBean(SecureWebClientExchangeFilterFunction.class)
-				.hasSingleBean(WebClient.Builder.class));
+				.hasSingleBean(WebClient.Builder.class)
+				.hasSingleBean(WebClientHttpServiceGroupConfigurer.class));
 	}
 
 	@Configuration(proxyBeanMethods = false)

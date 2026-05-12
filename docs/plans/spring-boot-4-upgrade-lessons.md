@@ -324,7 +324,44 @@ SDE boot starter 和 SDE 示例同时覆盖 Spring MVC、RestClient、WebClient 
 - 公开自动配置方法返回类型所在 artifact 不能随意标记 optional，否则下游在条件推断阶段仍可能因类缺失失败。
 - WebClient 相关迁移需要单独写明行为变化：Boot 4.0.6 没有 `WebClientCustomizer`，当前只在缺少 `WebClient.Builder` 时提供带 SDE filter 的 builder。
 
-## 经验 11：文档和提交需要与升级批次同步
+## 经验 11：HTTP Service Clients 不是 Feign 编解码器的直接替代
+
+问题：
+
+Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `HttpServiceProxyFactory` 生成代理，底层仍委托 `RestClient`、`WebClient` 或 `RestTemplate`。它不是 Feign `Encoder` / `Decoder` 的一对一替换点。
+
+错误尝试或风险：
+
+- 如果直接用 HTTP Service Clients 替换 Feign，会丢失 Feign `MethodMetadata`、`RequestTemplate` 和 `Response` 这些 SDE Feign 适配当前依赖的扩展点。
+- 第一次新增 HTTP Service Clients 适配代码后，编译先被 `spring-javaformat:validate` 阻断，说明新增 Java 文件需要先按项目格式化规则处理。
+- 为避免重复挂载拦截器补充列表去重逻辑后，`SdeRestClientAutoConfiguration` 与 `SdeWebClientAutoConfiguration` 再次触发格式校验失败，仍需先运行 `spring-javaformat:apply`。
+- Boot 4.0.6 已提供 `RestClientCustomizerHttpServiceGroupConfigurer`，会把普通 `RestClientCustomizer` 应用到 RestClient-backed HTTP Service group；如果 SDE 再在 group configurer 中无条件追加同一个拦截器，可能出现重复加密。
+
+有效方案：
+
+- 短期继续保留 Spring Cloud OpenFeign 5.x 路线，不把 HTTP Service Clients 作为强制替代。
+- 新增 `SecureHttpServiceClientContextProcessor`，通过 `HttpRequestValues.Processor` 读取 HTTP service 接口方法或接口类型上的 `@SecureExchange`，并写入请求属性。
+- `SecureRestClientInterceptor` 和 `SecureWebClientExchangeFilterFunction` 优先读取请求属性中的 `SecureExchangeClientContext`；没有请求级上下文时继续使用构造器传入的默认上下文。
+- SDE boot starter 通过 `RestClientHttpServiceGroupConfigurer` 和 `WebClientHttpServiceGroupConfigurer` 注册方法级上下文处理器；挂载拦截器/过滤器时使用列表去重，避免和 Boot 已应用的 builder customizer 重复。
+
+验证证据：
+
+- Context7 `/websites/spring_io_spring-framework_reference` 文档确认 HTTP Service Clients 使用 `HttpServiceProxyFactory`，并支持 `RestClientAdapter`、`WebClientAdapter` 和 `RestTemplateAdapter`。
+- Spring Boot Context7 `/spring-projects/spring-boot/v4.0.0` 文档确认 HTTP Service group 可通过 `RestClientHttpServiceGroupConfigurer` / `WebClientHttpServiceGroupConfigurer` 自定义。
+- 本地 `spring-web:7.0.7` JAR 确认 `HttpRequestValues.Processor` 可以接收 `Method` 并写入请求属性，`RestClientAdapter` 和 `WebClientAdapter` 均支持请求属性。
+- 本地 `spring-boot-restclient:4.0.6` JAR 确认存在 `RestClientCustomizerHttpServiceGroupConfigurer`。
+- `fist-sde-client -am test` 为 `BUILD SUCCESS`，新增 `SecureHttpServiceClientContextProcessorTest` 3 个用例，模块自身测试共 11 个用例，失败 0。
+- `fist-sde-boot-starter -am test` 为 `BUILD SUCCESS`，模块自身测试共 29 个用例，失败 0。
+- SDE RestClient / WebClient 示例测试为 `BUILD SUCCESS`，两个示例各 1 个用例，失败 0。
+- HTTP Service Clients 相关模块与示例的 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- HTTP Service Clients 适配优先复用 RestClient/WebClient 底层拦截能力，只补方法级上下文传递。
+- 对 Boot 自动配置扩展点要先查本地 JAR，确认是否已有全局 customizer 到 group configurer 的桥接，避免重复挂载同一拦截器。
+- 若后续需要完整替换 Feign，需要另起迁移方案，不能把当前 HTTP Service Clients 支持视为等价替换完成。
+
+## 经验 12：文档和提交需要与升级批次同步
 
 问题：
 
@@ -353,7 +390,7 @@ Spring Boot 4 升级周期长，单次批次容易只提交代码，遗漏调研
 - 新批次完成后，先补文档，再提交。
 - 错误命令、未覆盖测试和剩余风险必须写入文档。
 
-## 经验 12：MyBatis Plus Boot 4 starter 是公开依赖坐标变化
+## 经验 13：MyBatis Plus Boot 4 starter 是公开依赖坐标变化
 
 问题：
 
@@ -386,5 +423,5 @@ MyBatis CRUD 在 Spring Boot 4 下继续使用 `mybatis-plus-spring-boot3-starte
 
 ## 当前剩余高优先级事项
 
-1. Spring HTTP Service Clients 专项：在 Feign/SDE 延续方案已验证的基础上，评估是否需要新增等价适配层。
-2. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。
+1. OAuth2 LOB 数据库矩阵：补充 MySQL、PostgreSQL、达梦等驱动验证。
+2. Gateway / Spring Cloud Alibaba 组合：验证 Gateway、Sentinel、Nacos 和 LoadBalancer 在 Boot 4 组合下的编译与运行边界。

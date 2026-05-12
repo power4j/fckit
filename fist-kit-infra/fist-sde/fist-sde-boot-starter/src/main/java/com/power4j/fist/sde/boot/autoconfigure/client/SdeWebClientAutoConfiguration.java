@@ -1,12 +1,14 @@
 package com.power4j.fist.sde.boot.autoconfigure.client;
 
 import com.power4j.fist.sde.client.SecureExchangeOperations;
+import com.power4j.fist.sde.client.httpservice.SecureHttpServiceClientContextProcessor;
 import com.power4j.fist.sde.client.webclient.SecureWebClientExchangeFilterFunction;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.reactive.function.client.support.WebClientHttpServiceGroupConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
@@ -41,6 +43,27 @@ public class SdeWebClientAutoConfiguration {
 	@ConditionalOnMissingBean(WebClient.Builder.class)
 	public WebClient.Builder secureSdeWebClientBuilder(SecureWebClientExchangeFilterFunction filterFunction) {
 		return WebClient.builder().filter(filterFunction);
+	}
+
+	/**
+	 * 将 SDE 过滤器和方法级上下文处理器挂载到 WebClient-backed HTTP Service Clients。
+	 * @param filterFunction WebClient 过滤器
+	 * @return HTTP Service Clients 组定制器
+	 */
+	@Bean
+	@ConditionalOnClass(WebClientHttpServiceGroupConfigurer.class)
+	@ConditionalOnMissingBean(name = "secureSdeWebClientHttpServiceGroupConfigurer")
+	public WebClientHttpServiceGroupConfigurer secureSdeWebClientHttpServiceGroupConfigurer(
+			SecureWebClientExchangeFilterFunction filterFunction) {
+		SecureHttpServiceClientContextProcessor processor = new SecureHttpServiceClientContextProcessor();
+		return (groups) -> groups.forEachGroup((group, clientBuilder, proxyFactoryBuilder) -> {
+			clientBuilder.filters((filters) -> {
+				if (!filters.contains(filterFunction)) {
+					filters.add(filterFunction);
+				}
+			});
+			proxyFactoryBuilder.httpRequestValuesProcessor(processor);
+		});
 	}
 
 }

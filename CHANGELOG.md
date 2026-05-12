@@ -8,6 +8,7 @@
 
 ### Changed
 
+- Spring Boot 4 升级中为 SDE RestClient/WebClient 适配 Spring HTTP Service Clients，支持通过 HTTP service 接口方法上的 `@SecureExchange` 传递请求级策略上下文。
 - Spring Boot 4 升级中适配 SDE boot starter 的 RestClient、WebClient、MockMvc 测试和 SDE 示例工程，Feign 示例迁移到 Spring Cloud OpenFeign 5 的 `FeignHttpMessageConverters`。
 - Spring Boot 4 升级中将 `fist-boot-crud-mybatis` 的 MyBatis Plus starter 切换为 `mybatis-plus-spring-boot4-starter`，测试依赖切换为 `mybatis-plus-spring-boot4-starter-test`。
 - 将 5 个 Groovy/Spock 测试迁移到 Java/JUnit 5。

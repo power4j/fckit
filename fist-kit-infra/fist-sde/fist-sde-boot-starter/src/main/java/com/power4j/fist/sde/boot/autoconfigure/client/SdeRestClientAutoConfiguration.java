@@ -1,6 +1,7 @@
 package com.power4j.fist.sde.boot.autoconfigure.client;
 
 import com.power4j.fist.sde.client.SecureExchangeOperations;
+import com.power4j.fist.sde.client.httpservice.SecureHttpServiceClientContextProcessor;
 import com.power4j.fist.sde.client.restclient.SecureRestClientInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -8,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.support.RestClientHttpServiceGroupConfigurer;
 
 /**
  * SDE RestClient 自动配置。
@@ -39,6 +41,27 @@ public class SdeRestClientAutoConfiguration {
 	@ConditionalOnMissingBean(name = "secureSdeRestClientCustomizer")
 	public RestClientCustomizer secureSdeRestClientCustomizer(SecureRestClientInterceptor interceptor) {
 		return (builder) -> builder.requestInterceptor(interceptor);
+	}
+
+	/**
+	 * 将 SDE 拦截器和方法级上下文处理器挂载到 RestClient-backed HTTP Service Clients。
+	 * @param interceptor RestClient 请求拦截器
+	 * @return HTTP Service Clients 组定制器
+	 */
+	@Bean
+	@ConditionalOnClass(RestClientHttpServiceGroupConfigurer.class)
+	@ConditionalOnMissingBean(name = "secureSdeRestClientHttpServiceGroupConfigurer")
+	public RestClientHttpServiceGroupConfigurer secureSdeRestClientHttpServiceGroupConfigurer(
+			SecureRestClientInterceptor interceptor) {
+		SecureHttpServiceClientContextProcessor processor = new SecureHttpServiceClientContextProcessor();
+		return (groups) -> groups.forEachGroup((group, clientBuilder, proxyFactoryBuilder) -> {
+			clientBuilder.requestInterceptors((interceptors) -> {
+				if (!interceptors.contains(interceptor)) {
+					interceptors.add(interceptor);
+				}
+			});
+			proxyFactoryBuilder.httpRequestValuesProcessor(processor);
+		});
 	}
 
 }

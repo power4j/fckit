@@ -1401,8 +1401,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 ## 下一步
 
-1. 在 Feign/SDE 延续方案已验证的基础上，继续评估 Spring HTTP Service Clients 是否需要新增等价适配层。
-2. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+1. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+2. 继续验证 Gateway / Spring Cloud Alibaba 组合，明确 Sentinel、Nacos 和 LoadBalancer 的 Boot 4 兼容边界。
 
 ## 已验证：Feign/SDE 与 Boot 4 客户端模块化适配
 
@@ -1455,6 +1455,47 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - 将 `spring-boot-restclient` 作为 optional 依赖后，starter 自身测试通过，但下游 RestClient 示例运行期因 `RestClientCustomizer` 缺失失败；最终改为普通依赖。
 - `example-sde-feign` 进入自身编译后暴露 OpenFeign 5 的 `SpringEncoder` / `SpringDecoder` 构造参数变化。
 - RestClient/WebClient 示例进一步暴露 `WebServerApplicationContext` 包迁移。
+
+## 已验证：SDE 与 Spring HTTP Service Clients
+
+Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `HttpServiceProxyFactory` 创建代理，底层使用 `RestClientAdapter`、`WebClientAdapter` 或 `RestTemplateAdapter`。它不是 Feign `Encoder` / `Decoder` 的直接替换点。
+
+受影响模块：
+
+- `fist-kit-infra/fist-sde/fist-sde-client`
+- `fist-kit-infra/fist-sde/fist-sde-boot-starter`
+
+处理结果：
+
+- 新增 `SecureHttpServiceClientContextProcessor`，通过 `HttpRequestValues.Processor` 读取 HTTP service 接口方法或接口类型上的 `@SecureExchange`，并写入请求属性。
+- 新增 `SecureHttpServiceSupport`，统一请求属性 key，并解析请求级 `SecureExchangeClientContext`。
+- `SecureRestClientInterceptor` 与 `SecureWebClientExchangeFilterFunction` 优先读取请求属性中的 SDE 上下文，缺省时保持原有构造器上下文行为。
+- `SdeRestClientAutoConfiguration` 注册 `RestClientHttpServiceGroupConfigurer`，为 RestClient-backed HTTP Service group 添加方法级上下文处理器；拦截器挂载做列表去重，避免和 Boot 的 `RestClientCustomizerHttpServiceGroupConfigurer` 重复。
+- `SdeWebClientAutoConfiguration` 注册 `WebClientHttpServiceGroupConfigurer`，为 WebClient-backed HTTP Service group 添加方法级上下文处理器，并对 filter 挂载做列表去重。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-client -am test
+.\mvnw.cmd -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am test
+.\mvnw.cmd -Pexamples -pl examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am test
+.\mvnw.cmd -Pexamples -pl fist-kit-infra/fist-sde/fist-sde-client,fist-kit-infra/fist-sde/fist-sde-boot-starter,examples/fist-sde/example-restclient,examples/fist-sde/example-webclient -am spring-javaformat:validate
+```
+
+结果：
+
+- `fist-sde-client -am compile` 与 `fist-sde-boot-starter -am compile` 均为 `BUILD SUCCESS`。
+- `fist-sde-client -am test` 为 `BUILD SUCCESS`，新增 HTTP service 上下文处理器测试 3 个用例，模块自身测试共 11 个用例，失败 0。
+- `fist-sde-boot-starter -am test` 为 `BUILD SUCCESS`，模块自身测试共 29 个用例，失败 0。
+- SDE RestClient / WebClient 示例测试为 `BUILD SUCCESS`，两个示例各 1 个用例，失败 0。
+- HTTP Service Clients 相关模块与示例的 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+错误尝试记录：
+
+- 第一次新增 HTTP Service Clients 适配后直接编译，`spring-javaformat:validate` 报告新增 Java 文件格式不合规；运行 `spring-javaformat:apply` 后恢复。
+- 本地 JAR 复查发现 Boot 4.0.6 已有 `RestClientCustomizerHttpServiceGroupConfigurer`，因此 HTTP Service group 中挂载拦截器/过滤器时必须做去重。
 
 ## OAuth2 授权服务 LOB API
 

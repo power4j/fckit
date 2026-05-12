@@ -2,6 +2,7 @@ package com.power4j.fist.sde.client.webclient;
 
 import com.power4j.fist.sde.client.SecureExchangeClientContext;
 import com.power4j.fist.sde.client.SecureExchangeOperations;
+import com.power4j.fist.sde.client.httpservice.SecureHttpServiceSupport;
 import org.reactivestreams.Publisher;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -60,17 +61,19 @@ public class SecureWebClientExchangeFilterFunction implements ExchangeFilterFunc
 		if (isMultipart(request.headers())) {
 			return next.exchange(request);
 		}
+		SecureExchangeClientContext context = SecureHttpServiceSupport.getClientContext(request.attributes(),
+				this.context);
 		return captureBody(request).flatMap((body) -> {
 			if (body.length == 0) {
 				return next.exchange(request);
 			}
-			byte[] envelope = this.operations.encodeRequest(body, this.context);
+			byte[] envelope = this.operations.encodeRequest(body, context);
 			ClientRequest secureRequest = ClientRequest.from(request).headers((headers) -> {
 				headers.setContentType(MediaType.APPLICATION_JSON);
 				headers.setContentLength(envelope.length);
 			}).body(BodyInserters.fromDataBuffers(Flux.just(this.bufferFactory.wrap(envelope)))).build();
 			return next.exchange(secureRequest);
-		}).flatMap(this::decodeResponse);
+		}).flatMap((response) -> decodeResponse(response, context));
 	}
 
 	private Mono<byte[]> captureBody(ClientRequest request) {
@@ -79,12 +82,12 @@ public class SecureWebClientExchangeFilterFunction implements ExchangeFilterFunc
 		return request.writeTo(outputMessage, this.strategies).then(Mono.fromSupplier(outputMessage::toByteArray));
 	}
 
-	private Mono<ClientResponse> decodeResponse(ClientResponse response) {
+	private Mono<ClientResponse> decodeResponse(ClientResponse response, SecureExchangeClientContext context) {
 		return response.bodyToMono(byte[].class).defaultIfEmpty(new byte[0]).map((envelope) -> {
 			if (envelope.length == 0) {
 				return response.mutate().body(Flux.<DataBuffer>empty()).build();
 			}
-			byte[] plain = this.operations.decodeResponse(envelope, this.context);
+			byte[] plain = this.operations.decodeResponse(envelope, context);
 			return response.mutate().headers((headers) -> {
 				headers.setContentType(MediaType.APPLICATION_JSON);
 				headers.setContentLength(plain.length);

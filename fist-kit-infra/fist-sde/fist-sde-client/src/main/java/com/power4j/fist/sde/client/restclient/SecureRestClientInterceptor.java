@@ -2,6 +2,7 @@ package com.power4j.fist.sde.client.restclient;
 
 import com.power4j.fist.sde.client.SecureExchangeClientContext;
 import com.power4j.fist.sde.client.SecureExchangeOperations;
+import com.power4j.fist.sde.client.httpservice.SecureHttpServiceSupport;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
@@ -41,13 +42,15 @@ public class SecureRestClientInterceptor implements ClientHttpRequestInterceptor
 		if (isMultipart(request.getHeaders()) || body == null || body.length == 0) {
 			return execution.execute(request, body);
 		}
-		byte[] envelope = this.operations.encodeRequest(body, this.context);
+		SecureExchangeClientContext context = SecureHttpServiceSupport.getClientContext(request.getAttributes(),
+				this.context);
+		byte[] envelope = this.operations.encodeRequest(body, context);
 		ClientHttpResponse response = execution.execute(new SecureHttpRequest(request, envelope.length), envelope);
 		byte[] responseEnvelope = StreamUtils.copyToByteArray(response.getBody());
 		if (responseEnvelope.length == 0) {
 			return new SecureClientHttpResponse(response, responseEnvelope);
 		}
-		byte[] plain = this.operations.decodeResponse(responseEnvelope, this.context);
+		byte[] plain = this.operations.decodeResponse(responseEnvelope, context);
 		return new SecureClientHttpResponse(response, plain);
 	}
 
