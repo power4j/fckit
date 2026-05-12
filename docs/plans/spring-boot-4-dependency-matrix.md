@@ -10,8 +10,8 @@
 
 - Spring Boot 最新发布元数据为 `4.1.0-RC1`，但最新 GA 仍按 `4.0.6` 处理；本轮目标版本保持 `4.0.6`。
 - Spring Cloud 当前候选为 `2025.1.1`。
-- Spring Cloud Alibaba 当前候选为 `2025.1.0.0`，Maven Central 坐标存在，并管理 Nacos `3.1.1`、Sentinel `1.8.9`。
-- Spring Cloud Alibaba 不再阻塞进入试编译，但仍是阶段 2 的第一优先级风险。原因是 Sentinel POM 中仍出现 `sentinel-spring-cloud-gateway-v6x-adapter`、`sentinel-spring-webmvc-v6x-adapter` 等 Spring 6.x 命名适配器，需验证其在 Spring Boot 4 / Spring Framework 7 / Spring Cloud Gateway 5 下的真实编译结果。
+- Spring Cloud Alibaba `2025.1.0.0` 坐标存在，但当前仓库未发现 Nacos / Sentinel 源码、配置或注解使用点。
+- 已按未使用依赖处理：移除根版本属性、`fist-kit-build` 中的 Spring Cloud Alibaba BOM，以及 `fist-cloud-rpc-feign` 的 `spring-cloud-starter-alibaba-sentinel`。
 - `spring-security-jwt` 仅应保留为待删除项，不应作为 Boot 4 目标依赖进入试编译。
 - Groovy/Spock 相关依赖已删除，测试改为 Java/JUnit 5。
 
@@ -32,7 +32,7 @@
 | 项目根版本 | `4.0.0-SNAPSHOT` | `4.0.0-SNAPSHOT` | 已调整 | 确认 flatten 后发布版本正确 |
 | Spring Boot | `3.5.14` | `4.0.6` | 坐标存在 | starter 拆分、Jackson 3、测试依赖、配置属性 |
 | Spring Cloud | `2025.0.2` | `2025.1.1` | 坐标存在 | Gateway、OpenFeign、LoadBalancer API |
-| Spring Cloud Alibaba | `2023.0.3.4` | `2025.1.0.0` | 坐标存在，功能兼容待验证 | Nacos、Sentinel、Gateway、LoadBalancer、OpenFeign 组合 |
+| Spring Cloud Alibaba | `2023.0.3.4` | 移除 | 未发现实际使用点 | 不进入 Boot 4 目标依赖；下游如仍使用 Nacos / Sentinel，需在应用侧单独验证 |
 | MyBatis Plus BOM | `3.5.16` | `3.5.16` | 坐标存在，已切换 Boot 4 starter | 下游需使用 `mybatis-plus-spring-boot4-starter` |
 | SpringDoc OpenAPI BOM | `2.8.17` | `3.0.3` | 坐标存在 | `springdoc-openapi-starter-common`、WebFlux API 适配 |
 | Spring Boot Admin BOM | `3.5.8` | `4.0.4` | 坐标存在 | Admin starter 与 Actuator 端点兼容 |
@@ -45,13 +45,13 @@
 
 | 能力 | 当前使用点 | 候选版本事实 | 阶段 1 结论 | 阶段 2 动作 |
 | --- | --- | --- | --- | --- |
-| Sentinel | `fist-cloud-rpc-feign` 使用 `spring-cloud-starter-alibaba-sentinel` | BOM 管理 Sentinel `1.8.9` | 坐标存在，兼容性未确认 | 先编译 `fist-kit-cloud/fist-cloud-rpc-feign` |
-| Nacos | 当前仓库主要通过 BOM 暴露能力，真实内部项目样本可能使用 | BOM 管理 Nacos client `3.1.1` | 坐标存在，库侧直接命中较少 | 后续用户侧手册记录通用检查项 |
-| Gateway | `fist-cloud-gateway-*` 使用 Spring Cloud Gateway | Alibaba BOM 管理 `sentinel-spring-cloud-gateway-v6x-adapter` | Gateway 5 WebFlux starter 与 ACL 最小上下文已通过；Sentinel Gateway adapter 未验证 | 如下游使用 Sentinel Gateway，单独引入并验证 `spring-cloud-alibaba-sentinel-gateway` |
+| Sentinel | 原 `fist-cloud-rpc-feign` 只声明 starter，未发现实际 API / 注解 / 配置使用 | 不进入目标依赖 | 已移除 `spring-cloud-starter-alibaba-sentinel` | 由下游应用按需显式引入并验证 |
+| Nacos | 当前仓库未发现 starter、配置或 API 使用点 | 不进入目标依赖 | 已随 Spring Cloud Alibaba BOM 移除 | 由下游应用按需显式引入并验证 |
+| Gateway | `fist-cloud-gateway-*` 使用 Spring Cloud Gateway | 跟随 Spring Cloud Gateway 5 | Gateway 5 WebFlux starter 与 ACL 最小上下文已通过 | 继续验证 Gateway 自身能力，不再绑定 Sentinel Gateway adapter |
 | LoadBalancer | `fist-cloud-rpc-feign`、Gateway 测试使用 LoadBalancer | Spring Cloud 候选为 `2025.1.1` | 坐标存在 | 编译 LoadBalancer 自动配置与 Gateway 测试夹具 |
 | OpenFeign | `fist-cloud-rpc-feign`、SDE Feign 示例使用 | Spring Cloud 候选为 `2025.1.1` | 已验证延续方案，SDE 适配通过端到端测试 | 后续仅评估 Spring HTTP Service Clients 替代路线 |
 
-准入判断：Spring Cloud Alibaba 通过「坐标存在」准入，不再阻塞阶段 2；但没有通过「功能兼容」验收。若阶段 2 在 Alibaba / Sentinel / Nacos / Gateway 组合上出现基础解析或编译失败，需要立即暂停源码迁移，优先给出移除或替换相关集成的方案。
+准入判断：Spring Cloud Alibaba 不再作为本仓库 Boot 4 升级目标依赖。此前已确认候选坐标存在，但实际使用点复查后未发现 Nacos / Sentinel 业务或框架集成代码，因此采用移除策略，而不是继续投入 Sentinel Gateway / Nacos 运行级验证。
 
 ## 项目显式依赖矩阵
 
@@ -95,7 +95,6 @@
 ```xml
 <spring-boot.version>4.0.6</spring-boot.version>
 <spring-cloud.version>2025.1.1</spring-cloud.version>
-<spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
 <springdoc-openapi.version>3.0.3</springdoc-openapi.version>
 <spring-boot-admin.version>4.0.4</spring-boot-admin.version>
 <spring.oauth2-authorization-server.version>7.0.5</spring.oauth2-authorization-server.version>
@@ -111,8 +110,8 @@
 
 ## 阶段 2 优先级
 
-1. 先改 Boot / Cloud / Alibaba / SpringDoc / Boot Admin / Authorization Server / Redisson 候选版本。
-2. 先编译 `fist-kit-cloud/fist-cloud-rpc-feign`，验证 Sentinel、OpenFeign、LoadBalancer。
+1. 先改 Boot / Cloud / SpringDoc / Boot Admin / Authorization Server / Redisson 候选版本。
+2. 先编译 `fist-kit-cloud/fist-cloud-rpc-feign`，验证 OpenFeign、LoadBalancer。
 3. 再编译 `fist-kit-cloud/fist-cloud-gateway`，验证 Gateway、Reactive Security、SpringDoc WebFlux。
 4. 再编译 `fist-kit-infra/fist-jackson` 和 `fist-kit-infra/fist-sde`，验证 Jackson 3 与 SDE 编解码。
 5. 再编译 `fist-kit-app/fist-security`、`fist-kit-app/fist-data`，验证 Security 7、Authorization Server 7、MyBatis Plus。

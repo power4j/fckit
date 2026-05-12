@@ -85,13 +85,6 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>com.alibaba.cloud</groupId>
-        <artifactId>spring-cloud-alibaba-dependencies</artifactId>
-        <version>${spring-cloud-alibaba.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
         <groupId>com.baomidou</groupId>
         <artifactId>mybatis-plus-bom</artifactId>
         <version>${mybatis-plus.version}</version>

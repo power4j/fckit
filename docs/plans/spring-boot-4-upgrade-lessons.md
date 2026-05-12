@@ -522,8 +522,41 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 对自动配置或手工 `@Import` 配置，启动测试要保留真实应用侧契约，只补最小必要 bean，不通过关闭关键配置换取启动成功。
 - Gateway 启动通过不等于 Sentinel Gateway adapter 或 Nacos Discovery 通过；这些仍需要单独测试对象。
 
+## 经验 17：未实际使用的生态集成应移除，而不是继续验证兼容性
+
+问题：
+
+此前因为 `fist-cloud-rpc-feign` 声明了 Sentinel starter，调研将 Spring Cloud Alibaba、Sentinel Gateway adapter 和 Nacos Discovery 视为待验证对象。用户补充 Sentinel 应该没有实际使用后，复查发现当前仓库没有 Sentinel / Nacos 源码、注解、配置或 API 使用点。
+
+错误尝试或风险：
+
+- 只看 BOM 和 starter 声明会把「未使用的传递依赖」误判为「必须升级验证的功能」。
+- 如果继续为 Sentinel Gateway adapter 和 Nacos Discovery 建运行级验证，会扩大升级范围，并为未使用能力引入维护成本。
+- 未跟踪的 `.flattened-pom.xml` 可能保留旧依赖内容，不能作为实际源码使用点依据；应以 Git 跟踪的 POM 和源码为准。
+
+有效方案：
+
+- 使用 `rg` 复扫 Sentinel / Nacos / Spring Cloud Alibaba 的 Java、XML、YAML、properties 和 Markdown 使用点。
+- 移除 `fist-cloud-rpc-feign` 的 `spring-cloud-starter-alibaba-sentinel`。
+- 移除根 `spring-cloud-alibaba.version` 属性和 `fist-kit-build` 中的 Spring Cloud Alibaba BOM。
+- 将 Sentinel Gateway / Nacos Discovery 从本仓库 Boot 4 高优先级验证项中移除；下游如果实际使用，再由下游应用显式引入并验证。
+
+验证证据：
+
+- Sentinel / Nacos 复扫未发现 Git 跟踪源码、配置或主 POM 使用点。
+- 移除 Sentinel starter 后，Feign 模块依赖树未解析到 Sentinel 相关依赖。
+- 移除 Spring Cloud Alibaba BOM 后，Cloud 组合依赖树未解析到 Alibaba / Sentinel / Nacos 相关依赖，命令为 `BUILD SUCCESS`。
+- `fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`，目标模块自身 7 个用例，失败 0。
+- `fist-cloud-rpc-feign` + `fist-cloud-gateway-acl` 组合测试为 `BUILD SUCCESS`：Gateway Auth Core 14 个用例、Gateway ACL 7 个用例、Feign 7 个用例失败 0。
+- 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 对大版本升级中的生态依赖，先确认实际使用点，再决定是升级验证还是删除。
+- 删除未使用 starter 后，必须用依赖树证明传递依赖已消失，并用相关模块测试证明行为不依赖该 starter。
+- `.flattened-pom.xml` 如未被 Git 跟踪，只作为本地生成物观察，不作为提交对象。
+
 ## 当前剩余高优先级事项
 
-1. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
-2. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。
-3. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
+1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。
+2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。

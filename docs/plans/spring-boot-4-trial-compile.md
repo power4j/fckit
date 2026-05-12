@@ -30,7 +30,7 @@
 | --- | --- | --- |
 | `spring-boot.version` | `3.5.14` | `4.0.6` |
 | `spring-cloud.version` | `2025.0.2` | `2025.1.1` |
-| `spring-cloud-alibaba.version` | `2023.0.3.4` | `2025.1.0.0` |
+| `spring-cloud-alibaba.version` | `2023.0.3.4` | `2025.1.0.0`，后续复查为未使用并移除 |
 | `redisson.version` | `3.52.0` | `4.3.1` |
 | `springdoc-openapi.version` | `2.8.17` | `3.0.3` |
 | `spring-boot-admin.version` | `3.5.8` | `4.0.4` |
@@ -137,7 +137,7 @@ org/springframework/boot/webflux/error/ErrorAttributes.class
 Gateway 坐标已完成最小修正，后续仍需验证：
 
 - Gateway WebFlux starter 是否能满足当前 Gateway 自动配置和测试夹具。
-- Sentinel Gateway adapter 是否能与 Gateway 5.0.x 组合编译。
+- Sentinel Gateway adapter 曾列为待验证项；后续复查确认本仓库未实际使用 Sentinel，已改为移除 Spring Cloud Alibaba / Sentinel 依赖。
 - Gateway ACL、Reactive Security 与 LoadBalancer 是否存在 API 变化。
 
 ### P1：API Doc 与 Springfox
@@ -1017,13 +1017,13 @@ npx ctx7@latest docs /alibaba/spring-cloud-alibaba "Spring Cloud Alibaba 2025.1.
 边界：
 
 - 本轮验证确认当前仓库已有 Gateway / LoadBalancer / Feign / Sentinel WebMVC adapter 组合可编译、可测试。
-- 本轮没有验证 Sentinel Gateway adapter。若下游需要 Gateway 限流集成，应单独引入并验证 `spring-cloud-alibaba-sentinel-gateway`。
+- 后续复查确认 Sentinel 未实际使用，已移除 Sentinel starter 和 Spring Cloud Alibaba BOM；该结论取代本节中的 Sentinel 待验证项。
 - 当前仓库未显式使用 Nacos starter，Nacos 只停留在 Spring Cloud Alibaba BOM 准入层，未形成运行级验证。
 
 ## 后续事项
 
 1. 评估是否需要补一个最小 Gateway 启动类或示例，验证完整 Boot 4 Gateway 应用上下文。
-2. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+2. 复查 Sentinel / Nacos 是否有实际使用点；如无实际使用，改为移除未使用依赖。
 3. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
 
 ## Gateway ACL 最小 Boot 4 上下文启动验证
@@ -1063,9 +1063,50 @@ npx ctx7@latest docs /spring-projects/spring-boot/v4.0.3 "Spring Boot 4 WebFlux 
 
 ## 后续事项
 
-1. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+1. 复查 Sentinel / Nacos 是否有实际使用点；如无实际使用，改为移除未使用依赖。
 2. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
 3. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
+
+## Sentinel / Spring Cloud Alibaba 未使用依赖清理
+
+根据用户补充信息，复查仓库中 Sentinel、Nacos 和 Spring Cloud Alibaba 的实际使用点。除正式调研文档、`fist-cloud-rpc-feign/pom.xml` 中的 Sentinel starter 声明，以及未跟踪的 `.flattened-pom.xml` 外，未发现 Sentinel / Nacos 源码、注解、配置或 API 使用点。
+
+处理结果：
+
+- 移除 `fist-cloud-rpc-feign` 的 `com.alibaba.cloud:spring-cloud-starter-alibaba-sentinel`。
+- 移除根 `spring-cloud-alibaba.version` 属性。
+- 移除 `fist-kit-build` 中的 `com.alibaba.cloud:spring-cloud-alibaba-dependencies` BOM。
+- 将 Sentinel Gateway / Nacos Discovery 从后续高优先级运行级验证项中移除；如内部应用仍使用，应在应用侧单独引入并验证。
+
+验证命令：
+
+```powershell
+rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alibaba-sentinel-gateway|nacos|Nacos" -g "*.java" -g "*.xml" -g "*.yml" -g "*.yaml" -g "*.properties" -g "*.md"
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am dependency:tree "-Dincludes=com.alibaba.cloud:spring-cloud-starter-alibaba-sentinel,com.alibaba.csp:sentinel-spring-webmvc-v6x-adapter,com.alibaba.csp:sentinel-spring-cloud-gateway-v6x-adapter"
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am dependency:tree "-Dincludes=com.alibaba.cloud:spring-cloud-alibaba-dependencies,com.alibaba.cloud:spring-cloud-starter-alibaba-sentinel,com.alibaba.csp:sentinel-spring-webmvc-v6x-adapter,com.alibaba.csp:sentinel-spring-cloud-gateway-v6x-adapter,com.alibaba.nacos:nacos-client"
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am spring-javaformat:validate
+```
+
+结果：
+
+- Sentinel / Nacos 复扫未发现 Git 跟踪源码、配置或主 POM 使用点。
+- 移除 Sentinel starter 后，Feign 模块依赖树未解析到 Sentinel 相关依赖。
+- 移除 Spring Cloud Alibaba BOM 后，Cloud 组合依赖树未解析到 Alibaba / Sentinel / Nacos 相关依赖，命令为 `BUILD SUCCESS`。
+- `fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`，目标模块自身 7 个用例，失败 0。
+- `fist-cloud-rpc-feign` + `fist-cloud-gateway-acl` 组合测试为 `BUILD SUCCESS`：Gateway Auth Core 14 个用例、Gateway ACL 7 个用例、Feign 7 个用例失败 0。
+- 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+边界：
+
+- 未跟踪的 `fist-cloud-rpc-feign/.flattened-pom.xml` 仍保留旧 Sentinel 内容，本轮不提交该文件；发布时由 flatten 插件重新生成。
+- 如果下游应用实际使用 Sentinel 或 Nacos，需要由下游显式引入 Spring Cloud Alibaba 相关依赖，并在应用侧完成 Boot 4 运行级验证。
+
+## 后续事项
+
+1. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
+2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
 
 ## 本地日志
 
@@ -1128,6 +1169,11 @@ npx ctx7@latest docs /spring-projects/spring-boot/v4.0.3 "Spring Boot 4 WebFlux 
 - `.codex/gateway-context-startup-green.log`
 - `.codex/gateway-context-startup-module-test.log`
 - `.codex/gateway-context-startup-format-validate.log`
+- `.codex/sentinel-removal-dependency-tree.log`
+- `.codex/sentinel-removal-feign-test.log`
+- `.codex/sentinel-removal-cloud-dependency-tree.log`
+- `.codex/sentinel-removal-cloud-test.log`
+- `.codex/sentinel-removal-format-validate.log`
 
 ## 资料来源
 

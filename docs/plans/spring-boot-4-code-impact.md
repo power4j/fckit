@@ -1440,12 +1440,12 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 - 当前仓库已有 Gateway / LoadBalancer / Feign / Sentinel WebMVC adapter 组合可编译、可测试。
 - Nacos 当前未被仓库显式引入，只能保持 BOM 准入结论，不能声明运行级验证通过。
-- Sentinel Gateway adapter 需要后续单独引入 `spring-cloud-alibaba-sentinel-gateway` 后验证。
+- 后续复查确认 Sentinel / Nacos 未实际使用，已移除 Sentinel starter 与 Spring Cloud Alibaba BOM；该结论取代本节中的 Sentinel Gateway adapter 待验证项。
 
 ## 下一步
 
 1. 评估是否需要补一个最小 Gateway 启动类或示例，验证完整 Boot 4 Gateway 应用上下文。
-2. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+2. 复查 Sentinel / Nacos 是否有实际使用点；如无实际使用，改为移除未使用依赖。
 3. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
 
 ## 已验证：Feign/SDE 与 Boot 4 客户端模块化适配
@@ -1572,6 +1572,37 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 
 - 第一次测试使用 `assertThat(applicationContext).hasSingleBean(...)`，当前 AssertJ 断言类型不支持该方法，编译失败；改为 `applicationContext.getBeansOfType(...).hasSize(1)`。
 - 第二次测试失败于 `ReactivePermissionDefinitionService` 缺失，确认 ACL 自动配置需要应用侧权限定义服务；在测试应用中提供空权限服务后通过。
+
+## 已清理：未实际使用的 Sentinel / Spring Cloud Alibaba 依赖
+
+根据用户补充信息复查后，当前仓库未发现 Sentinel / Nacos 源码、注解、配置或 API 使用点。此前 `fist-cloud-rpc-feign` 仅声明 `spring-cloud-starter-alibaba-sentinel`，但 Feign/SDE 行为测试不依赖该 starter。
+
+受影响文件：
+
+- 根 `pom.xml`
+- `fist-kit-build/pom.xml`
+- `fist-kit-cloud/fist-cloud-rpc-feign/pom.xml`
+
+处理结果：
+
+- 移除根 `spring-cloud-alibaba.version` 属性。
+- 移除 `fist-kit-build` 中的 `spring-cloud-alibaba-dependencies` BOM。
+- 移除 `fist-cloud-rpc-feign` 的 `spring-cloud-starter-alibaba-sentinel` 依赖。
+
+影响判断：
+
+- FIST Kit v4 当前不再向下游传递 Spring Cloud Alibaba、Sentinel 或 Nacos 依赖。
+- Gateway / Feign / LoadBalancer 当前仍由 Spring Cloud `2025.1.1` 管理。
+- 下游如果仍使用 Sentinel 或 Nacos，需要在应用侧显式引入并独立验证 Boot 4 兼容性。
+
+验证结果：
+
+- Sentinel / Nacos 复扫未发现 Git 跟踪源码、配置或主 POM 使用点。
+- 移除 Sentinel starter 后，Feign 模块依赖树未解析到 Sentinel 相关依赖。
+- 移除 Spring Cloud Alibaba BOM 后，Cloud 组合依赖树未解析到 Alibaba / Sentinel / Nacos 相关依赖，命令为 `BUILD SUCCESS`。
+- `fist-cloud-rpc-feign -am test` 为 `BUILD SUCCESS`，目标模块自身 7 个用例，失败 0。
+- `fist-cloud-rpc-feign` + `fist-cloud-gateway-acl` 组合测试为 `BUILD SUCCESS`：Gateway Auth Core 14 个用例、Gateway ACL 7 个用例、Feign 7 个用例失败 0。
+- 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
 ## OAuth2 授权服务 LOB API
 
