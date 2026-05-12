@@ -6,6 +6,7 @@ import com.power4j.fist.sde.core.SecureEnvelope;
 import com.power4j.fist.sde.core.SecureScope;
 import com.power4j.fist.sde.core.codec.JacksonSecureEnvelopeCodec;
 import com.power4j.fist.sde.core.codec.SecureEnvelopeContext;
+import feign.Request;
 import feign.RequestTemplate;
 import feign.codec.Encoder;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ class SecureFeignEncoderPrototypeTest {
 	void shouldWriteSecureEnvelopeWithoutChangingQueryOrHeaders() throws Exception {
 		PrototypeSecureFeignSupport support = PrototypeSecureFeignSupport.defaults();
 		Encoder encoder = new PrototypeSecureFeignEncoder(new JsonBodyEncoder(), support);
-		RequestTemplate template = new RequestTemplate().method("POST")
+		RequestTemplate template = new RequestTemplate().method(Request.HttpMethod.POST)
 			.uri("/orders?keyword=plain")
 			.header("X-Request-Id", "rid-1");
 

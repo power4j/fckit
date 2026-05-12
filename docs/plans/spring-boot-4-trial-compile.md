@@ -972,8 +972,59 @@ npx ctx7@latest docs /websites/spring_io_spring-framework_current_javadoc-api "S
 
 ## 后续事项
 
-1. 继续验证 Gateway / Spring Cloud Alibaba 组合，明确 Sentinel、Nacos 和 LoadBalancer 的 Boot 4 兼容边界。
+1. 进入 Gateway / Spring Cloud Alibaba 组合验证。
 2. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
+
+## Gateway / Spring Cloud Alibaba 组合验证
+
+继续验证 Gateway、Sentinel、Nacos 和 LoadBalancer 在 Boot 4 组合下的编译与运行边界。当前仓库中，Gateway 能力位于 `fist-cloud-gateway` 三个子模块；Spring Cloud Alibaba Sentinel 通过 `fist-cloud-rpc-feign` 引入。
+
+主要处理：
+
+- 使用 Context7 核对 Spring Cloud Gateway 5 WebFlux starter 坐标，确认 Boot 4 下使用 `spring-cloud-starter-gateway-server-webflux`。
+- 使用 Context7 核对 Spring Cloud Alibaba `2025.1.x` 示例，确认 Gateway 示例同样使用 `spring-cloud-starter-gateway-server-webflux`。
+- 解析 Gateway、LoadBalancer、Sentinel 和 Nacos 相关依赖树。
+- 将 Feign 测试中的 `RequestTemplate.method("POST")` 迁移到 OpenFeign 13.6 推荐的 `RequestTemplate.method(Request.HttpMethod.POST)`。
+
+验证命令：
+
+```powershell
+npx ctx7@latest library "Spring Cloud Gateway" "Spring Cloud Gateway 5 Spring Boot 4 webflux starter artifact spring-cloud-starter-gateway-server-webflux filter RouteLocator"
+npx ctx7@latest docs /spring-cloud/spring-cloud-gateway/v5.0.0 "Spring Cloud Gateway 5 Spring Boot 4 webflux starter artifact spring-cloud-starter-gateway-server-webflux GlobalFilter GatewayFilter RouteLocator"
+npx ctx7@latest library "Spring Cloud Alibaba" "Spring Cloud Alibaba 2025.1.0.0 Sentinel Nacos Spring Boot 4 Spring Cloud 2025 compatibility"
+npx ctx7@latest docs /alibaba/spring-cloud-alibaba "Spring Cloud Alibaba 2025.1.0.0 Sentinel Nacos Spring Boot 4 Spring Cloud 2025 compatibility starter sentinel gateway adapter"
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am dependency:tree "-Dincludes=org.springframework.cloud:spring-cloud-gateway-server-webflux,org.springframework.cloud:spring-cloud-starter-gateway-server-webflux,org.springframework.cloud:spring-cloud-gateway-server,org.springframework.cloud:spring-cloud-starter-gateway,org.springframework.cloud:spring-cloud-loadbalancer,org.springframework.cloud:spring-cloud-starter-loadbalancer,com.alibaba.cloud:spring-cloud-starter-alibaba-sentinel,com.alibaba.cloud:spring-cloud-alibaba-sentinel-gateway,com.alibaba.csp:sentinel-spring-cloud-gateway-v6x-adapter,com.alibaba.csp:sentinel-spring-webmvc-v6x-adapter,com.alibaba.nacos:nacos-client"
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign spring-javaformat:apply
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am "-Dtest=SecureFeignEncoderPrototypeTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am spring-javaformat:validate
+```
+
+结果：
+
+- Gateway 依赖树解析到 `spring-cloud-gateway-server-webflux:5.0.1` 和 `spring-cloud-starter-gateway-server-webflux:5.0.1`，未解析到旧 `spring-cloud-gateway-server` 或 `spring-cloud-starter-gateway`。
+- LoadBalancer 解析到 `spring-cloud-loadbalancer:5.0.1` 和 `spring-cloud-starter-loadbalancer:5.0.1`。
+- `fist-cloud-rpc-feign` 解析到 `spring-cloud-starter-alibaba-sentinel:2025.1.0.0`，传递 `sentinel-spring-webmvc-v6x-adapter:1.8.9`；当前仓库没有引入 `spring-cloud-alibaba-sentinel-gateway`，也没有解析到 `sentinel-spring-cloud-gateway-v6x-adapter`。
+- 组合 clean compile 为 `BUILD SUCCESS`。
+- 初次组合 test 为 `BUILD SUCCESS`，但 Feign 测试编译提示 `RequestTemplate.method(String)` 过时；解包 `feign-core-13.6-sources.jar` 后确认替代项为 `RequestTemplate.method(Request.HttpMethod)`。
+- 第一次复扫 `RequestTemplate.method("...")` 时使用双引号正则，PowerShell 将 `|` 当作管道解析导致命令失败；改用单引号后复扫成功。
+- 替换 Feign 测试调用后，首次定向测试被 `spring-javaformat:validate` 拦截；执行 `spring-javaformat:apply` 后恢复。
+- 修正后 Feign encoder 定向测试为 `BUILD SUCCESS`，1 个用例失败 0。
+- 最终组合 test 为 `BUILD SUCCESS`：`fist-gateway-auth-core` 14 个用例、`fist-cloud-gateway-acl` 6 个用例、`fist-cloud-rpc-feign` 7 个用例失败 0；`fist-cloud-gateway-security-reactive` 当前无自身测试源码。
+- 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+边界：
+
+- 本轮验证确认当前仓库已有 Gateway / LoadBalancer / Feign / Sentinel WebMVC adapter 组合可编译、可测试。
+- 本轮没有验证 Sentinel Gateway adapter。若下游需要 Gateway 限流集成，应单独引入并验证 `spring-cloud-alibaba-sentinel-gateway`。
+- 当前仓库未显式使用 Nacos starter，Nacos 只停留在 Spring Cloud Alibaba BOM 准入层，未形成运行级验证。
+
+## 后续事项
+
+1. 评估是否需要补一个最小 Gateway 启动类或示例，验证完整 Boot 4 Gateway 应用上下文。
+2. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+3. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
 
 ## 本地日志
 
@@ -1024,6 +1075,13 @@ npx ctx7@latest docs /websites/spring_io_spring-framework_current_javadoc-api "S
 - `.codex/http-service-processor-test.log`
 - `.codex/http-service-sde-examples-rest-webclient-test.log`
 - `.codex/http-service-format-validate.log`
+- `.codex/gateway-alibaba-dependency-tree.log`
+- `.codex/gateway-alibaba-compile.log`
+- `.codex/gateway-alibaba-test.log`
+- `.codex/gateway-alibaba-feign-format-apply.log`
+- `.codex/gateway-alibaba-feign-encoder-test.log`
+- `.codex/gateway-alibaba-test-after-feign-fix.log`
+- `.codex/gateway-alibaba-format-validate.log`
 
 ## 资料来源
 
@@ -1048,4 +1106,7 @@ npx ctx7@latest docs /websites/spring_io_spring-framework_current_javadoc-api "S
 - Spring Framework `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-web\7.0.7\spring-web-7.0.7.jar`，确认 `HttpRequestValues.Processor`、`RestClientAdapter` 和 HTTP service registry 类型。
 - Spring Framework `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-webflux\7.0.7\spring-webflux-7.0.7.jar`，确认 `WebClientAdapter` 和 `WebClientHttpServiceGroupConfigurer`。
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-restclient\4.0.6\spring-boot-restclient-4.0.6.jar`，确认 `RestClientCustomizerHttpServiceGroupConfigurer` 会处理 RestClient-backed HTTP Service group。
+- Spring Cloud Gateway Context7 文档：`/spring-cloud/spring-cloud-gateway/v5.0.0`，确认 Gateway Server WebFlux starter 坐标为 `spring-cloud-starter-gateway-server-webflux`。
+- Spring Cloud Alibaba Context7 文档：`/alibaba/spring-cloud-alibaba`，确认 `2025.1.x` 示例使用 `spring-cloud-starter-gateway-server-webflux`，Sentinel Gateway 需引入 `spring-cloud-alibaba-sentinel-gateway`。
+- OpenFeign `13.6` 本地源码 JAR：`F:\pkg-maven\repository\io\github\openfeign\feign-core\13.6\feign-core-13.6-sources.jar`，确认 `RequestTemplate.method(String)` 弃用并推荐 `RequestTemplate.method(Request.HttpMethod)`。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

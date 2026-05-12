@@ -454,7 +454,43 @@ OAuth2 LOB 迁移需要验证数据库行为，但当前仓库没有 MySQL、Pos
 - Maven reactor 定向测试使用 `-am` 时，若指定 `-Dtest`，同时传 `-Dsurefire.failIfNoSpecifiedTests=false`。
 - 数据库 schema 迁移结论必须引用官方 schema、驱动文档或实际测试日志，不能只凭 SQL 类型名称推断。
 
+## 经验 15：Gateway / Alibaba 验证要区分 starter 坐标、adapter 类型和实际使用点
+
+问题：
+
+Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标。Spring Cloud Alibaba `2025.1.0.0` 虽然可解析，但当前仓库只通过 Feign 模块引入 Sentinel starter，并没有引入 Sentinel Gateway adapter 或 Nacos starter。
+
+错误尝试或风险：
+
+- 只看到 Spring Cloud Alibaba BOM 管理 Sentinel / Nacos 版本，容易误判为 Gateway、Sentinel Gateway 和 Nacos 都已通过运行级验证。
+- 依赖树显示 `sentinel-spring-webmvc-v6x-adapter:1.8.9`，这只能说明 Feign / WebMVC 侧 Sentinel starter 可解析，不能代表 Gateway adapter 通过。
+- 第一次复扫 `RequestTemplate.method("...")` 时，PowerShell 将双引号正则中的 `|` 当作管道解析。包含管道符的 `rg` 正则在 PowerShell 中应使用单引号。
+- OpenFeign 测试迁移 `RequestTemplate.method(String)` 后，首次定向测试被 `spring-javaformat:validate` 拦截；新增 import 后仍需先执行格式化。
+
+有效方案：
+
+- 用依赖树同时包含新旧 Gateway starter、LoadBalancer、Sentinel starter、Sentinel Gateway adapter、Nacos client，明确实际解析结果。
+- Gateway 5 WebFlux 坐标以 Context7 `/spring-cloud/spring-cloud-gateway/v5.0.0` 和 Maven 依赖树共同确认。
+- Spring Cloud Alibaba 只声明当前已验证范围：`spring-cloud-starter-alibaba-sentinel:2025.1.0.0` + `sentinel-spring-webmvc-v6x-adapter:1.8.9` 可解析，Feign 模块测试通过。
+- OpenFeign 13.6 中 `RequestTemplate.method(String)` 迁移到 `RequestTemplate.method(Request.HttpMethod)`。
+
+验证证据：
+
+- Gateway 模块解析到 `spring-cloud-gateway-server-webflux:5.0.1` 和 `spring-cloud-starter-gateway-server-webflux:5.0.1`，未解析到旧 `spring-cloud-gateway-server` / `spring-cloud-starter-gateway`。
+- LoadBalancer 解析到 `spring-cloud-loadbalancer:5.0.1` 和 `spring-cloud-starter-loadbalancer:5.0.1`。
+- Feign 模块解析到 `spring-cloud-starter-alibaba-sentinel:2025.1.0.0` 和 `sentinel-spring-webmvc-v6x-adapter:1.8.9`，未解析到 `spring-cloud-alibaba-sentinel-gateway`。
+- 组合 clean compile 为 `BUILD SUCCESS`。
+- 最终组合 test 为 `BUILD SUCCESS`：`fist-gateway-auth-core` 14 个用例、`fist-cloud-gateway-acl` 6 个用例、`fist-cloud-rpc-feign` 7 个用例失败 0。
+- 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- Cloud 生态依赖验证需要把「BOM 准入」「依赖树解析」「模块测试」「示例或应用上下文启动」分开记录。
+- Sentinel WebMVC adapter、Sentinel Gateway adapter、Nacos Discovery 是不同验证对象，不能互相替代。
+- 对 OpenFeign 过时 API，优先解包本地 sources JAR 或查看 Javadoc，按明确替代项迁移。
+
 ## 当前剩余高优先级事项
 
-1. Gateway / Spring Cloud Alibaba 组合：验证 Gateway、Sentinel、Nacos 和 LoadBalancer 在 Boot 4 组合下的编译与运行边界。
-2. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。
+1. 评估是否需要补一个最小 Gateway 启动类或示例，验证完整 Boot 4 Gateway 应用上下文。
+2. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+3. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

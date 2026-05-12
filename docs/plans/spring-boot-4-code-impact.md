@@ -1399,10 +1399,54 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - `fist-boot-data` 模块自身测试共 2 个用例，失败 0。
 - 剩余 deprecation 明细为既有 `Breaker`、`ValidateUtil`、`InTenant` 和 `PageData` unchecked 使用。
 
+## 已验证：Gateway / Spring Cloud Alibaba 组合
+
+继续验证 Gateway、Sentinel、Nacos 和 LoadBalancer 在 Boot 4 组合下的编译与运行边界。当前仓库中，Gateway 使用 Spring Cloud Gateway Server WebFlux；Spring Cloud Alibaba Sentinel 只通过 `fist-cloud-rpc-feign` 引入。
+
+受影响模块：
+
+- `fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core`
+- `fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive`
+- `fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl`
+- `fist-kit-cloud/fist-cloud-rpc-feign`
+
+处理结果：
+
+- Gateway 相关依赖已停留在 Boot 4 / Spring Cloud 2025.1 的 WebFlux 新坐标：`spring-cloud-gateway-server-webflux` 与 `spring-cloud-starter-gateway-server-webflux`。
+- LoadBalancer 解析到 Spring Cloud `5.0.1`。
+- Spring Cloud Alibaba Sentinel starter 解析到 `2025.1.0.0`，传递 `sentinel-spring-webmvc-v6x-adapter:1.8.9`。
+- 当前仓库没有引入 `spring-cloud-alibaba-sentinel-gateway`，也没有解析到 `sentinel-spring-cloud-gateway-v6x-adapter`；因此本轮不声明 Sentinel Gateway adapter 已通过。
+- Feign 测试中的 `RequestTemplate.method("POST")` 迁移到 OpenFeign 13.6 推荐的 `RequestTemplate.method(Request.HttpMethod.POST)`。
+
+验证命令：
+
+```powershell
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am dependency:tree "-Dincludes=org.springframework.cloud:spring-cloud-gateway-server-webflux,org.springframework.cloud:spring-cloud-starter-gateway-server-webflux,org.springframework.cloud:spring-cloud-gateway-server,org.springframework.cloud:spring-cloud-starter-gateway,org.springframework.cloud:spring-cloud-loadbalancer,org.springframework.cloud:spring-cloud-starter-loadbalancer,com.alibaba.cloud:spring-cloud-starter-alibaba-sentinel,com.alibaba.cloud:spring-cloud-alibaba-sentinel-gateway,com.alibaba.csp:sentinel-spring-cloud-gateway-v6x-adapter,com.alibaba.csp:sentinel-spring-webmvc-v6x-adapter,com.alibaba.nacos:nacos-client"
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-rpc-feign -am "-Dtest=SecureFeignEncoderPrototypeTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am test
+.\mvnw.cmd -pl fist-kit-cloud/fist-cloud-gateway/fist-gateway-auth-core,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-security-reactive,fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl,fist-kit-cloud/fist-cloud-rpc-feign -am spring-javaformat:validate
+```
+
+结果：
+
+- 依赖树验证为 `BUILD SUCCESS`，未解析到旧 Gateway starter。
+- 组合 clean compile 为 `BUILD SUCCESS`。
+- Feign encoder 定向测试为 `BUILD SUCCESS`，1 个用例失败 0。
+- 最终组合 test 为 `BUILD SUCCESS`：`fist-gateway-auth-core` 14 个用例、`fist-cloud-gateway-acl` 6 个用例、`fist-cloud-rpc-feign` 7 个用例失败 0；`fist-cloud-gateway-security-reactive` 当前无自身测试源码。
+- 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+边界判断：
+
+- 当前仓库已有 Gateway / LoadBalancer / Feign / Sentinel WebMVC adapter 组合可编译、可测试。
+- Nacos 当前未被仓库显式引入，只能保持 BOM 准入结论，不能声明运行级验证通过。
+- Sentinel Gateway adapter 需要后续单独引入 `spring-cloud-alibaba-sentinel-gateway` 后验证。
+
 ## 下一步
 
-1. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
-2. 继续验证 Gateway / Spring Cloud Alibaba 组合，明确 Sentinel、Nacos 和 LoadBalancer 的 Boot 4 兼容边界。
+1. 评估是否需要补一个最小 Gateway 启动类或示例，验证完整 Boot 4 Gateway 应用上下文。
+2. 如下游实际使用 Sentinel Gateway 或 Nacos Discovery，单独建立对应示例或测试模块。
+3. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
 
 ## 已验证：Feign/SDE 与 Boot 4 客户端模块化适配
 
