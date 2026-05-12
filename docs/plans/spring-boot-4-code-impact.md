@@ -1207,17 +1207,17 @@ rg -l "org\.springframework\.lang\.Nullable" fist-kit-app fist-kit-cloud fist-ki
 
 阶段 2 中 `fist-boot-apidoc` 主代码可编译，但仍有过时 API 警告。OpenRewrite dry-run 倾向删除 Springfox 依赖。
 
-处理建议：
+处理决策：
 
-- 明确 Boot 4 目标是否只保留 SpringDoc 3。
-- 若删除 Springfox，需要同步删除插件类和自动配置分支。
-- API 文档模块应单独验证用户可见行为。
+- Boot 4 目标只保留 SpringDoc 3，移除 Springfox 支持。
+- 删除 `springfox-oas` 可选依赖、Springfox 插件类、Springfox 自动配置类，以及自动配置注册文件中的 Springfox 入口。
+- API 文档模块保留 SpringDoc 主路径，`ApiTraitOperationCustomizer` 继续负责写入 `ApiTrait` 扩展信息。
 
 当前进展：
 
 - `DocParser` 中的 Jackson 2 `JsonNode.fields()` 已迁移到 `JsonNode.properties()`。
 - `HandlerMethodResource` 和 `RestResource` 中的 `Validate.notNull(T)` 已迁移到 `Objects.requireNonNull(T)`。
-- Springfox 插件和自动配置分支尚未删除；当前只处理替代关系明确、行为风险较低的 API 警告。
+- Springfox 插件和自动配置分支已删除；当前 API Doc 只保留 SpringDoc 3 扩展路径。
 
 处理依据：
 
@@ -1239,7 +1239,7 @@ rg -n "Validate\.notNull|\.fields\(" fist-kit-app/fist-boot-apidoc/src/main/java
 - API Doc 目标调用复扫未命中 `Validate.notNull` 和 `.fields(`。
 - API Doc deprecation 明细编译为 `BUILD SUCCESS`。
 - API Doc 测试为 `BUILD SUCCESS`；模块自身没有测试源码，依赖链 `fist-kit-api` 共 6 个用例，失败 0。
-- 剩余 deprecation 明细只来自 `ApiTraitOperationPlugin` 和 `SwaggerDocAutoConfiguration` 缺少 `@Deprecated` 注解，属于 Springfox 退役决策范围。
+- Springfox 移除后，API Doc 主代码复扫未命中 `springfox`、`SwaggerDocAutoConfiguration`、`ApiTraitOperationPlugin` 和 `swagger.plugin`。
 - 编译日志另有依赖链 `fist-kit-api` 的 `ElementType.MODULE` 提示，不属于本轮 API Doc deprecation 收敛目标。
 
 ## Feign 与 SDE
@@ -1361,9 +1361,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 ## 下一步
 
-1. 评审 API Doc 中 Springfox 支持的去留，决定是完全删除 Springfox 分支，还是在过渡期显式标记弃用。
-2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+1. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+2. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
 
 ## OAuth2 授权服务 LOB API
 
@@ -1393,6 +1392,8 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 - Web/Data Commons Lang 迁移测试日志：`.codex/web-data-commons-deprecation-test.log`
 - API Doc 低风险 API 迁移编译日志：`.codex/apidoc-special-compile.log`
 - API Doc 低风险 API 迁移测试日志：`.codex/apidoc-special-test.log`
+- API Doc Springfox 移除编译日志：`.codex/apidoc-remove-springfox-compile.log`
+- API Doc Springfox 移除测试日志：`.codex/apidoc-remove-springfox-test.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`

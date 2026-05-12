@@ -67,7 +67,7 @@
 | `mybatis-spring` | `3.0.5` | 暂不主动升级 | 数据访问 | 先随 MyBatis Plus 验证 |
 | `excel-spring-boot-starter` | `3.4.3` | 待查兼容性 | Boot starter | 需阶段 2 解析和编译确认 |
 | `swagger-core-jakarta` | `2.2.49` | 暂不主动升级 | OpenAPI | 先由 SpringDoc 3 BOM 约束验证 |
-| `springfox-*` | `3.0.0` | 倾向删除或隔离 | 旧 API 文档 | 高风险，Springfox 已长期停滞，不应作为 Boot 4 主路径 |
+| `springfox-*` | `3.0.0` | 移除 | 旧 API 文档 | Boot 4 主路径只保留 SpringDoc 3，`fist-boot-apidoc` 已删除 Springfox 支持 |
 | `okhttp-bom` | `4.12.0` | 暂不主动升级 | HTTP 客户端 | Feign OkHttp 适配时再确认 |
 | `bucket4j_jdk17-*` | `8.18.0` | 暂不主动升级 | 限流 | 与 Boot 4 关联低，阶段 2 编译确认 |
 | `jspecify` | `1.0.0` | `1.0.0` | 空值契约 | 保持 |

@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- Spring Boot 4 升级中移除 `fist-boot-apidoc` 的 Springfox 支持，API 文档扩展统一保留 SpringDoc 3 路径。
+
 ## [3.13.1] - 2026-05-09
 
 ### Changed

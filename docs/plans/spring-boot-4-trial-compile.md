@@ -821,12 +821,28 @@ rg -n "Validate\.notNull|\.fields\(" fist-kit-app/fist-boot-apidoc/src/main/java
 
 结果：API Doc 目标调用复扫未命中；API Doc deprecation 明细编译为 `BUILD SUCCESS`；API Doc 测试为 `BUILD SUCCESS`，模块自身没有测试源码，依赖链 `fist-kit-api` 共 6 个用例，失败 0。剩余 deprecation 明细只来自 Springfox 相关类缺少 `@Deprecated` 注解，需要在 Springfox 去留决策中处理。编译日志另有依赖链 `fist-kit-api` 的 `ElementType.MODULE` 提示，不属于本轮 API Doc deprecation 收敛目标。
 
+继续按 Boot 4 主版本破坏性升级策略移除 Springfox 支持：
+
+- 删除 `fist-boot-apidoc` 的 `io.springfox:springfox-oas` 可选依赖。
+- 删除 `ApiTraitOperationPlugin`、Springfox 包级 `package-info.java` 和 `SwaggerDocAutoConfiguration`。
+- 从 `spring.factories` 和 `AutoConfiguration.imports` 删除 Springfox 自动配置入口，只保留 `SpringDocAutoConfiguration`。
+- SpringDoc 3 主路径保持不变。
+
+验证命令：
+
+```powershell
+rg -n "springfox|SwaggerDocAutoConfiguration|ApiTraitOperationPlugin|swagger\.plugin" fist-kit-app/fist-boot-apidoc -S
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+.\mvnw.cmd -pl fist-kit-app/fist-boot-apidoc -am test
+```
+
+结果：API Doc Springfox 复扫未命中；API Doc deprecation 明细编译为 `BUILD SUCCESS`；API Doc 测试为 `BUILD SUCCESS`，模块自身没有测试源码，依赖链 `fist-kit-api` 共 6 个用例，失败 0。Springfox 相关 deprecation 警告已消失；编译日志仍有依赖链 `fist-kit-api` 的 `ElementType.MODULE` 提示，不属于本轮 API Doc 迁移目标。
+
 下一步：
 
-1. 评审 API Doc 中 Springfox 支持的去留，决定是完全删除 Springfox 分支，还是在过渡期显式标记弃用。
-2. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
-3. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
-4. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
+1. 检查 MyBatis Plus Boot 4 starter 是否对下游公开依赖坐标产生发布说明影响。
+2. 继续推进 Feign/SDE 与 Spring 官方 Feign / HTTP Service Clients 的专项评估。
+3. 为 OAuth2 LOB 迁移补充真实数据库矩阵验证计划，重点覆盖 MySQL、PostgreSQL、达梦等驱动对 BLOB/CLOB 参数绑定和比较函数的行为。
 
 ## 本地日志
 
@@ -850,6 +866,8 @@ rg -n "Validate\.notNull|\.fields\(" fist-kit-app/fist-boot-apidoc/src/main/java
 - `.codex/apidoc-special-compile-before.log`
 - `.codex/apidoc-special-compile.log`
 - `.codex/apidoc-special-test.log`
+- `.codex/apidoc-remove-springfox-compile.log`
+- `.codex/apidoc-remove-springfox-test.log`
 
 ## 资料来源
 

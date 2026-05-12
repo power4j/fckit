@@ -87,7 +87,7 @@ org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0
 | --- | ---: | --- |
 | `tools.jackson` | 105 | 不直接全量接受，先专项验证自定义 Jackson 扩展点 |
 | `org.jspecify.annotations.Nullable` | 92 | 可作为 JSpecify 迁移候选，但需符合项目现有 `@NullMarked` 策略 |
-| `springfox` | 16 | 倾向删除 Springfox，但 API Doc 模块需单独设计替代关系 |
+| `springfox` | 16 | API Doc 已按 SpringDoc 3 主路径删除 Springfox 支持，OpenRewrite 结论仅作为线索 |
 | `mockwebserver3` | 5 | 可纳入测试依赖迁移，需确认 OkHttp 与 Feign 测试兼容 |
 | `spring-boot-starter-webmvc` | 5 | 需要按模块确认 Web MVC 与 RestClient 依赖边界 |
 | `spring-boot-starter-restclient` | 3 | SDE client 与 Feign 模块需确认是否需要显式 RestClient starter |
