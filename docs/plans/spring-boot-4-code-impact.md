@@ -1795,6 +1795,43 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - deprecation 明细编译：`fist-boot-data -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，不再出现 `InTenant` / `InTenantAspect` 相关提示。
 - 格式校验：`fist-boot-data -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## Web `Breaker` 废弃工具类移除
+
+`Breaker` 是自有废弃异常工具类，仓库生产代码仅剩 `MessageConfiguration` 为其注入国际化依赖。主版本阶段删除旧工具类和对应自动配置入口，避免继续暴露未使用的旧异常 API。
+
+受影响文件：
+
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/common/error/Breaker.java`
+- `fist-kit-app/fist-web/fist-support-web/src/test/java/com/power4j/fist/boot/common/error/BreakerDeprecationTest.java`
+- `fist-kit-app/fist-web/fist-support-web/src/test/java/com/power4j/fist/boot/common/error/BreakerRemovalTest.java`
+- `fist-kit-app/fist-web/fist-boot-web-app/src/main/java/com/power4j/fist/boot/autoconfigure/i18n/MessageConfiguration.java`
+- `fist-kit-app/fist-web/fist-boot-web-app/src/main/java/com/power4j/fist/boot/autoconfigure/common/CommonConfiguration.java`
+- `fist-kit-app/fist-web/fist-boot-web-app/src/test/java/com/power4j/fist/boot/autoconfigure/common/CommonConfigurationTest.java`
+
+处理结果：
+
+- 删除 `Breaker`。
+- 删除只服务 `Breaker` 的 `MessageConfiguration`。
+- 删除 `BreakerDeprecationTest`。
+- `CommonConfiguration` 不再导入 `MessageConfiguration`。
+- 新增删除锁定测试，防止旧工具类和旧自动配置入口回流。
+
+影响判断：
+
+- 下游应用如果仍调用 `Breaker`，升级当前主版本后会编译失败，需要改用 `CommonErrors` / `MsgBundleRejectedException` 等当前异常模型。
+- `fist-boot-web-app` 的 `i18n/common*.properties` 仍被当前异常模型使用，本轮不删除资源文件。
+- 本轮不改变 `ServerErrorHandler`、`DefaultExceptionTranslator` 和 `AppMonConfiguration` 的消息解析路径。
+
+验证结果：
+
+- RED：`BreakerRemovalTest` 在旧实现下失败，原因是旧类仍可加载。
+- RED：`CommonConfigurationTest` 在旧实现下失败，原因是 `@Import` 仍包含 `MessageConfiguration`。
+- 格式拦截：删除 `@Import` 元素后，`CommonConfigurationTest` 首次 GREEN 被 `spring-javaformat:validate` 拦截，运行 `spring-javaformat:apply` 修复。
+- GREEN：两个目标测试均为 `BUILD SUCCESS`，各 1 个用例，失败 0。
+- 组合测试：`fist-boot-web-app -am test` 为 `BUILD SUCCESS`，`fist-support-web` 8 个用例、`fist-support-security` 20 个用例、`fist-boot-web-app` 1 个用例失败 0。
+- deprecation 明细编译：`fist-boot-web-app -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，不再出现 `Breaker` / `MessageConfiguration` 相关生产提示。
+- 格式校验：`fist-boot-web-app -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`

@@ -729,6 +729,42 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 删除自动配置 bean 时，测试应同时覆盖「新 bean 存在」和「旧 bean 不存在」，避免只验证替代能力而遗漏旧入口残留。
 - 格式插件拦截属于实施流程问题，应记录到经验文档，但不能与代码语义失败混为一类。
 
+## 经验 23：自有废弃工具类不能只断开生产调用点
+
+问题：
+
+`Breaker` 是自有废弃异常工具类，`MessageConfiguration` 仍在启动时向它注入 `LocaleResolver` 和 `MessageSourceAccessor`。如果只删除 `MessageConfiguration` 中的静态 setter 调用，`Breaker` 会继续作为公开 API 存在，但运行时缺少消息源初始化，形成更隐蔽的迁移风险。Boot 4 主版本阶段应删除旧工具类和只服务旧工具类的自动配置入口。
+
+错误尝试或风险：
+
+- `BreakerDeprecationTest` 只能证明类声明带 `@Deprecated`，不能证明主版本迁移已经清理旧 API。
+- `CommonConfigurationTest` 的 GREEN 阶段第一次被 `spring-javaformat:validate` 拦截，原因是删除 `@Import` 元素后 `CommonConfiguration.java` 格式需要重新应用。
+- `rg` 复扫时如果不限制到 `src`，会命中 `target/surefire-reports` 和 `target/classes` 中的历史输出，容易误判源码仍有残留。
+- 下游应用如果仍调用 `Breaker`，升级当前主版本后会编译失败；迁移方向是改用 `CommonErrors` / `MsgBundleRejectedException` 等当前异常模型。
+
+有效方案：
+
+- 新增 `BreakerRemovalTest`，通过 `Class.forName(...)` 断言旧 `Breaker` 类已移除。
+- 新增 `CommonConfigurationTest`，通过反射断言 `CommonConfiguration` 不再导入 `MessageConfiguration`。
+- 删除 `Breaker`、`BreakerDeprecationTest` 和 `MessageConfiguration`。
+- 从 `CommonConfiguration` 的 `@Import` 中移除 `MessageConfiguration`。
+
+验证证据：
+
+- RED：`BreakerRemovalTest` 在旧实现下失败，原因是 `Breaker` 类仍可加载。
+- RED：`CommonConfigurationTest` 在旧实现下失败，原因是 `@Import` 仍包含 `MessageConfiguration`。
+- GREEN：`BreakerRemovalTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- GREEN：`CommonConfigurationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- Web 组合模块测试为 `BUILD SUCCESS`，`fist-support-web` 8 个用例、`fist-support-security` 20 个用例、`fist-boot-web-app` 1 个用例失败 0。
+- deprecation 明细编译为 `BUILD SUCCESS`，不再出现 `Breaker` / `MessageConfiguration` 相关生产提示。
+- Web 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 删除废弃 API 时，同时清理只为该 API 服务的自动配置、声明级废弃测试和文档中的「剩余项」描述。
+- 对类删除类迁移，优先使用字符串反射测试，避免测试源码直接引用即将删除的类型。
+- 源码复扫要限定 `src` 或排除 `target`，防止 Maven 历史输出污染判断。
+
 ## 当前剩余高优先级事项
 
 1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

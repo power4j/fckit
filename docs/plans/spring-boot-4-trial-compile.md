@@ -1296,6 +1296,51 @@ cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data -am spring-javaformat:valid
 - 这是主版本内的破坏性 API 删除。下游仍使用 `@InTenant` 的代码需要迁移到当前租户调用模型。
 - 本仓库未发现除旧切面自注册、声明级废弃测试和文档记录外的业务使用。
 
+## Web `Breaker` 废弃工具类移除
+
+日期：2026-05-13
+执行者：Codex
+
+目标：
+
+- 删除自有废弃异常工具类 `Breaker`。
+- 删除只为 `Breaker` 注入国际化依赖的 `MessageConfiguration`。
+- 消除 `fist-boot-web-app` 生产代码对自有废弃 API 的最后调用点。
+
+变更：
+
+- 删除 `Breaker` 和 `BreakerDeprecationTest`。
+- 删除 `MessageConfiguration`。
+- `CommonConfiguration` 不再导入 `MessageConfiguration`。
+- 新增 `BreakerRemovalTest`，断言旧 `Breaker` 类不可加载。
+- 新增 `CommonConfigurationTest`，断言 `CommonConfiguration` 不再导入旧消息配置。
+
+执行命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-web/fist-support-web -am "-Dtest=BreakerRemovalTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app -am "-Dtest=CommonConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app spring-javaformat:apply
+cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app -am test
+cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app -am spring-javaformat:validate
+```
+
+结果：
+
+- RED：`BreakerRemovalTest` 在旧实现下失败，原因是 `Breaker` 仍可加载。
+- RED：`CommonConfigurationTest` 在旧实现下失败，原因是 `CommonConfiguration` 仍导入 `MessageConfiguration`。
+- GREEN：两个目标测试均为 `BUILD SUCCESS`，各 1 个用例，失败 0。
+- 错误尝试：删除 `MessageConfiguration` 导入后，`CommonConfigurationTest` 首次 GREEN 被 `spring-javaformat:validate` 拦截；运行 `spring-javaformat:apply` 后通过。
+- 组合测试：`fist-boot-web-app -am test` 为 `BUILD SUCCESS`，`fist-support-web` 8 个用例、`fist-support-security` 20 个用例、`fist-boot-web-app` 1 个用例失败 0。
+- deprecation 明细编译：`fist-boot-web-app -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，不再出现 `Breaker` / `MessageConfiguration` 相关生产提示。剩余可见项为既有 `ElementType.MODULE` 注解环境提示。
+- 格式校验：`fist-boot-web-app -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+影响：
+
+- 这是主版本破坏性 API 删除。下游仍调用 `Breaker` 的代码需要改用 `CommonErrors` / `MsgBundleRejectedException` 等当前异常模型。
+- `fist-boot-web-app` 的 `i18n/common*.properties` 仍被当前异常模型使用，本轮未删除资源文件。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
