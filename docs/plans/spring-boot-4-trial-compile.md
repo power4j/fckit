@@ -1460,6 +1460,30 @@ cmd /c mvn -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.s
 - 当前主代码层面没有新暴露出大批 Boot 4 废弃 API 调用点。
 - 升级工作重点应从「继续扫废弃 API」切换到「应用级启动、自动配置装配和跨模块组合验证」。
 
+## 2026-05-13：OAuth2 Server 自动配置最小上下文
+
+在 API Doc 自动配置最小上下文验证完成后，继续为 OAuth2 Server 模块补最小装配证据。该模块此前已有授权服务、失败处理器和 password grant 相关功能测试，但缺少 Boot 4 下的自动配置入口验证。
+
+执行内容：
+
+- 在 `fist-boot-security-oauth2-server` 中补充 `spring-boot-starter-test`。
+- 新增 `AuthorizationServerAutoConfigurationTest`，使用 `ApplicationContextRunner` 验证 `AuthorizationServerAutoConfiguration` 默认装配。
+- 同时验证 `@Oauth2AuthorizationServer` 注解能否继续正确导入自动配置。
+
+执行命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=AuthorizationServerAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am spring-javaformat:validate
+```
+
+结果：
+
+- 首次执行被 `spring-javaformat:validate` 拦截；运行目标模块 `spring-javaformat:apply` 后重跑通过。
+- OAuth2 Server 自动配置测试为 `BUILD SUCCESS`，测试 2 个，失败 0，错误 0，跳过 0。
+- 本轮确认 `OauthUserPropExporter`、`AuthenticationFailureHandler`、`LogoutSuccessHandler`、`AuthenticationConverter` 和 `OAuth2TokenGenerator` 在最小上下文中均可装配。
+- 本轮同时确认 `@Oauth2AuthorizationServer` 注解导入路径未因 Boot 4 升级而漂移。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1543,6 +1567,7 @@ cmd /c mvn -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.s
 - `.codex/boot4-deprecation-support-web.log`
 - `.codex/boot4-deprecation-support-data.log`
 - `.codex/boot4-deprecation-apidoc-noclean.log`
+- `.codex/oauth2-server-autoconfig-test.log`
 
 ## 资料来源
 

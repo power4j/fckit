@@ -844,8 +844,39 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - `clean compile` 失败只能作为候选线索，必须用不带 `clean` 的定向 `compile` 或等价最小验证二次确认。
 - 升级中后期如果主代码废弃告警已基本清空，下一阶段应转向应用启动、自动配置装配、配置项迁移和跨模块组合验证。
 
+## 经验 26：应用级验证优先补「最小自动配置上下文」，不要一上来就拉完整示例应用
+
+问题：
+
+当主代码编译和主要废弃 API 基本收敛后，Boot 4 升级的剩余风险会转向「自动配置是否还能装配」「注解导入路径是否漂移」「最小上下文能否启动」。如果直接上完整示例应用或完整 `@SpringBootTest` Web 容器，失败面会同时混入端口、数据源、Web 环境和其他模块依赖，排障成本偏高。
+
+错误尝试或风险：
+
+- API Doc 和 OAuth2 Server 模块此前都只有编译通过或功能级单元测试，没有最小自动配置装配证据。
+- 新增这类测试时，第一次执行往往先被 `spring-javaformat:validate` 拦截；如果不把这类格式失败单独记录，很容易误判成 Boot 4 语义问题。
+- 如果只依赖 `compile` 或已有功能级测试，评审无法直接判断 Boot 4 下 `AutoConfiguration.imports`、`@Import` 元注解和核心默认 bean 是否仍然正确。
+
+有效方案：
+
+- 优先使用 `ApplicationContextRunner` 或等价最小上下文测试，先验证自动配置类本身和注解导入路径。
+- API Doc 模块验证 `SpringDocAutoConfiguration` 是否仍能创建 `OpenAPI`、`OperationCustomizer` 和预期的 `SecurityScheme`。
+- OAuth2 Server 模块验证 `AuthorizationServerAutoConfiguration` 是否仍能创建 `OauthUserPropExporter`、`AuthenticationFailureHandler`、`LogoutSuccessHandler`、`AuthenticationConverter` 和 `OAuth2TokenGenerator`，并补充 `@Oauth2AuthorizationServer` 注解导入路径验证。
+- 通过最小上下文先锁定装配问题，再决定是否继续扩大到完整 `@SpringBootTest` 或示例应用。
+
+验证证据：
+
+- `cmd /c mvn -pl fist-kit-app/fist-boot-apidoc -am "-Dtest=SpringDocAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，失败 0。
+- `cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=AuthorizationServerAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 2 个，失败 0。
+- 两个模块首次执行都先被 `spring-javaformat:validate` 拦截；分别运行目标模块 `spring-javaformat:apply` 后重跑通过。
+
+后续复用规则：
+
+- 应用级验证第一步优先补最小自动配置上下文，不直接跳到完整应用启动。
+- `ApplicationContextRunner` 适合验证自动配置类、条件装配和注解导入；只有当这一层通过后，再增加更重的 `@SpringBootTest`。
+- 格式插件拦截要单独记录为流程性问题，避免污染对 Boot 4 兼容性的判断。
+
 ## 当前剩余高优先级事项
 
-1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」，优先覆盖 Gateway 最小应用上下文、API Doc 自动配置和 OAuth2 Server 组合启动。
+1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、API Doc 自动配置和 OAuth2 Server 自动配置最小上下文已具备证据，下一步优先扩大到更完整的组合启动验证。
 2. 继续评估 JDK 8 `release` 模块中 `@NullMarked package-info.java` 触发的 `ElementType.MODULE` 告警是否需要专项处理。
 3. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。

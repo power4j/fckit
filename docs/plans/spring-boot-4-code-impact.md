@@ -1678,6 +1678,27 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - `fist-boot-apidoc -am "-Dtest=SpringDocAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，失败 0。
 - `fist-boot-apidoc -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## 已验证：OAuth2 Server 自动配置最小上下文
+
+为避免 OAuth2 Server 模块只保留功能级单元测试、没有 Boot 4 下的自动配置装配证据，本轮补充最小组合启动验证。
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/pom.xml`
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/test/java/com/power4j/fist/autoconfigure/oas/AuthorizationServerAutoConfigurationTest.java`
+
+处理结果：
+
+- `fist-boot-security-oauth2-server` 补充 `spring-boot-starter-test` 测试依赖。
+- 新增 `AuthorizationServerAutoConfigurationTest`，使用 `ApplicationContextRunner` 验证 `AuthorizationServerAutoConfiguration` 默认装配。
+- 同时验证 `@Oauth2AuthorizationServer` 注解导入路径仍能正确导入自动配置。
+
+验证结果：
+
+- 首次执行被 `spring-javaformat:validate` 拦截；运行 `spring-javaformat:apply` 后重跑通过。
+- `fist-boot-security-oauth2-server -am "-Dtest=AuthorizationServerAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 2 个，失败 0。
+- `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## Redisson 队列订阅 API
 
 Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废弃，但 `RBlockingQueue.subscribeOnElements(Function<V, CompletionStage<Void>>)` 仍保留。`fist-redisson` 的队列消费者注册属于方法重载迁移，不需要切换到 `RReliableQueue`。
