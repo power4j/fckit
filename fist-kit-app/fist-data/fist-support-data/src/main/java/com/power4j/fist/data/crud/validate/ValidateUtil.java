@@ -67,6 +67,7 @@ public class ValidateUtil {
 	 * @return 违例的约束,如果没有违例情况返回空的Set
 	 * @deprecated use {@link ValidateUtil#check(ValidatorFactory, T, Class[])}
 	 */
+	@Deprecated
 	public static <T> Set<ConstraintViolation<T>> check(T object, Class<?>... groups) {
 		try (ValidatorFactory factory = createValidatorFactory()) {
 			return check(factory, object, groups);

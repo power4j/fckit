@@ -1696,6 +1696,38 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-boot-security-oauth2-server -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，本轮目标关键字 `setRefreshTokenGenerator` / `refreshTokenGenerator` 未再出现。
 - `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## 自有废弃 API 注解一致性
+
+`Breaker` 和 `ValidateUtil#check(T, Class<?>...)` 已通过 Javadoc 声明废弃，但缺少 Java 级 `@Deprecated` 注解。Boot 4 迁移中的 deprecation 明细编译会把这类不一致暴露为声明侧警告。
+
+受影响文件：
+
+- `fist-kit-app/fist-web/fist-support-web/src/main/java/com/power4j/fist/boot/common/error/Breaker.java`
+- `fist-kit-app/fist-web/fist-support-web/src/test/java/com/power4j/fist/boot/common/error/BreakerDeprecationTest.java`
+- `fist-kit-app/fist-data/fist-support-data/src/main/java/com/power4j/fist/data/crud/validate/ValidateUtil.java`
+- `fist-kit-app/fist-data/fist-support-data/src/test/java/com/power4j/fist/data/crud/validate/ValidateUtilDeprecationTest.java`
+
+处理结果：
+
+- `Breaker` 类补充 `@Deprecated`。
+- `ValidateUtil#check(T, Class<?>...)` 旧重载补充 `@Deprecated`。
+- 新增声明级测试，防止 Javadoc 与 Java 注解再次不一致。
+
+影响判断：
+
+- 本次不删除 API，不改变运行时行为，只修正公共 API 元数据。
+- 测试代码引用废弃类型产生的 deprecation 提示属于测试断言副作用，生产代码是否清理仍需以生产编译日志为准。
+- 组合模块验证当前被 Maven 依赖解析阻断，需在网络或审批服务恢复后补跑。
+
+验证结果：
+
+- RED：`BreakerDeprecationTest` 在旧实现下失败，原因是 `Breaker` 缺少 Java 级 `@Deprecated`。
+- RED：`ValidateUtilDeprecationTest` 在旧实现下失败，原因是旧 `check(Object, Class[])` 重载缺少 Java 级 `@Deprecated`。
+- GREEN：`BreakerDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- GREEN：`ValidateUtilDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- `fist-support-web` 和 `fist-support-data` 的 `spring-javaformat:apply` 均为 `BUILD SUCCESS`。
+- 组合模块 `test` 未完成：Maven Central BOM POM 下载失败并被本地仓库缓存，提升权限重跑时审批服务返回 503。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`

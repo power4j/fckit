@@ -624,6 +624,43 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 对 Spring Authorization Server token 相关扩展，优先使用官方 `OAuth2TokenGenerator` 扩展点。
 - 反射类测试适合防止公共废弃入口在迁移后残留。
 
+## 经验 20：Javadoc 废弃说明必须同步 Java 级 `@Deprecated`
+
+问题：
+
+`Breaker` 和 `ValidateUtil#check(T, Class<?>...)` 已在 Javadoc 中声明 `@deprecated`，但生产代码缺少 Java 级 `@Deprecated` 注解。Boot 4 迁移阶段开启 deprecation 明细编译后，这类不一致会产生 `deprecated item is not annotated with @Deprecated` 编译提示。
+
+错误尝试或风险：
+
+- 只处理第三方废弃 API 会漏掉自有 API 的注解一致性问题。
+- 仅看调用点 deprecation 日志容易误判；该问题来自 API 声明本身，不一定有外部调用点。
+- 第一次 GREEN 阶段被 `spring-javaformat:validate` 拦截，说明新增注解后的源码仍需要经过项目格式插件。
+- 新增测试直接引用 `Breaker` 这类废弃 API 会让测试源码产生「使用或覆盖了已过时的 API」提示。该提示来自测试意图本身，不代表生产代码仍有同类调用。
+- 组合模块测试一度被 Maven Central BOM POM 下载失败阻断，并且失败结果被本地仓库缓存；需要使用 `-U` 或等待仓库更新间隔后重试。提升权限重跑时审批服务返回 503，本轮未继续绕过审批。
+
+有效方案：
+
+- 为 `Breaker` 类补充 `@Deprecated`。
+- 为 `ValidateUtil#check(T, Class<?>...)` 补充 `@Deprecated`。
+- 增加 `BreakerDeprecationTest`，要求类声明保留 Java 级废弃注解。
+- 增加 `ValidateUtilDeprecationTest`，通过反射要求旧重载声明保留 Java 级废弃注解。
+- 使用 `spring-javaformat:apply` 修复新增注解后的格式问题。
+
+验证证据：
+
+- RED：`BreakerDeprecationTest` 在旧实现下失败，原因是 `Breaker.class.isAnnotationPresent(Deprecated.class)` 为 `false`。
+- RED：`ValidateUtilDeprecationTest` 在旧实现下失败，原因是旧 `check(Object, Class[])` 重载缺少 `@Deprecated`。
+- GREEN：`BreakerDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- GREEN：`ValidateUtilDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- `fist-support-web` 和 `fist-support-data` 的 `spring-javaformat:apply` 均为 `BUILD SUCCESS`。
+- 组合模块 `test` 首次运行失败原因是 Maven BOM POM 从 Maven Central 传输失败并被缓存，未进入编译或测试阶段。
+
+后续复用规则：
+
+- 对 Javadoc `@deprecated` 与 Java `@Deprecated` 不一致的问题，优先补齐注解；主版本阶段如决定删除 API，则应单独用反射测试防止残留。
+- 测试废弃 API 注解时优先使用反射；如果测试必须直接引用废弃类型，需要在验证记录中说明该警告来自测试断言。
+- Maven 依赖解析失败要与代码失败分开记录；被本地仓库缓存的下载失败应使用 `-U` 重试，并保留审批或网络阻断原因。
+
 ## 当前剩余高优先级事项
 
 1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

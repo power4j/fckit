@@ -1179,6 +1179,40 @@ rg -n "sentinel|Sentinel|spring-cloud-starter-alibaba-sentinel|spring-cloud-alib
 - deprecation 明细编译为 `BUILD SUCCESS`，本轮目标关键字 `setRefreshTokenGenerator` / `refreshTokenGenerator` 未再出现；日志中仍有依赖链既有 `Breaker` 和 `ValidateUtil` 提示。
 - 格式校验为 `BUILD SUCCESS`。
 
+## 自有废弃 API 注解一致性
+
+继续处理 deprecation 明细编译中暴露的自有 API 声明一致性问题：
+
+- `Breaker` 已在 Javadoc 标注 `@deprecated`，但类声明缺少 `@Deprecated`。
+- `ValidateUtil#check(T, Class<?>...)` 已在 Javadoc 标注 `@deprecated`，但方法声明缺少 `@Deprecated`。
+
+处理结果：
+
+- `Breaker` 类补充 `@Deprecated`。
+- `ValidateUtil#check(T, Class<?>...)` 旧重载补充 `@Deprecated`。
+- 新增 `BreakerDeprecationTest`，要求类声明包含 Java 级废弃注解。
+- 新增 `ValidateUtilDeprecationTest`，通过反射要求旧重载包含 Java 级废弃注解。
+
+验证命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-web/fist-support-web spring-javaformat:apply
+cmd /c mvn -pl fist-kit-app/fist-data/fist-support-data spring-javaformat:apply
+cmd /c mvn -pl fist-kit-app/fist-web/fist-support-web -am "-Dtest=BreakerDeprecationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-data/fist-support-data -am "-Dtest=ValidateUtilDeprecationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-data/fist-support-data -am test
+```
+
+结果：
+
+- RED：`BreakerDeprecationTest` 在旧实现下失败，原因是 `Breaker.class.isAnnotationPresent(Deprecated.class)` 为 `false`。
+- RED：`ValidateUtilDeprecationTest` 在旧实现下失败，原因是旧 `check(Object, Class[])` 重载缺少 `@Deprecated`。
+- `fist-support-web` 和 `fist-support-data` 的 `spring-javaformat:apply` 均为 `BUILD SUCCESS`。
+- GREEN：`BreakerDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- GREEN：`ValidateUtilDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- `BreakerDeprecationTest` 直接引用废弃类，测试编译阶段出现「使用或覆盖了已过时的 API」提示；该提示来自测试意图，不代表生产代码仍有同类调用。
+- 组合模块 `test` 未完成：Maven Central BOM POM 下载失败并被本地仓库缓存，导致 Maven 在模型构建阶段失败；提升权限重跑时审批服务返回 503，本轮未继续重试。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：

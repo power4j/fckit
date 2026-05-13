@@ -32,6 +32,7 @@ import java.util.Optional;
  * @deprecated
  */
 @UtilityClass
+@Deprecated
 public class Breaker {
 
 	private static @Nullable MessageSourceAccessor messageSourceAccessor;
