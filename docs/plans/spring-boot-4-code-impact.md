@@ -1672,14 +1672,46 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 执行结果：
 
 - `fist-support-web`、`fist-support-data`、`fist-boot-apidoc` 不带 `clean` 的定向 `compile` 审计均为 `BUILD SUCCESS`，日志未命中生产代码 `deprecated` 告警。
-- `fist-sde-client`、`fist-sde-boot-starter`、`fist-cloud-rpc-feign` 组合 `clean compile` 为 `BUILD SUCCESS`；当前仅剩 `package-info.java` 上 `@NullMarked` 在 JDK 8 `release` 编译时触发的 `ElementType.MODULE` 警告。
+- `fist-sde-client`、`fist-sde-boot-starter`、`fist-cloud-rpc-feign` 组合 `clean compile` 为 `BUILD SUCCESS`。
+- JDK 8 `release` 模块中 `package-info.java` 上的 `@NullMarked` 曾触发 `ElementType.MODULE` 警告，已在后续专项中处理。
 - `fist-boot-apidoc` 和 `web/data` 组合第一次 `clean compile` 曾出现编译失败，但复跑不带 `clean` 的定向 `compile` 后均通过，说明这两次失败不能直接视为 Boot 4 生产代码阻塞。
 
 当前判断：
 
 - 当前仓库主代码面上，Boot 4 迁移期最显著的废弃 API 已基本清理完毕。
-- 仍需跟踪的编译告警不再集中于 Spring Boot 4 破坏性 API，而是 JDK 8 兼容模块中的 JSpecify `@NullMarked` 元注解警告。
+- JDK 8 兼容模块中的 JSpecify `@NullMarked` 元注解警告已清理，保留显式 `@Nullable` 表达可空契约。
 - 升级工作的下一阶段应从「清编译错误 / 清废弃调用」转向「最小应用启动、自动配置装配和跨模块组合行为验证」。
+
+## 已处理：JDK 8 release 模块的 JSpecify package 默认非空告警
+
+在废弃告警基线复核后，继续处理 JDK 8 `release` 模块中 `package-info.java` 上 `@NullMarked` 触发的编译告警。
+
+问题根因：
+
+- JSpecify `1.0.0` 的 `org.jspecify.annotations.NullMarked` 自身 classfile 可被 Java 8 读取。
+- 但它的 `@Target` 元数据包含 Java 9 引入的 `ElementType.MODULE`。
+- 本项目部分 infra 模块要求 `maven.compiler.release=8`，当这些模块的 `package-info.java` 使用包级 `@NullMarked` 时，`javac --release 8` 会报告「未知的枚举常量 `java.lang.annotation.ElementType.MODULE`」。
+
+处理结果：
+
+- 从 JDK 8 release 模块的 19 个 `package-info.java` 中移除包级 `@NullMarked` 和对应 import。
+- 保留源码中已经存在的显式 `org.jspecify.annotations.Nullable`，不改变方法参数、返回值、字段和泛型类型参数上的可空契约。
+- 未采用 `-Xlint:none` 或 `-nowarn` 这类全局关闭告警的方式，避免掩盖后续真实迁移问题。
+
+影响范围：
+
+- `fist-kit-infra/fist-kit-api`
+- `fist-kit-infra/fist-jackson`
+- `fist-kit-infra/fist-logback`
+- `fist-kit-infra/fist-mybatis-plus`
+- `fist-kit-infra/fist-sde/fist-sde-core`
+- `fist-kit-infra/fist-sde/fist-sde-client`
+
+验证结果：
+
+- `fist-kit-api -am clean compile` 为 `BUILD SUCCESS`，日志未命中 `WARNING` 或 `ElementType.MODULE`。
+- JDK 8 release 相关 infra 模块组合 `clean compile` 为 `BUILD SUCCESS`，日志未命中 `WARNING` 或 `ElementType.MODULE`。
+- 目标模块 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
 ## 已验证：API Doc 自动配置最小上下文
 

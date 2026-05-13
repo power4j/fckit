@@ -1538,6 +1538,48 @@ cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am s
 - OAuth2 Server 组合上下文测试为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 0。
 - OAuth2 Server 依赖链 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## 2026-05-13：JDK 8 release 模块 JSpecify package 默认非空告警清理
+
+废弃告警基线复核后，继续处理 `fist-kit-infra` 中要求 Java 8 release 兼容的模块。此前这些模块的部分 `package-info.java` 已迁移到 JSpecify `@NullMarked`，但 `javac --release 8` 会报告「未知的枚举常量 `java.lang.annotation.ElementType.MODULE`」。
+
+根因确认：
+
+- JSpecify `1.0.0` 的 `@NullMarked` classfile 可被 Java 8 读取。
+- `javap` 复核显示 `@NullMarked` 的 `@Target` 包含 `ElementType.MODULE`。
+- `ElementType.MODULE` 是 Java 9 枚举值，JDK 8 release 编译环境读取该元数据时会产生 classfile 告警。
+
+错误尝试和修正：
+
+- 最小复现先在 `fist-kit-api` 上确认该告警可稳定出现。
+- 尝试添加 `-Xlint:-classfile` 后，告警仍然出现，说明它不能解决本问题。
+- `-Xlint:none` 和 `-nowarn` 能压掉告警，但范围过大，会同时隐藏后续真实编译告警，因此没有采用。
+- 最终处理方式为：仅从 JDK 8 release 模块的 `package-info.java` 移除包级 `@NullMarked`；源码中显式 `@Nullable` 保留，继续表达可空契约。
+- 目标模块组合编译首次受沙箱内 Maven 依赖缓存 / 网络访问限制影响，使用已批准的提升权限 Maven 命令重跑后通过。
+
+受影响模块：
+
+- `fist-kit-infra/fist-kit-api`
+- `fist-kit-infra/fist-jackson`
+- `fist-kit-infra/fist-logback`
+- `fist-kit-infra/fist-mybatis-plus`
+- `fist-kit-infra/fist-sde/fist-sde-core`
+- `fist-kit-infra/fist-sde/fist-sde-client`
+
+执行命令：
+
+```powershell
+cmd /c mvn -l .codex/jspecify-release8-fist-kit-api-compile.log -pl fist-kit-infra/fist-kit-api -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+cmd /c mvn -l .codex/jspecify-release8-modules-compile.log -pl fist-kit-infra/fist-kit-api,fist-kit-infra/fist-jackson,fist-kit-infra/fist-logback,fist-kit-infra/fist-mybatis-plus,fist-kit-infra/fist-sde/fist-sde-core,fist-kit-infra/fist-sde/fist-sde-extra,fist-kit-infra/fist-sde/fist-sde-client -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+cmd /c mvn -l .codex/jspecify-release8-format-validate.log -pl fist-kit-infra/fist-kit-api,fist-kit-infra/fist-jackson,fist-kit-infra/fist-logback,fist-kit-infra/fist-mybatis-plus,fist-kit-infra/fist-sde/fist-sde-core,fist-kit-infra/fist-sde/fist-sde-client spring-javaformat:validate
+```
+
+结果：
+
+- `fist-kit-api -am clean compile` 为 `BUILD SUCCESS`。
+- JDK 8 release 相关 infra 模块组合 `clean compile` 为 `BUILD SUCCESS`。
+- 目标模块 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+- 编译日志复扫未命中 `WARNING` 或 `ElementType.MODULE`。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1624,6 +1666,9 @@ cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am s
 - `.codex/boot4-deprecation-apidoc-noclean.log`
 - `.codex/oauth2-server-autoconfig-test.log`
 - `.codex/oauth2-server-composed-context-test.log`
+- `.codex/jspecify-release8-fist-kit-api-compile.log`
+- `.codex/jspecify-release8-modules-compile.log`
+- `.codex/jspecify-release8-format-validate.log`
 
 ## 资料来源
 

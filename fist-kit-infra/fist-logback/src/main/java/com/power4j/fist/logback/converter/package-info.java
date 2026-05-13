@@ -14,7 +14,4 @@
  * limitations under the License.
  */
 
-@NullMarked
 package com.power4j.fist.logback.converter;
-
-import org.jspecify.annotations.NullMarked;

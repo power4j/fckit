@@ -19,7 +19,4 @@
  * @date 2021/6/2
  * @since 1.0
  */
-@NullMarked
 package com.power4j.fist.jackson.support.obfuscation;
-
-import org.jspecify.annotations.NullMarked;

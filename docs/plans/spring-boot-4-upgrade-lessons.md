@@ -936,8 +936,39 @@ OAuth2 Server 自动配置最小上下文已经证明 `AuthorizationServerAutoCo
 - 组合上下文应优先使用内存数据库和官方 schema，先排除外部资源干扰。
 - 已由条件集成测试覆盖的真实资源兼容性，不在默认组合测试中重复引入。
 
+## 经验 29：JDK 8 release 模块不要使用包级 `@NullMarked`
+
+问题：
+
+部分 `fist-kit-infra` 模块仍要求 Java 8 release 兼容。此前为了统一 JSpecify 策略，将这些模块的 `package-info.java` 也迁移到了包级 `@NullMarked`。随后在 `javac --release 8` 编译时稳定出现「未知的枚举常量 `java.lang.annotation.ElementType.MODULE`」告警。
+
+错误尝试或风险：
+
+- 只看 JSpecify `1.0.0` 的 classfile 版本，容易误判为 Java 8 release 模块可以无条件使用包级 `@NullMarked`。
+- `-Xlint:-classfile` 无法消除该告警。
+- `-Xlint:none` 和 `-nowarn` 能压掉告警，但会同时隐藏真实编译告警，不适合作为 Boot 4 升级阶段的长期处理方式。
+- 如果把该告警继续留在基线中，后续 deprecation / warning 审计会被稳定噪声污染。
+
+有效方案：
+
+- 对要求 `maven.compiler.release=8` 的模块，不在 `package-info.java` 上使用包级 `@NullMarked`。
+- 保留方法参数、返回值、字段和泛型类型参数上的显式 `@Nullable`，继续表达关键可空契约。
+- 非 Java 8 release 模块可以继续使用包级 `@NullMarked`，但新增时需要先确认模块编译 release。
+
+验证证据：
+
+- `javap` 复核 JSpecify `1.0.0` 的 `@NullMarked`，确认其 `@Target` 包含 Java 9 的 `ElementType.MODULE`。
+- `fist-kit-api -am clean compile` 为 `BUILD SUCCESS`，日志未命中 `WARNING` 或 `ElementType.MODULE`。
+- JDK 8 release 相关 infra 模块组合 `clean compile` 为 `BUILD SUCCESS`，日志未命中 `WARNING` 或 `ElementType.MODULE`。
+- 目标模块 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 空值注解迁移前先确认模块的 `maven.compiler.release`，不要把包级默认非空策略跨 release 机械复用。
+- Java 8 release 模块优先使用显式 `@Nullable` 表达边界契约，不使用包级 `@NullMarked`。
+- 不用全局关闭 warning 的方式消除升级噪声；优先移除触发源或缩小处理范围。
+
 ## 当前剩余高优先级事项
 
 1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置、OAuth2 Server 自动配置最小上下文和 OAuth2 Server JDBC 授权服务组合上下文已具备证据，下一步优先扩大到更完整的示例应用或跨模块业务流验证。
-2. 继续评估 JDK 8 `release` 模块中 `@NullMarked package-info.java` 触发的 `ElementType.MODULE` 告警是否需要专项处理。
-3. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。
+2. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。
