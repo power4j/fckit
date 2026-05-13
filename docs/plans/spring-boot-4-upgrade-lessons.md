@@ -875,8 +875,38 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - `ApplicationContextRunner` 适合验证自动配置类、条件装配和注解导入；只有当这一层通过后，再增加更重的 `@SpringBootTest`。
 - 格式插件拦截要单独记录为流程性问题，避免污染对 Boot 4 兼容性的判断。
 
+## 经验 27：Gateway OAuth2 配置要单独验证条件装配，不要只靠手工 bean 启动测试
+
+问题：
+
+`RouteGuardConfigurationStartupTest` 为了验证 Gateway Reactive Web 上下文启动，手工提供了 `UserIntrospectClient`。这能覆盖 ACL 主配置和 Gateway 5 WebFlux 自动配置共同启动，但不会覆盖 `Oauth2Configuration` 根据 `fist.oauth2.resourceserver.opaque-token.*` 配置自动创建 `UserIntrospectClient` 的路径。
+
+错误尝试或风险：
+
+- 如果只看 Gateway 最小启动测试通过，容易误以为 OAuth2 opaque-token 配置项绑定和条件装配也已经通过。
+- 如果直接调用真实 introspection 服务，测试会引入外部认证服务器依赖，不适合作为默认本地验证。
+- `Oauth2Configuration` 同时包含普通 `WebClient` 和 `@LoadBalanced` `WebClient.Builder` 路径，需要至少确认 LoadBalancer 入口 bean 没有在 Boot 4 / Spring Cloud 2025.1 下失效。
+
+有效方案：
+
+- 使用 `ApplicationContextRunner` 单独装配 `Oauth2Configuration`。
+- 分别验证未配置 `introspection-uri` 时不创建 `UserIntrospectClient`，配置 URI、client ID 和 client secret 后创建 `UserIntrospectClient`。
+- 同时断言 `lbWebClientBuilder` 存在，确认 `lb://` introspection URI 的入口仍可用。
+- 不发起真实 HTTP 请求，把远程认证服务器响应和用户信息解析留给后续外部环境联调。
+
+验证证据：
+
+- `cmd /c mvn -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am "-Dtest=Oauth2ConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 2 个，失败 0。
+- `cmd /c mvn -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 对手工提供 bean 的启动测试，要反向检查哪些自动配置路径被绕开了。
+- 条件装配测试优先验证「未配置不创建」和「配置后创建」两个方向。
+- 涉及外部服务的配置装配测试只验证本地 bean 创建；真实远程调用用单独的条件集成测试或环境联调承载。
+
 ## 当前剩余高优先级事项
 
-1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、API Doc 自动配置和 OAuth2 Server 自动配置最小上下文已具备证据，下一步优先扩大到更完整的组合启动验证。
+1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置和 OAuth2 Server 自动配置最小上下文已具备证据，下一步优先扩大到更完整的组合启动验证。
 2. 继续评估 JDK 8 `release` 模块中 `@NullMarked package-info.java` 触发的 `ElementType.MODULE` 告警是否需要专项处理。
 3. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。

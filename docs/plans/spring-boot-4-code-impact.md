@@ -1573,6 +1573,30 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - 第一次测试使用 `assertThat(applicationContext).hasSingleBean(...)`，当前 AssertJ 断言类型不支持该方法，编译失败；改为 `applicationContext.getBeansOfType(...).hasSize(1)`。
 - 第二次测试失败于 `ReactivePermissionDefinitionService` 缺失，确认 ACL 自动配置需要应用侧权限定义服务；在测试应用中提供空权限服务后通过。
 
+## 已验证：Gateway OAuth2 opaque-token 配置装配
+
+现有 Gateway 最小应用上下文测试通过手工提供 `UserIntrospectClient`，没有覆盖 `Oauth2Configuration` 根据 `fist.oauth2.resourceserver.opaque-token.*` 配置创建客户端的路径。本轮补充该路径的最小配置装配验证。
+
+受影响文件：
+
+- `fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl/src/test/java/com/power4j/fist/autoconfigure/gateway/Oauth2ConfigurationTest.java`
+
+处理结果：
+
+- 新增 `Oauth2ConfigurationTest`，使用 `ApplicationContextRunner` 装配 `Oauth2Configuration`。
+- 验证未设置 `fist.oauth2.resourceserver.opaque-token.introspection-uri` 时不创建 `UserIntrospectClient`。
+- 验证设置 introspection URI、client ID 和 client secret 后可创建 `UserIntrospectClient`，并保留 `lbWebClientBuilder`。
+
+影响判断：
+
+- `Oauth2Configuration` 的配置项绑定和条件装配在 Boot 4 下可用。
+- 本测试不发起真实远程 introspection 请求，不验证认证服务器响应结构。
+
+验证结果：
+
+- `fist-cloud-gateway-acl -am "-Dtest=Oauth2ConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 2 个，失败 0。
+- `fist-cloud-gateway-acl -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 已清理：未实际使用的 Sentinel / Spring Cloud Alibaba 依赖
 
 根据用户补充信息复查后，当前仓库未发现 Sentinel / Nacos 源码、注解、配置或 API 使用点。此前 `fist-cloud-rpc-feign` 仅声明 `spring-cloud-starter-alibaba-sentinel`，但 Feign/SDE 行为测试不依赖该 starter。

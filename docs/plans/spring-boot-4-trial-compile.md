@@ -1061,6 +1061,34 @@ npx ctx7@latest docs /spring-projects/spring-boot/v4.0.3 "Spring Boot 4 WebFlux 
 - 本轮验证覆盖 Gateway WebFlux 自动配置与项目 ACL 配置的最小应用上下文启动，不覆盖真实路由转发、Sentinel Gateway adapter 或 Nacos Discovery。
 - `RouteGuardConfiguration` 不是完全自包含自动配置，下游应用仍需要提供权限定义服务；如果启用 OAuth2 introspection，也需要提供 introspection URI 或自定义 `UserIntrospectClient`。
 
+## Gateway OAuth2 opaque-token 配置装配验证
+
+继续补充 Gateway 运行级证据。此前 `RouteGuardConfigurationStartupTest` 为避免远程 OAuth2 introspection 依赖，手工提供了 `UserIntrospectClient`，因此没有覆盖 `Oauth2Configuration` 基于配置项创建 `UserIntrospectClient` 的路径。
+
+主要处理：
+
+- 新增 `Oauth2ConfigurationTest`，使用 `ApplicationContextRunner` 装配 `Oauth2Configuration`。
+- 验证未设置 `fist.oauth2.resourceserver.opaque-token.introspection-uri` 时不创建 `UserIntrospectClient`。
+- 验证设置 `fist.oauth2.resourceserver.opaque-token.introspection-uri`、`client-id` 和 `client-secret` 后可创建 `UserIntrospectClient`。
+- 同时确认 `lbWebClientBuilder` 仍在上下文中，保留 `lb://` introspection URI 的 LoadBalancer 客户端入口。
+
+验证命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am "-Dtest=Oauth2ConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-cloud/fist-cloud-gateway/fist-cloud-gateway-acl -am spring-javaformat:validate
+```
+
+结果：
+
+- `Oauth2ConfigurationTest` 定向测试为 `BUILD SUCCESS`，测试 2 个，失败 0，错误 0，跳过 0。
+- `fist-cloud-gateway-acl -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+边界：
+
+- 本轮只验证配置项绑定、条件装配和 `UserIntrospectClient` 创建，不发起真实 introspection HTTP 请求。
+- 真实认证服务器响应结构、错误处理和 `UserInfo` 解析仍由后续应用级或外部环境联调覆盖。
+
 ## 后续事项
 
 1. 复查 Sentinel / Nacos 是否有实际使用点；如无实际使用，改为移除未使用依赖。
@@ -1545,6 +1573,7 @@ cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am s
 - `.codex/gateway-context-startup-green.log`
 - `.codex/gateway-context-startup-module-test.log`
 - `.codex/gateway-context-startup-format-validate.log`
+- `.codex/gateway-oauth2-config-test.log`
 - `.codex/sentinel-removal-dependency-tree.log`
 - `.codex/sentinel-removal-feign-test.log`
 - `.codex/sentinel-removal-cloud-dependency-tree.log`
