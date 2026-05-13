@@ -1213,6 +1213,44 @@ cmd /c mvn -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-data/fis
 - `BreakerDeprecationTest` 直接引用废弃类，测试编译阶段出现「使用或覆盖了已过时的 API」提示；该提示来自测试意图，不代表生产代码仍有同类调用。
 - 组合模块 `test` 未完成：Maven Central BOM POM 下载失败并被本地仓库缓存，导致 Maven 在模型构建阶段失败；提升权限重跑时审批服务返回 503，本轮未继续重试。
 
+## Data 自有废弃 API 注解一致性补充
+
+继续处理 Data 模块中 Javadoc `@deprecated` 与 Java `@Deprecated` 不一致的声明：
+
+- `InTenant`
+- `AuditFiller`
+
+处理结果：
+
+- `InTenant` 注解补充 `@Deprecated`。
+- `AuditFiller` 类补充 `@Deprecated`。
+- 新增 `InTenantDeprecationTest` 和 `AuditFillerDeprecationTest`，要求声明包含 Java 级废弃注解。
+
+验证命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data -am "-Dtest=InTenantDeprecationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-crud-mybatis -am "-Dtest=AuditFillerDeprecationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -U -pl fist-kit-app/fist-data/fist-boot-data,fist-kit-app/fist-data/fist-boot-crud-mybatis -am test
+cmd /c mvn -U -pl fist-kit-app/fist-data/fist-boot-data,fist-kit-app/fist-data/fist-boot-crud-mybatis -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+cmd /c mvn -U -pl fist-kit-app/fist-data/fist-boot-data,fist-kit-app/fist-data/fist-boot-crud-mybatis -am spring-javaformat:validate
+```
+
+结果：
+
+- RED：两个新增测试在旧实现下均失败，原因是声明缺少 Java 级 `@Deprecated`。
+- GREEN：`InTenantDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- GREEN：`AuditFillerDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- Data 组合模块测试为 `BUILD SUCCESS`，`fist-boot-data` 3 个用例、`fist-boot-crud-mybatis` 15 个用例失败 0。
+- deprecation 明细编译为 `BUILD SUCCESS`，`InTenant` / `AuditFiller` 的「未使用 @Deprecated 对已过时的项目进行注释」警告已消失；仍存在 `InTenantAspect` 引用已废弃 `InTenant` 的调用点提示，需要另行决策。
+- 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+错误尝试记录：
+
+- 两个目标测试第一次并行运行时，因 `fist-boot-crud-mybatis -am` 与 `fist-boot-data -am` 反应堆重叠，`fist-boot-data/target` 发生并发写入，`InTenantDeprecationTest` 的 GREEN 阶段出现 Surefire `ClassNotFoundException`。
+- 不带 `-am` 只跑 `fist-boot-data` 会解析远端 `4.0.0-SNAPSHOT` 上游模块，失败于本仓库 SNAPSHOT 依赖不可解析。
+- 普通权限组合验证被 Maven Central BOM POM 下载失败和本地缓存阻断；提升权限并加 `-U` 后通过。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：

@@ -33,6 +33,7 @@ import java.util.function.Supplier;
  * @since 1.0
  * @deprecated use {@link AuditInfoSupplier}
  */
+@Deprecated
 public class AuditFiller implements MetaObjectHandler {
 
 	private final static long UID_FALLBACK = -1L;

@@ -661,6 +661,39 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 测试废弃 API 注解时优先使用反射；如果测试必须直接引用废弃类型，需要在验证记录中说明该警告来自测试断言。
 - Maven 依赖解析失败要与代码失败分开记录；被本地仓库缓存的下载失败应使用 `-U` 重试，并保留审批或网络阻断原因。
 
+## 经验 21：重叠 Maven 反应堆验证不能并行执行
+
+问题：
+
+继续处理 `InTenant` 和 `AuditFiller` 的 Javadoc `@deprecated` 与 Java `@Deprecated` 不一致问题时，两个目标测试分别覆盖 `fist-boot-data` 和 `fist-boot-crud-mybatis`。后者依赖前者，两个 Maven `-am` 反应堆会同时写入 `fist-boot-data/target`。
+
+错误尝试或风险：
+
+- 第一次并行运行两个目标测试时，`AuditFillerDeprecationTest` 通过，但 `InTenantDeprecationTest` 的 GREEN 阶段出现 Surefire `ClassNotFoundException`。测试类已经编译到 `target/test-classes`，根因是两个重叠反应堆并发写同一目标目录。
+- 尝试不带 `-am` 只跑 `fist-boot-data` 时，Maven 转而解析远端 `4.0.0-SNAPSHOT` 上游模块，因本地模块未 install 而失败。
+- 普通权限下的组合 `test` 和 `spring-javaformat:validate` 又被 Maven Central BOM POM 下载失败阻断；需要在可联网环境下使用 `-U` 重新解析。
+
+有效方案：
+
+- 对有依赖重叠的 Maven 模块验证，改为顺序执行，或合并为一个反应堆命令执行。
+- 保留 `-am`，让 Maven 使用当前工作区上游模块，而不是解析远端 SNAPSHOT。
+- 对缓存的 BOM 下载失败，使用 `cmd /c mvn -U ...` 并在需要时提升权限执行。
+- 为 `InTenant` 和 `AuditFiller` 补充 `@Deprecated`，并用声明测试锁定。
+
+验证证据：
+
+- RED：`InTenantDeprecationTest` 和 `AuditFillerDeprecationTest` 在旧实现下均失败，断言结果为 `expected: <true> but was: <false>`。
+- GREEN：顺序重跑后 `InTenantDeprecationTest` 为 `BUILD SUCCESS`，1 个用例，失败 0；`AuditFillerDeprecationTest` 为 `BUILD SUCCESS`，1 个用例，失败 0。
+- Data 组合模块测试在提升权限并加 `-U` 后为 `BUILD SUCCESS`：`fist-boot-data` 3 个用例、`fist-boot-crud-mybatis` 15 个用例失败 0。
+- Data 组合 deprecation 明细编译为 `BUILD SUCCESS`，不再出现 `InTenant` / `AuditFiller` 的「未使用 @Deprecated 对已过时的项目进行注释」警告。
+- Data 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 不要并行运行写入同一 `target` 目录的 Maven 反应堆。
+- 大模块验证优先使用一个合并 `-pl ... -am` 命令；如果拆分执行，也要按依赖顺序串行执行。
+- 单模块命令如果依赖未 install 的本仓库 SNAPSHOT，上游必须使用 `-am` 带入当前工作区。
+
 ## 当前剩余高优先级事项
 
 1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

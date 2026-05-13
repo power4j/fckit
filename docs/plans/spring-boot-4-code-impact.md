@@ -1728,6 +1728,38 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-support-web` 和 `fist-support-data` 的 `spring-javaformat:apply` 均为 `BUILD SUCCESS`。
 - 组合模块 `test` 未完成：Maven Central BOM POM 下载失败并被本地仓库缓存，提升权限重跑时审批服务返回 503。
 
+## Data 自有废弃 API 注解一致性补充
+
+继续收敛 Data 模块声明侧 deprecation 警告。`InTenant` 和 `AuditFiller` 已在 Javadoc 中声明废弃，但缺少 Java 级 `@Deprecated`。
+
+受影响文件：
+
+- `fist-kit-app/fist-data/fist-boot-data/src/main/java/com/power4j/fist/data/tenant/annotation/InTenant.java`
+- `fist-kit-app/fist-data/fist-boot-data/src/test/java/com/power4j/fist/data/tenant/annotation/InTenantDeprecationTest.java`
+- `fist-kit-app/fist-data/fist-boot-crud-mybatis/src/main/java/com/power4j/fist/boot/mybaits/handler/AuditFiller.java`
+- `fist-kit-app/fist-data/fist-boot-crud-mybatis/src/test/java/com/power4j/fist/boot/mybaits/handler/AuditFillerDeprecationTest.java`
+
+处理结果：
+
+- `InTenant` 注解补充 `@Deprecated`。
+- `AuditFiller` 类补充 `@Deprecated`。
+- 新增声明级测试，防止 Javadoc 与 Java 注解再次不一致。
+
+影响判断：
+
+- 本次不删除 API，不改变运行时行为，只修正公共 API 元数据。
+- `fist-boot-data` 主代码仍通过 `InTenantAspect` 使用废弃 `InTenant`，deprecation 明细编译会继续报告调用点提示；是否删除租户注解和切面属于后续破坏性 API 决策。
+- Maven 反应堆验证必须顺序执行或合并执行，避免多个命令并发写入同一 `target` 目录。
+
+验证结果：
+
+- RED：`InTenantDeprecationTest` 和 `AuditFillerDeprecationTest` 在旧实现下均失败，断言结果为 `expected: <true> but was: <false>`。
+- GREEN：`InTenantDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- GREEN：`AuditFillerDeprecationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- Data 组合模块测试为 `BUILD SUCCESS`，`fist-boot-data` 3 个用例、`fist-boot-crud-mybatis` 15 个用例失败 0。
+- Data 组合 deprecation 明细编译为 `BUILD SUCCESS`，`InTenant` / `AuditFiller` 的声明侧缺注解警告已消失。
+- Data 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
