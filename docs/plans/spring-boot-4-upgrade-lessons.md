@@ -905,8 +905,39 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - 条件装配测试优先验证「未配置不创建」和「配置后创建」两个方向。
 - 涉及外部服务的配置装配测试只验证本地 bean 创建；真实远程调用用单独的条件集成测试或环境联调承载。
 
+## 经验 28：组合上下文测试要区分「自动配置提供」和「应用侧提供」
+
+问题：
+
+OAuth2 Server 自动配置最小上下文已经证明 `AuthorizationServerAutoConfiguration` 能创建默认 token 生成器和认证转换器，但它不负责创建 `DefaultAuthorizationService`。如果把授权服务缺失误判为自动配置缺陷，就会把应用侧职责错误迁移到 starter 中，扩大维护面。
+
+错误尝试或风险：
+
+- 只验证 `AuthorizationServerAutoConfigurationTest`，无法证明自动配置默认 bean 与应用侧 JDBC 授权服务能在同一个 Boot 4 上下文中共同工作。
+- 如果直接上完整示例应用，失败面会同时混入 Web 容器、外部数据源、客户端注册和资源服务器配置，定位成本偏高。
+- 第一次运行新增组合测试仍被 `spring-javaformat:validate` 拦截，说明测试扩展阶段仍要先接受项目格式门禁，而不是把格式失败归为 Boot 4 兼容问题。
+- `DefaultAuthorizationService` 的真实数据库 LOB 兼容性已经由条件集成测试覆盖，组合上下文测试不应再次依赖外部数据库。
+
+有效方案：
+
+- 使用 `ApplicationContextRunner` 同时加载 `AuthorizationServerAutoConfiguration` 和测试侧应用配置。
+- 测试侧显式提供 H2 `DataSource`、`JdbcTemplate`、测试 `RegisteredClientRepository` 和 `DefaultAuthorizationService`。
+- 使用 Spring Authorization Server 官方 `oauth2-authorization-schema.sql` 初始化 H2 表结构。
+- 在断言中同时检查 `OAuth2TokenGenerator`、`RegisteredClientRepository`、`ManagedOAuth2AuthorizationService`，并执行授权保存、按 ID 查询、按 access token 查询。
+
+验证证据：
+
+- `cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=AuthorizationServerComposedContextTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，失败 0。
+- `cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 自动配置测试先确认 starter 自己负责创建的 bean；组合测试再显式补齐应用侧必须提供的 bean。
+- 组合上下文应优先使用内存数据库和官方 schema，先排除外部资源干扰。
+- 已由条件集成测试覆盖的真实资源兼容性，不在默认组合测试中重复引入。
+
 ## 当前剩余高优先级事项
 
-1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置和 OAuth2 Server 自动配置最小上下文已具备证据，下一步优先扩大到更完整的组合启动验证。
+1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置、OAuth2 Server 自动配置最小上下文和 OAuth2 Server JDBC 授权服务组合上下文已具备证据，下一步优先扩大到更完整的示例应用或跨模块业务流验证。
 2. 继续评估 JDK 8 `release` 模块中 `@NullMarked package-info.java` 触发的 `ElementType.MODULE` 告警是否需要专项处理。
 3. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。

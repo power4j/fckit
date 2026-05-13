@@ -1723,6 +1723,33 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - `fist-boot-security-oauth2-server -am "-Dtest=AuthorizationServerAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 2 个，失败 0。
 - `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## 已验证：OAuth2 Server 自动配置与 JDBC 授权服务组合上下文
+
+OAuth2 Server 自动配置最小上下文只能证明默认 bean 可装配，不能证明应用侧 `DefaultAuthorizationService` 与自动配置提供的 `OAuth2TokenGenerator` 能在同一个 Boot 4 上下文中共同工作。本轮补充更完整的组合上下文验证。
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/test/java/com/power4j/fist/autoconfigure/oas/AuthorizationServerComposedContextTest.java`
+
+处理结果：
+
+- 新增 `AuthorizationServerComposedContextTest`，使用 `ApplicationContextRunner` 同时加载 `AuthorizationServerAutoConfiguration` 和测试侧应用配置。
+- 测试侧使用 H2 `DataSource`、`JdbcTemplate`、Spring Authorization Server 官方 `oauth2-authorization-schema.sql`、测试 `RegisteredClientRepository` 和 `DefaultAuthorizationService`。
+- 验证同一上下文中存在 `OAuth2TokenGenerator`、`RegisteredClientRepository` 和 `ManagedOAuth2AuthorizationService`。
+- 验证 `DefaultAuthorizationService` 能保存 `OAuth2Authorization`，并能按 ID 与 access token 读取。
+
+影响判断：
+
+- 这是测试能力增强，不改变生产自动配置和默认运行行为。
+- 当前证据说明 OAuth2 Server 模块在 Boot 4 / Spring Authorization Server 7 组合下，自动配置默认 token 生成器与应用侧 JDBC 授权服务可共同装配。
+- 真实数据库 LOB 兼容性已由条件集成测试覆盖；本测试只验证环境无关的组合启动和基础授权读写。
+
+验证结果：
+
+- 首次执行被 `spring-javaformat:validate` 拦截；运行目标模块 `spring-javaformat:apply` 后重跑通过。
+- `fist-boot-security-oauth2-server -am "-Dtest=AuthorizationServerComposedContextTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，失败 0。
+- `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## Redisson 队列订阅 API
 
 Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废弃，但 `RBlockingQueue.subscribeOnElements(Function<V, CompletionStage<Void>>)` 仍保留。`fist-redisson` 的队列消费者注册属于方法重载迁移，不需要切换到 `RReliableQueue`。

@@ -1512,6 +1512,32 @@ cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am s
 - 本轮确认 `OauthUserPropExporter`、`AuthenticationFailureHandler`、`LogoutSuccessHandler`、`AuthenticationConverter` 和 `OAuth2TokenGenerator` 在最小上下文中均可装配。
 - 本轮同时确认 `@Oauth2AuthorizationServer` 注解导入路径未因 Boot 4 升级而漂移。
 
+## 2026-05-13：OAuth2 Server 自动配置与 JDBC 授权服务组合上下文
+
+在 OAuth2 Server 自动配置最小上下文通过后，继续扩大到「自动配置 + 应用侧 JDBC 授权服务」组合验证。该验证不连接外部数据库，使用 H2 和 Spring Authorization Server 官方 schema 复现应用侧授权服务装配。
+
+执行内容：
+
+- 新增 `AuthorizationServerComposedContextTest`。
+- 使用 `ApplicationContextRunner` 同时加载 `AuthorizationServerAutoConfiguration` 和测试侧 `AuthorizationServiceConfiguration`。
+- 测试侧提供 H2 `DataSource`、`JdbcTemplate`、`RegisteredClientRepository` 和 `DefaultAuthorizationService`。
+- 验证 `OAuth2TokenGenerator` 来自自动配置，`ManagedOAuth2AuthorizationService` 来自应用侧配置。
+- 保存 `OAuth2Authorization` 后，分别按 ID 和 access token 读取。
+
+执行命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=AuthorizationServerComposedContextTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am spring-javaformat:validate
+```
+
+结果：
+
+- 首次执行在测试前被 `spring-javaformat:validate` 拦截，原因为新增测试文件格式未应用项目规则。
+- 执行 `cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server spring-javaformat:apply` 后，定向测试重跑通过。
+- OAuth2 Server 组合上下文测试为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 0。
+- OAuth2 Server 依赖链 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1597,6 +1623,7 @@ cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am s
 - `.codex/boot4-deprecation-support-data.log`
 - `.codex/boot4-deprecation-apidoc-noclean.log`
 - `.codex/oauth2-server-autoconfig-test.log`
+- `.codex/oauth2-server-composed-context-test.log`
 
 ## 资料来源
 
