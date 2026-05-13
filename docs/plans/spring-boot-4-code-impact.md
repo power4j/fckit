@@ -1713,6 +1713,32 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - JDK 8 release 相关 infra 模块组合 `clean compile` 为 `BUILD SUCCESS`，日志未命中 `WARNING` 或 `ElementType.MODULE`。
 - 目标模块 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## 已验证：SDE 示例应用组合启动
+
+在自动配置最小上下文通过后，继续扩大到 `examples/fist-sde` 示例应用。该验证覆盖真实 Spring Boot 应用启动、HTTP server、Feign 客户端、RestClient 上下文和 WebClient 上下文。
+
+首次执行结果：
+
+- 直接从 `examples/fist-sde/pom.xml` 执行 `test` 时，Maven 无法解析仓库内 `4.0.0-SNAPSHOT` 的 `fist-sde-boot-starter`、`fist-sde-client` 和 `fist-sde-extra`。
+- 根因是 `examples` 不在根 `pom.xml` reactor 中，不能自动带上主工程模块。
+- 先执行 `fist-sde-boot-starter -am -DskipTests install` 将本地快照组件安装到本地 Maven 仓库后，示例测试进入真实编译阶段。
+
+编译阻塞：
+
+- `example-server` 的 `SdeServerDemoRunner` 仍引用旧包 `org.springframework.boot.web.context.WebServerApplicationContext`。
+- Boot 4 中该接口位于 `org.springframework.boot.web.server.context.WebServerApplicationContext`。
+- 同组 `example-restclient` 和 `example-webclient` 已使用新包，说明这是 server 示例遗漏的局部迁移点。
+
+处理结果：
+
+- 将 `SdeServerDemoRunner` 的 `WebServerApplicationContext` import 迁移到 Boot 4 新包。
+
+验证结果：
+
+- `examples/fist-sde` 整组测试为 `BUILD SUCCESS`。
+- `SdeServerExampleApplicationTest`、`SdeFeignExampleApplicationTest`、`SdeRestClientExampleApplicationTest`、`SdeWebClientExampleApplicationTest` 各运行 1 个用例，失败 0。
+- 其中 server 和 feign 示例包含真实 HTTP 调用；restclient 和 webclient 示例覆盖应用上下文启动。
+
 ## 已验证：API Doc 自动配置最小上下文
 
 为避免 API Doc 模块只有编译通过、没有装配证据，本轮补充了 Boot 4 下的最小自动配置测试。

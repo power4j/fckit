@@ -968,7 +968,37 @@ OAuth2 Server 自动配置最小上下文已经证明 `AuthorizationServerAutoCo
 - Java 8 release 模块优先使用显式 `@Nullable` 表达边界契约，不使用包级 `@NullMarked`。
 - 不用全局关闭 warning 的方式消除升级噪声；优先移除触发源或缩小处理范围。
 
+## 经验 30：示例应用验证前先确认 Maven reactor 边界
+
+问题：
+
+`examples/fist-sde` 是更接近真实应用的 Boot 4 验证入口，但它不在根 `pom.xml` 的 reactor 中。直接用 `-f examples/fist-sde/pom.xml test` 执行时，Maven 只构建示例 reactor，无法自动构建主工程里的 `4.0.0-SNAPSHOT` 组件。
+
+错误尝试或风险：
+
+- 第一次直接执行示例测试失败，原因是 `fist-sde-boot-starter`、`fist-sde-client` 和 `fist-sde-extra` 本地快照组件无法解析。
+- 如果把该失败当作 Boot 4 兼容问题，会误判示例应用启动状态。
+- 安装本地依赖后，测试才暴露真实代码问题：`example-server` 仍引用 Boot 3 的 `WebServerApplicationContext` 旧包。
+
+有效方案：
+
+- 对不在根 reactor 的示例工程，先安装其依赖的本地快照组件，再运行示例 reactor 测试。
+- 示例应用编译失败时，先区分「本地快照依赖未安装」和「Boot 4 API 迁移缺失」。
+- `WebServerApplicationContext` 在 Boot 4 中使用 `org.springframework.boot.web.server.context.WebServerApplicationContext`。
+
+验证证据：
+
+- `fist-sde-boot-starter -am -DskipTests install` 为 `BUILD SUCCESS`。
+- 迁移 `SdeServerDemoRunner` import 后，`examples/fist-sde` 整组测试为 `BUILD SUCCESS`。
+- server、feign、restclient、webclient 四个示例测试各运行 1 个用例，失败 0。
+
+后续复用规则：
+
+- 应用级样例验证需要先确认样例是否在当前 Maven reactor 内。
+- 对独立示例工程，优先使用「安装本地快照组件 + 运行示例 reactor」的两步验证。
+- 包迁移问题要和同组已通过示例对照，优先做局部一致性修复。
+
 ## 当前剩余高优先级事项
 
-1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置、OAuth2 Server 自动配置最小上下文和 OAuth2 Server JDBC 授权服务组合上下文已具备证据，下一步优先扩大到更完整的示例应用或跨模块业务流验证。
+1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置、OAuth2 Server 自动配置最小上下文、OAuth2 Server JDBC 授权服务组合上下文和 SDE 示例应用组合测试已具备证据，下一步优先扩大到更完整的 Web/Data/Security 组合样例或配置项迁移验证。
 2. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。

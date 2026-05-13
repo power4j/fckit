@@ -1580,6 +1580,33 @@ cmd /c mvn -l .codex/jspecify-release8-format-validate.log -pl fist-kit-infra/fi
 - 目标模块 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 - 编译日志复扫未命中 `WARNING` 或 `ElementType.MODULE`。
 
+## 2026-05-13：SDE 示例应用组合测试
+
+在 Gateway、API Doc、OAuth2 Server 和 SDE / Feign 组件级验证之后，继续扩大到 `examples/fist-sde` 示例应用。该验证用于确认 Boot 4 下示例应用能否完成真实启动和部分 HTTP 调用。
+
+执行命令：
+
+```powershell
+cmd /c mvn -l .codex/sde-examples-module-test.log -f examples/fist-sde/pom.xml test
+cmd /c mvn -l .codex/sde-components-install.log -pl fist-kit-infra/fist-sde/fist-sde-boot-starter -am -DskipTests install
+cmd /c mvn -l .codex/sde-examples-module-test-after-install.log -f examples/fist-sde/pom.xml test
+cmd /c mvn -l .codex/sde-examples-module-test-after-webserver-import.log -f examples/fist-sde/pom.xml test
+```
+
+错误尝试和修正：
+
+- 首次直接执行 `examples/fist-sde` 测试失败，原因是 `examples` 不在根 reactor 中，无法解析仓库内 `4.0.0-SNAPSHOT` 的 SDE 组件。
+- 先安装 `fist-sde-boot-starter -am -DskipTests install` 后，示例测试进入编译阶段。
+- 第二次失败来自 `example-server` 的 `SdeServerDemoRunner` 仍引用 Boot 3 旧包 `org.springframework.boot.web.context.WebServerApplicationContext`。
+- Boot 4 本地 JAR 和同组示例代码都确认新包为 `org.springframework.boot.web.server.context.WebServerApplicationContext`，已做单点迁移。
+
+结果：
+
+- SDE 组件本地安装为 `BUILD SUCCESS`。
+- 修正 import 后，`examples/fist-sde` 整组测试为 `BUILD SUCCESS`。
+- `SdeServerExampleApplicationTest`、`SdeFeignExampleApplicationTest`、`SdeRestClientExampleApplicationTest`、`SdeWebClientExampleApplicationTest` 各运行 1 个用例，失败 0，错误 0，跳过 0。
+- 当前示例验证覆盖 server 与 feign 的真实 HTTP 调用，以及 restclient / webclient 应用上下文启动。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1669,6 +1696,10 @@ cmd /c mvn -l .codex/jspecify-release8-format-validate.log -pl fist-kit-infra/fi
 - `.codex/jspecify-release8-fist-kit-api-compile.log`
 - `.codex/jspecify-release8-modules-compile.log`
 - `.codex/jspecify-release8-format-validate.log`
+- `.codex/sde-examples-module-test.log`
+- `.codex/sde-components-install.log`
+- `.codex/sde-examples-module-test-after-install.log`
+- `.codex/sde-examples-module-test-after-webserver-import.log`
 
 ## 资料来源
 
