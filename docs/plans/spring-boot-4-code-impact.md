@@ -1832,6 +1832,34 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - deprecation 明细编译：`fist-boot-web-app -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，不再出现 `Breaker` / `MessageConfiguration` 相关生产提示。
 - 格式校验：`fist-boot-web-app -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## 外部资源验证测试入口
+
+本轮新增两个条件集成测试入口，用于后续真实资源矩阵验证。它们默认不访问外部服务，只在设置环境变量时启用。
+
+受影响文件：
+
+- `fist-kit-app/fist-security/fist-boot-security-oauth2-server/src/test/java/com/power4j/fist/oauth2/extension/service/ExternalJdbcAuthorizationServiceTest.java`
+- `fist-kit-infra/fist-redisson/src/test/java/com/power4j/fist/boot/autoconfigure/redisson/queue/ExternalRedisQueueConsumerTest.java`
+
+处理结果：
+
+- `ExternalJdbcAuthorizationServiceTest` 使用 `DriverManagerDataSource` 和 `DefaultAuthorizationService`，覆盖授权写入、按 ID 读取和按 access token 读取。
+- JDBC 驱动类和驱动 JAR 支持通过环境变量注入，避免把达梦等外部驱动绑定到源码。
+- `ExternalRedisQueueConsumerTest` 使用真实 Redisson client 注册 `QueueConsumerBeanProcessor`，向本次生成的队列写入消息并等待消费方法回调。
+- Redisson 密码配置使用 `Config#setPassword(String)`，避免测试源码继续调用 Redisson `4.3.1` 中已废弃的 `BaseConfig#setPassword(String)`。
+
+影响判断：
+
+- 这是测试能力增强，不改变生产代码和默认测试行为。
+- 未设置 `FIST_IT_JDBC_URL` 或 `FIST_IT_REDIS_URL` 时，测试类会编译但跳过。
+- 真实 MySQL、PostgreSQL、达梦和 Redis 环境需要在本地 shell 注入环境变量后再执行，不在仓库中固化。
+
+验证结果：
+
+- `ExternalJdbcAuthorizationServiceTest` 定向验证为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
+- `ExternalRedisQueueConsumerTest` 定向验证为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
+- 本轮未执行真实数据库或 Redis 连接验证，剩余风险是各厂商 JDBC LOB 类型映射和共享 Redis 网络连通性仍未覆盖。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
@@ -1864,6 +1892,7 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - MyBatis Plus Context7 文档：`/baomidou/mybatis-plus-doc`，Spring Boot 4 及以上版本使用 `mybatis-plus-spring-boot4-starter`
 - Redisson Context7 文档：`/redisson/redisson`，未直接覆盖 `RBlockingQueue.subscribeOnElements` 替代项。
 - Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `subscribeOnElements(Consumer<V>)` 废弃，`subscribeOnElements(Function<V, CompletionStage<Void>>)` 未废弃。
+- Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `BaseConfig#setPassword(String)` 已废弃。
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql`。
 - Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认自定义 token 生成应通过 `OAuth2TokenGenerator` / `DelegatingOAuth2TokenGenerator` 配置。

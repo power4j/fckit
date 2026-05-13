@@ -765,7 +765,42 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 对类删除类迁移，优先使用字符串反射测试，避免测试源码直接引用即将删除的类型。
 - 源码复扫要限定 `src` 或排除 `target`，防止 Maven 历史输出污染判断。
 
+## 经验 24：外部资源验证用条件测试承载，资源值只走环境变量
+
+问题：
+
+OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 / mock 测试，但 MySQL、PostgreSQL、达梦和 Redis 这类真实资源仍需要运行级验证。测试环境连接信息包含地址、账号和密码，不能写入仓库、文档示例、提交信息或测试源码。
+
+错误尝试或风险：
+
+- 如果把真实连接串写入测试注解、`application-*.yml` 或文档，后续提交会泄露测试环境。
+- 真实数据库和 Redis 资源并非开发者本地必备资源，直接纳入默认测试会导致普通 `mvn test` 不稳定。
+- 第一次新增 `ExternalJdbcAuthorizationServiceTest` 后，`spring-javaformat:validate` 拦截构建，说明新增测试文件也必须走项目格式插件。
+- Redisson `4.3.1` 的 `SingleServerConfig#setPassword(String)` 继承自已废弃的 `BaseConfig#setPassword(String)`，测试源码直接使用会继续产生 deprecation 警告。
+
+有效方案：
+
+- 新增条件集成测试，默认只编译，不连接外部资源。
+- JDBC 验证仅在设置 `FIST_IT_JDBC_URL` 后启用，账号、密码、驱动类、驱动 JAR、建表开关和 LOB 比较函数都通过环境变量传入。
+- Redis 验证仅在设置 `FIST_IT_REDIS_URL` 后启用，密码和 database 也通过环境变量传入。
+- 测试只清理本次生成的授权 ID 或队列名，避免影响共享测试环境。
+- Redisson 密码配置改用 `Config#setPassword(String)`，避开 `BaseConfig#setPassword(String)` 的废弃入口。
+
+验证证据：
+
+- `cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=ExternalJdbcAuthorizationServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
+- `cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsumerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
+- 本轮没有把达梦、MySQL、PostgreSQL 或 Redis 的真实地址、账号、密码写入仓库文件。
+
+后续复用规则：
+
+- 外部资源测试默认必须跳过，启用条件只能依赖环境变量或等价的本地注入机制。
+- 文档只记录环境变量名、用途和测试前置条件，不记录任何真实资源值。
+- 对共享数据库测试，清理语句必须限定到测试生成的数据，禁止清空表或改动全局 schema。
+- 实际执行 MySQL、PostgreSQL、达梦和 Redis 验证前，先由实施人员在本地 shell 注入环境变量，再运行定向测试。
+
 ## 当前剩余高优先级事项
 
-1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。
-2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
+1. OAuth2 LOB 真实驱动矩阵：测试入口已具备，仍需接入 MySQL、PostgreSQL、达梦环境实际执行。
+2. Redisson 队列真实 Redis 验证：测试入口已具备，仍需设置 Redis 环境变量实际执行。
+3. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。

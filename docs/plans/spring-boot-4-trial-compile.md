@@ -1341,6 +1341,69 @@ cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app -am spring-javaformat:val
 - 这是主版本破坏性 API 删除。下游仍调用 `Breaker` 的代码需要改用 `CommonErrors` / `MsgBundleRejectedException` 等当前异常模型。
 - `fist-boot-web-app` 的 `i18n/common*.properties` 仍被当前异常模型使用，本轮未删除资源文件。
 
+## 外部资源条件测试入口
+
+日期：2026-05-13
+执行者：Codex
+
+目标：
+
+- 为 OAuth2 授权服务 LOB 读写补充真实 JDBC 驱动验证入口。
+- 为 Redisson 队列订阅补充真实 Redis 验证入口。
+- 保证外部资源信息不进入仓库，默认构建不依赖外部服务。
+
+测试入口：
+
+| 模块 | 测试类 | 启用条件 | 默认行为 |
+| --- | --- | --- | --- |
+| `fist-boot-security-oauth2-server` | `ExternalJdbcAuthorizationServiceTest` | 设置 `FIST_IT_JDBC_URL` | 编译测试类，未设置环境变量时跳过 |
+| `fist-redisson` | `ExternalRedisQueueConsumerTest` | 设置 `FIST_IT_REDIS_URL` | 编译测试类，未设置环境变量时跳过 |
+
+JDBC 环境变量：
+
+| 变量名 | 用途 |
+| --- | --- |
+| `FIST_IT_JDBC_URL` | JDBC URL，同时作为启用条件 |
+| `FIST_IT_JDBC_USERNAME` | JDBC 用户名 |
+| `FIST_IT_JDBC_PASSWORD` | JDBC 密码 |
+| `FIST_IT_JDBC_DRIVER_CLASS` | 可选，外部 JDBC 驱动类名 |
+| `FIST_IT_JDBC_DRIVER_JAR` | 可选，本地 JDBC 驱动 JAR 路径 |
+| `FIST_IT_JDBC_INIT_SCHEMA` | 可选，显式设置为 `true` 时允许测试建表 |
+| `FIST_IT_JDBC_LOB_CMP_FUNC` | 可选，数据库 LOB 比较函数 |
+
+Redis 环境变量：
+
+| 变量名 | 用途 |
+| --- | --- |
+| `FIST_IT_REDIS_URL` | Redisson single server address，同时作为启用条件 |
+| `FIST_IT_REDIS_PASSWORD` | 可选，Redis 密码 |
+| `FIST_IT_REDIS_DATABASE` | 可选，Redis database，默认 `0` |
+
+执行命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-security/fist-boot-security-oauth2-server -am "-Dtest=ExternalJdbcAuthorizationServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsumerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+结果：
+
+- OAuth2 JDBC 条件测试为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 1 个。
+- Redisson Redis 条件测试为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 1 个。
+- 本轮只验证「无环境变量时可编译且跳过」。MySQL、PostgreSQL、达梦和 Redis 的真实连通性待环境变量注入后再执行。
+
+错误尝试和修正：
+
+- `ExternalJdbcAuthorizationServiceTest` 首次运行被 `spring-javaformat:validate` 拦截，已运行目标模块 `spring-javaformat:apply` 修正。
+- `ExternalRedisQueueConsumerTest` 首次编译出现过时 API 提示，根因是 `BaseConfig#setPassword(String)` 已废弃；已改用 `Config#setPassword(String)`。
+- 两个目标测试按顺序运行，避免重叠 Maven 反应堆并发写入 `target`。
+- 两个目标模块组合 `spring-javaformat:validate` 首次被 Maven Central BOM POM 传输失败和本地缓存阻断；使用 `-U` 刷新解析后重跑通过。
+
+安全边界：
+
+- 仓库只记录环境变量名和用途，不记录任何真实连接串、主机、端口、schema、用户名或密码。
+- 测试清理只限定到本次生成的授权 ID 或队列名，不执行全表清空或共享资源重置。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1416,6 +1479,8 @@ cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app -am spring-javaformat:val
 - `.codex/oauth2-resource-owner-deprecated-module-test.log`
 - `.codex/oauth2-resource-owner-deprecated-compile.log`
 - `.codex/oauth2-resource-owner-deprecated-format-validate.log`
+- `.codex/external-jdbc-conditional-test.log`
+- `.codex/external-redis-conditional-test.log`
 
 ## 资料来源
 
@@ -1447,4 +1512,5 @@ cmd /c mvn -pl fist-kit-app/fist-web/fist-boot-web-app -am spring-javaformat:val
 - OpenFeign `13.6` 本地源码 JAR：`F:\pkg-maven\repository\io\github\openfeign\feign-core\13.6\feign-core-13.6-sources.jar`，确认 `RequestTemplate.method(String)` 弃用并推荐 `RequestTemplate.method(Request.HttpMethod)`。
 - Redisson Context7 文档：`/redisson/redisson`，未直接覆盖 `RBlockingQueue.subscribeOnElements` 替代项。
 - Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `subscribeOnElements(Consumer<V>)` 废弃，`subscribeOnElements(Function<V, CompletionStage<Void>>)` 未废弃。
+- Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `BaseConfig#setPassword(String)` 已废弃，并在字节码提示中建议改用 `Config` 的 password 设置。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`
