@@ -1864,7 +1864,8 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - PostgreSQL 16 首次真实环境验证因官方 schema 的 `blob` 类型失败；加入 PostgreSQL schema 变体后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
 - Redis 7 首次真实环境验证因队列名不一致导致消费超时；修正队列名映射后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
 - Redis 条件测试无环境变量回归为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
-- 剩余风险是达梦 JDBC LOB 类型映射仍未覆盖。
+- 达梦真实验证已确认本地达梦 JDBC 驱动可加载并进入连接阶段；当前阻塞为外部数据库账号认证失败和登录失败次数限制，未进入 schema 初始化和 LOB 读写阶段。
+- 剩余风险是达梦 JDBC LOB 类型映射仍未覆盖，需要在测试账号恢复或替换后继续验证。
 
 ## 本地证据
 

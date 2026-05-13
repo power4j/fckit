@@ -1394,13 +1394,14 @@ cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsum
 - PostgreSQL 16 首次真实环境验证失败，失败原因是官方 schema 使用 `blob` 类型；加入 PostgreSQL schema 变体后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 0。
 - Redis 7 首次真实环境验证失败，失败原因是测试写入队列名与 `@QueueConsumer("test")` 订阅队列名不一致；加入测试专用 `NameGenerator` 后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 0。
 - Redis 条件测试无环境变量回归为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 1 个。
-- 达梦真实连通性待环境变量注入后再执行。
+- 达梦真实验证已加载本地达梦 JDBC 驱动并发起连接；第一次失败为数据库认证失败，第二次只调整用户名大小写后失败为登录失败次数超过限制，未进入 schema 初始化和 LOB 读写阶段。
 
 错误尝试和修正：
 
 - `ExternalJdbcAuthorizationServiceTest` 首次运行被 `spring-javaformat:validate` 拦截，已运行目标模块 `spring-javaformat:apply` 修正。
 - `ExternalRedisQueueConsumerTest` 首次编译出现过时 API 提示，根因是 `BaseConfig#setPassword(String)` 已废弃；已改用 `Config#setPassword(String)`。
 - `ExternalRedisQueueConsumerTest` 首次 Redis 7 真实验证能连接 Redis，但消费超时。根因是测试写入 `queue:<random>`，处理器实际按名称生成器订阅 `@QueueConsumer("test")` 对应队列；已改为用测试专用 `NameGenerator` 将注解值映射到本次运行唯一队列名。
+- 达梦首次验证失败后，只做了一次用户名大小写最小重试；数据库返回登录失败次数限制后停止继续尝试，避免扩大账号锁定影响。
 - 两个目标测试按顺序运行，避免重叠 Maven 反应堆并发写入 `target`。
 - 两个目标模块组合 `spring-javaformat:validate` 首次被 Maven Central BOM POM 传输失败和本地缓存阻断；使用 `-U` 刷新解析后重跑通过。
 - PostgreSQL 16 首次真实验证暴露 `type "blob" does not exist`，已在测试初始化 schema 时按 PostgreSQL 转换为 `text` / `timestamptz`。

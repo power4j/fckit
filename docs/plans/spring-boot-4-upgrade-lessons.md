@@ -779,6 +779,7 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - Redisson `4.3.1` 的 `SingleServerConfig#setPassword(String)` 继承自已废弃的 `BaseConfig#setPassword(String)`，测试源码直接使用会继续产生 deprecation 警告。
 - PostgreSQL 16 首次真实验证失败，根因是 Spring Authorization Server 官方 schema 使用 `blob`，PostgreSQL 不支持该类型。
 - Redis 7 首次真实验证已成功建立连接，但消费者没有在超时时间内收到消息。根因不是 Redis 连通性，而是测试写入的随机队列名与 `@QueueConsumer("test")` 实际订阅队列名不一致。
+- 达梦首次真实验证已加载本地达梦 JDBC 驱动并进入连接阶段，但数据库返回认证失败；再次只调整用户名大小写后触发登录失败次数限制。该问题属于外部账号状态，不是当前测试入口、驱动加载或 Boot 4 代码问题。
 
 有效方案：
 
@@ -798,6 +799,7 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - PostgreSQL 16 首次真实环境验证因 `blob` 类型不兼容失败；加入 PostgreSQL schema 变体后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
 - Redis 7 首次真实环境验证因队列名不一致失败；加入测试专用 `NameGenerator` 后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
 - Redis 条件测试无环境变量回归为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
+- 达梦真实环境验证未完成：第一次失败为认证失败，第二次失败为登录失败次数超过限制；未进入 schema 初始化和 LOB 读写阶段。
 - 本轮没有把达梦、MySQL、PostgreSQL 或 Redis 的真实地址、账号、密码写入仓库文件。
 
 后续复用规则：
@@ -806,8 +808,9 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - 文档只记录环境变量名、用途和测试前置条件，不记录任何真实资源值。
 - 对共享数据库测试，清理语句必须限定到测试生成的数据，禁止清空表或改动全局 schema。
 - 实际执行 MySQL、PostgreSQL、达梦和 Redis 验证前，先由实施人员在本地 shell 注入环境变量，再运行定向测试。
+- 外部数据库返回账号锁定或登录失败次数限制后必须停止重试，先由数据库管理员恢复账号或提供新的测试账号。
 
 ## 当前剩余高优先级事项
 
-1. OAuth2 LOB 真实驱动矩阵：MySQL 8 和 PostgreSQL 16 已通过，达梦仍需接入环境实际执行。
+1. OAuth2 LOB 真实驱动矩阵：MySQL 8 和 PostgreSQL 16 已通过；达梦已验证到驱动加载和连接发起阶段，当前阻塞在测试账号认证状态。
 2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
