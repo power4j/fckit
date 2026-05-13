@@ -22,11 +22,11 @@ import com.power4j.fist.boot.security.inner.SecurityUtil;
 import com.power4j.fist.boot.security.inner.TrustedUserFilter;
 import com.power4j.fist.boot.security.inner.UserDecoder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -39,7 +39,7 @@ import java.util.List;
  * @date 2021/10/20
  * @since 1.0
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class InnerSecurityConfiguration {
 

@@ -1739,6 +1739,32 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - `SdeServerExampleApplicationTest`、`SdeFeignExampleApplicationTest`、`SdeRestClientExampleApplicationTest`、`SdeWebClientExampleApplicationTest` 各运行 1 个用例，失败 0。
 - 其中 server 和 feign 示例包含真实 HTTP 调用；restclient 和 webclient 示例覆盖应用上下文启动。
 
+## 已处理：Security 自动配置注册与 Web/Data/Security 组合上下文
+
+SDE 示例验证后，继续扩大到 Web/Data/Security 组合装配。复查 `fist-boot-security` 时发现该模块的自动配置注册文件仍指向 Web 模块自动配置，未注册自身的 `InnerSecurityConfiguration`。
+
+问题根因：
+
+- `fist-boot-security` 的 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 和 `spring.factories` 误注册了 `CommonConfiguration`、`FistWebAutoConfiguration`、`FistReactiveWebAutoConfiguration`。
+- `InnerSecurityConfiguration` 只通过 `@TrustedSecurity` 注解手工导入，没有作为 Boot 自动配置候选注册。
+- 这会导致下游仅引入 `fist-boot-security` 时，可信用户过滤器、用户解码器、密码编码器等默认安全 bean 不会按 starter 方式自动装配。
+
+处理结果：
+
+- `InnerSecurityConfiguration` 从普通 `@Configuration` 调整为 `@AutoConfiguration`。
+- `fist-boot-security` 的 `AutoConfiguration.imports` 和 `spring.factories` 改为只注册 `InnerSecurityConfiguration`。
+- 新增 `InnerSecurityConfigurationImportsTest`，隔离读取 `fist-boot-security` 自身 `target/classes` 下的自动配置候选，避免被测试依赖中的 Web/Data 自动配置污染。
+- 同一测试类补充 Servlet Web/Data/Security 组合上下文验证，确认 Web、Data、Security 三组自动配置可以在同一上下文中创建核心 bean 和 filter 注册。
+
+验证结果：
+
+- RED：`InnerSecurityConfigurationImportsTest` 首次失败，原因是候选中缺少 `InnerSecurityConfiguration`。
+- GREEN 首次被 `spring-javaformat:validate` 拦截；运行目标模块 `spring-javaformat:apply` 后继续验证。
+- 新增 Web/Data 测试依赖后，导入候选测试一度被依赖模块候选污染；改为使用只包含 security 模块输出目录的 `URLClassLoader` 后通过。
+- `InnerSecurityConfigurationImportsTest` 定向测试为 `BUILD SUCCESS`，2 个用例，失败 0。
+- `fist-boot-security -am test` 为 `BUILD SUCCESS`。
+- `fist-boot-security -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 已验证：API Doc 自动配置最小上下文
 
 为避免 API Doc 模块只有编译通过、没有装配证据，本轮补充了 Boot 4 下的最小自动配置测试。

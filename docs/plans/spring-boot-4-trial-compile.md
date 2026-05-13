@@ -1607,6 +1607,44 @@ cmd /c mvn -l .codex/sde-examples-module-test-after-webserver-import.log -f exam
 - `SdeServerExampleApplicationTest`、`SdeFeignExampleApplicationTest`、`SdeRestClientExampleApplicationTest`、`SdeWebClientExampleApplicationTest` 各运行 1 个用例，失败 0，错误 0，跳过 0。
 - 当前示例验证覆盖 server 与 feign 的真实 HTTP 调用，以及 restclient / webclient 应用上下文启动。
 
+## 2026-05-13：Security 自动配置注册与 Web/Data/Security 组合验证
+
+SDE 示例组合测试通过后，继续补 Web/Data/Security 组合装配验证。复查发现 `fist-boot-security` 的自动配置注册文件仍指向 Web 模块自动配置，没有注册自身的 `InnerSecurityConfiguration`。
+
+执行内容：
+
+- 为 `fist-boot-security` 补充测试依赖：`spring-boot-starter-test`、`spring-boot-starter-web`、`fist-boot-web-app`、`fist-boot-data`。
+- 新增 `InnerSecurityConfigurationImportsTest`。
+- 将 `InnerSecurityConfiguration` 调整为 `@AutoConfiguration`。
+- 将 `fist-boot-security` 的 `AutoConfiguration.imports` 和 `spring.factories` 改为注册 `InnerSecurityConfiguration`。
+- 补充 Servlet Web/Data/Security 组合上下文验证，覆盖 `TenantInvokeAspect`、`PasswordEncoder`、`UserDecoder`、`UserInfoSupplier`、`TraceInfoResolver`、`tenantContextFilter`、`headerMdcFilter` 和 `trustedUserFilter`。
+
+执行命令：
+
+```powershell
+cmd /c mvn -l .codex/boot-security-imports-red.log -pl fist-kit-app/fist-security/fist-boot-security -am "-Dtest=InnerSecurityConfigurationImportsTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -l .codex/boot-security-format-apply.log -pl fist-kit-app/fist-security/fist-boot-security spring-javaformat:apply
+cmd /c mvn -l .codex/boot-security-imports-green-after-format.log -pl fist-kit-app/fist-security/fist-boot-security -am "-Dtest=InnerSecurityConfigurationImportsTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -l .codex/boot-security-composed-context-test.log -pl fist-kit-app/fist-security/fist-boot-security -am "-Dtest=InnerSecurityConfigurationImportsTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -l .codex/boot-security-composed-context-test-2.log -pl fist-kit-app/fist-security/fist-boot-security -am "-Dtest=InnerSecurityConfigurationImportsTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -l .codex/boot-security-module-test-after-autoconfig.log -pl fist-kit-app/fist-security/fist-boot-security -am test
+cmd /c mvn -l .codex/boot-security-format-validate-after-autoconfig.log -pl fist-kit-app/fist-security/fist-boot-security -am spring-javaformat:validate
+```
+
+错误尝试和修正：
+
+- RED 测试失败原因符合预期：自动配置候选中缺少 `InnerSecurityConfiguration`，反而包含 Web 自动配置类。
+- 修正自动配置注册后，首次 GREEN 被 `spring-javaformat:validate` 拦截，运行目标模块 `spring-javaformat:apply` 后通过。
+- 新增 Web/Data 测试依赖后，`ImportCandidates.load(...)` 会同时读取依赖模块的自动配置候选；如果继续断言候选中不包含 Web 自动配置，会误判。
+- 修正方式为使用只包含 `fist-boot-security` 自身输出目录的 `URLClassLoader` 读取候选，专门验证当前模块的自动配置注册内容。
+
+结果：
+
+- `InnerSecurityConfigurationImportsTest` 定向测试为 `BUILD SUCCESS`，2 个用例，失败 0，错误 0，跳过 0。
+- `fist-boot-security -am test` 为 `BUILD SUCCESS`。
+- `fist-boot-security -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+- 当前已具备 Web/Data/Security Servlet 组合上下文证据。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1700,6 +1738,13 @@ cmd /c mvn -l .codex/sde-examples-module-test-after-webserver-import.log -f exam
 - `.codex/sde-components-install.log`
 - `.codex/sde-examples-module-test-after-install.log`
 - `.codex/sde-examples-module-test-after-webserver-import.log`
+- `.codex/boot-security-imports-red.log`
+- `.codex/boot-security-format-apply.log`
+- `.codex/boot-security-imports-green-after-format.log`
+- `.codex/boot-security-composed-context-test.log`
+- `.codex/boot-security-composed-context-test-2.log`
+- `.codex/boot-security-module-test-after-autoconfig.log`
+- `.codex/boot-security-format-validate-after-autoconfig.log`
 
 ## 资料来源
 

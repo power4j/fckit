@@ -84,5 +84,25 @@
       <artifactId>fist-support-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.power4j.fist3</groupId>
+      <artifactId>fist-boot-web-app</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.power4j.fist3</groupId>
+      <artifactId>fist-boot-data</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

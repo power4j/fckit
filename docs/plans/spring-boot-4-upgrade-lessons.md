@@ -998,7 +998,40 @@ OAuth2 Server 自动配置最小上下文已经证明 `AuthorizationServerAutoCo
 - 对独立示例工程，优先使用「安装本地快照组件 + 运行示例 reactor」的两步验证。
 - 包迁移问题要和同组已通过示例对照，优先做局部一致性修复。
 
+## 经验 31：自动配置候选测试要隔离当前模块资源
+
+问题：
+
+`fist-boot-security` 的自动配置注册文件误注册了 Web 模块自动配置，没有注册自身的 `InnerSecurityConfiguration`。新增测试依赖后，`ImportCandidates.load(...)` 会读取整个测试 classpath 上的所有 `AutoConfiguration.imports`，导致依赖模块的候选也进入断言结果。
+
+错误尝试或风险：
+
+- 第一个 RED 测试正确暴露了 `InnerSecurityConfiguration` 缺失。
+- 修正后新增 Web/Data 组合测试依赖，导入候选断言又看到 `fist-boot-web-app` 和 `fist-boot-data` 的自动配置候选。
+- 如果继续用全 classpath 候选断言「不包含 Web 自动配置」，测试会把依赖模块的合法候选误判为当前模块的注册污染。
+- 修正生产代码后首次 GREEN 被 `spring-javaformat:validate` 拦截，说明自动配置类注解变更后仍要按项目格式门禁处理。
+
+有效方案：
+
+- 对「当前模块是否正确写入自动配置资源」这类测试，使用只包含当前模块输出目录的 `URLClassLoader` 读取 `ImportCandidates`。
+- 对「多个模块能否一起启动」这类测试，单独使用 `WebApplicationContextRunner` 加载明确的自动配置集合。
+- `fist-boot-security` 应将 `InnerSecurityConfiguration` 注册为 `@AutoConfiguration`，并在 `AutoConfiguration.imports` 与 `spring.factories` 中只声明自身自动配置。
+
+验证证据：
+
+- RED：`InnerSecurityConfigurationImportsTest` 失败，自动配置候选缺少 `InnerSecurityConfiguration`。
+- GREEN：隔离 ClassLoader 后导入候选测试通过。
+- Web/Data/Security Servlet 组合上下文测试通过，覆盖 `TenantInvokeAspect`、`PasswordEncoder`、`UserDecoder`、`UserInfoSupplier` 和 3 个 filter / resolver 注册点。
+- `fist-boot-security -am test` 为 `BUILD SUCCESS`。
+- `fist-boot-security -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 自动配置资源测试和组合上下文测试要分开：前者验证当前 artifact，后者验证多个 artifact 一起工作。
+- 一旦测试 classpath 引入其他 starter，`ImportCandidates.load(...)` 的结果不能再直接等同于当前模块资源内容。
+- Boot 4 迁移中发现自动配置文件复制错误时，应同时维护 `AutoConfiguration.imports` 和兼容保留的 `spring.factories`。
+
 ## 当前剩余高优先级事项
 
-1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置、OAuth2 Server 自动配置最小上下文、OAuth2 Server JDBC 授权服务组合上下文和 SDE 示例应用组合测试已具备证据，下一步优先扩大到更完整的 Web/Data/Security 组合样例或配置项迁移验证。
+1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」；Gateway 最小应用上下文、Gateway OAuth2 配置装配、API Doc 自动配置、OAuth2 Server 自动配置最小上下文、OAuth2 Server JDBC 授权服务组合上下文、SDE 示例应用组合测试和 Web/Data/Security Servlet 组合上下文已具备证据，下一步优先进入配置项迁移验证。
 2. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。
