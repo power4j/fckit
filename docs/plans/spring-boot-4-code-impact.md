@@ -1444,9 +1444,9 @@ rg -n "defaultIfNull|Validate\.notNull|StringUtils\.equalsIgnoreCase|ret\.getVal
 
 ## 下一步
 
-1. 评估是否需要补一个最小 Gateway 启动类或示例，验证完整 Boot 4 Gateway 应用上下文。
-2. 复查 Sentinel / Nacos 是否有实际使用点；如无实际使用，改为移除未使用依赖。
-3. 如决定引入真实数据库矩阵，为 OAuth2 LOB 补充 MySQL、PostgreSQL、达梦的驱动级验证。
+1. 将验证重点从「编译迁移」切换到「应用级启动和组合行为验证」，优先覆盖 Gateway 最小应用上下文、API Doc 自动配置和 OAuth2 Server 组合启动。
+2. 继续处理当前仅剩的编译告警基线，重点评估 JDK 8 `release` 模块中 `@NullMarked package-info.java` 触发的 `ElementType.MODULE` 警告是否需要专项消除。
+3. 继续保持「`clean compile` 只用于发现新阻塞，定向 `compile` 用于确认真实废弃告警」的审计方式，避免把 reactor 清理副作用误判为 Boot 4 源码问题。
 
 ## 已验证：Feign/SDE 与 Boot 4 客户端模块化适配
 
@@ -1622,7 +1622,7 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 - 这是 Boot 4 迁移中的破坏性 API 清理。下游如果显式传入自定义 `LobHandler`，需要改为依赖默认 JDBC 绑定逻辑，或自定义 `authorizationParametersMapper` / `authorizationRowMapper`。
 - 达梦等数据库的 BLOB 查询兼容逻辑仍保留：字段类型仍来自数据库元数据，查询 SQL 仍走 `processQuerySql(...)` 中的 LOB 比较函数处理。
 - 当前本地验证已覆盖 Spring Authorization Server 7 官方 H2 schema 下的 BLOB 写入、读取和 access token 查询，也覆盖了将 LOB 字段改为 CLOB 后的写入与读取。
-- MySQL、PostgreSQL、达梦等真实驱动仍需接入外部数据库或引入 Testcontainers 后再验证；当前仓库未配置这些测试依赖和数据库服务。
+- MySQL 8、PostgreSQL 16 和达梦真实驱动矩阵已通过条件集成测试入口验证；当前剩余风险从 JDBC LOB 兼容性转向更完整的应用级集成场景。
 
 本地数据库矩阵：
 
@@ -1630,15 +1630,53 @@ Spring Framework 7 的 HTTP Service Clients 通过 `@HttpExchange` 接口和 `Ht
 | --- | --- | --- | --- |
 | H2 + Authorization Server 7 官方 `oauth2-authorization-schema.sql` | `DefaultAuthorizationService.save(...)`、`findById(...)`、`findByToken(..., ACCESS_TOKEN)` | 通过 | 覆盖 `SqlBinaryValue` 写入、`ResultSet#getBytes(...)` 读取和 BLOB token 查询 |
 | H2 + CLOB schema 变体 | 将官方 schema 中 `blob DEFAULT NULL` 替换为 `clob DEFAULT NULL` 后执行 `save(...)`、`findById(...)` | 通过 | 覆盖 `SqlCharacterValue` 写入和 `ResultSet#getString(...)` 读取 |
-| MySQL | 未执行 | 待验证 | 官方 schema 注释要求 JDBC URL 增加 `preserveInstants=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true` |
-| PostgreSQL | 未执行 | 待验证 | 官方 schema 注释要求将 `blob` 改为 `text`，将 `timestamp` 改为 `timestamptz` |
-| 达梦 | 未执行 | 待验证 | 需验证既有 `getLobCmpFunc()` 兼容策略和驱动元数据返回类型 |
+| MySQL 8 | 外部条件集成测试 `ExternalJdbcAuthorizationServiceTest` | 通过 | 覆盖 schema 初始化、`save(...)`、`findById(...)` 和 `findByToken(..., ACCESS_TOKEN)` |
+| PostgreSQL 16 | 外部条件集成测试 `ExternalJdbcAuthorizationServiceTest` | 通过 | 初始化 schema 时将 `blob` 转换为 `text`，`timestamp` 转换为 `timestamptz` |
+| 达梦 | 外部条件集成测试 `ExternalJdbcAuthorizationServiceTest` | 通过 | 保留既有 `getLobCmpFunc()` 兼容策略，覆盖 schema 初始化、授权写入与读取 |
 
 验证结果：
 
 - `DefaultAuthorizationServiceTest` 定向测试为 `BUILD SUCCESS`，共 4 个用例，失败 0。
 - `fist-boot-security-oauth2-server -am test` 为 `BUILD SUCCESS`，目标模块自身共 7 个用例，失败 0。
 - `fist-boot-security-oauth2-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+- MySQL 8、PostgreSQL 16 和达梦外部条件集成测试均为 `BUILD SUCCESS`，每轮测试 1 个用例，失败 0。
+
+## 已复核：当前废弃告警基线
+
+在 MySQL 8、PostgreSQL 16、达梦和 Redis 7 外部资源矩阵完成后，重新按当前仓库状态执行 Boot 4 废弃告警复核，目的是确认「还剩哪些真实问题」，而不是继续追逐历史文档中的旧待办。
+
+执行结果：
+
+- `fist-support-web`、`fist-support-data`、`fist-boot-apidoc` 不带 `clean` 的定向 `compile` 审计均为 `BUILD SUCCESS`，日志未命中生产代码 `deprecated` 告警。
+- `fist-sde-client`、`fist-sde-boot-starter`、`fist-cloud-rpc-feign` 组合 `clean compile` 为 `BUILD SUCCESS`；当前仅剩 `package-info.java` 上 `@NullMarked` 在 JDK 8 `release` 编译时触发的 `ElementType.MODULE` 警告。
+- `fist-boot-apidoc` 和 `web/data` 组合第一次 `clean compile` 曾出现编译失败，但复跑不带 `clean` 的定向 `compile` 后均通过，说明这两次失败不能直接视为 Boot 4 生产代码阻塞。
+
+当前判断：
+
+- 当前仓库主代码面上，Boot 4 迁移期最显著的废弃 API 已基本清理完毕。
+- 仍需跟踪的编译告警不再集中于 Spring Boot 4 破坏性 API，而是 JDK 8 兼容模块中的 JSpecify `@NullMarked` 元注解警告。
+- 升级工作的下一阶段应从「清编译错误 / 清废弃调用」转向「最小应用启动、自动配置装配和跨模块组合行为验证」。
+
+## 已验证：API Doc 自动配置最小上下文
+
+为避免 API Doc 模块只有编译通过、没有装配证据，本轮补充了 Boot 4 下的最小自动配置测试。
+
+受影响文件：
+
+- `fist-kit-app/fist-boot-apidoc/pom.xml`
+- `fist-kit-app/fist-boot-apidoc/src/test/java/com/power4j/fist/boot/autoconfigure/apidoc/SpringDocAutoConfigurationTest.java`
+
+处理结果：
+
+- `fist-boot-apidoc` 补充 `spring-boot-starter-test` 测试依赖。
+- 新增 `SpringDocAutoConfigurationTest`，使用 `ApplicationContextRunner` 装配 `SpringDocAutoConfiguration`。
+- 测试断言 `OperationCustomizer` 和 `OpenAPI` bean 可创建，并校验 `inner_auth` 的 `SecurityScheme` 仍使用 `SecurityConstant.HEADER_USER_TOKEN_INNER`。
+
+验证结果：
+
+- 首次执行被 `spring-javaformat:validate` 拦截；运行 `spring-javaformat:apply` 后重跑通过。
+- `fist-boot-apidoc -am "-Dtest=SpringDocAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，失败 0。
+- `fist-boot-apidoc -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
 ## Redisson 队列订阅 API
 

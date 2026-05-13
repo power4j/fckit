@@ -1411,6 +1411,55 @@ cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsum
 - 仓库只记录环境变量名和用途，不记录任何真实连接串、主机、端口、schema、用户名或密码。
 - 测试清理只限定到本次生成的授权 ID 或队列名，不执行全表清空或共享资源重置。
 
+## 2026-05-13：废弃告警基线复核
+
+在 MySQL 8、PostgreSQL 16、达梦和 Redis 7 外部资源矩阵完成后，重新做一轮面向当前仓库状态的废弃告警审计。目的不是继续沿用旧文档的「下一步」，而是确认当前代码还剩哪些真实的 Boot 4 迁移问题。
+
+官方资料补充：
+
+- Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3` 明确 `spring-boot-properties-migrator` 仍是配置项迁移的官方辅助工具，适合应用级验证阶段临时接入。
+- 同一份文档也说明 Boot 4 默认优先使用 Jackson 3，如需迁移缓冲可临时启用 `spring.jackson.use-jackson2-defaults=true`，但当前仓库本轮没有新增该兼容开关。
+
+本轮先执行三组 `clean compile`：
+
+```powershell
+cmd /c mvn -U -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+cmd /c mvn -U -pl fist-kit-infra/fist-sde/fist-sde-client,fist-kit-infra/fist-sde/fist-sde-boot-starter,fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+cmd /c mvn -U -pl fist-kit-app/fist-web/fist-support-web,fist-kit-app/fist-web/fist-boot-web-app,fist-kit-app/fist-data/fist-support-data,fist-kit-app/fist-data/fist-boot-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+```
+
+第一轮结果：
+
+- SDE / Feign 组合为 `BUILD SUCCESS`。
+- `fist-boot-apidoc` `clean compile` 失败。
+- Web / Data 组合 `clean compile` 失败，日志表现为依赖模块 `target/classes` 下类文件 `NoSuchFileException`。
+
+错误尝试和修正：
+
+- 如果直接把第一次 `clean compile` 的失败当作新的 Boot 4 阻塞点，会把 reactor 清理副作用和真实源码问题混在一起，误导后续排查顺序。
+- 复查发现 `fist-boot-apidoc`、`fist-support-web`、`fist-support-data` 当前源码树已经没有此前文档记录的 `JsonNode.fields()`、`ObjectUtils.defaultIfNull(...)`、`Validate.notNull(...)`、`MutableObject.getValue()`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module` 等直观迁移点。
+- 因此第二轮改为不带 `clean` 的定向 `compile` 审计，专门验证当前源码是否仍有真实废弃告警。
+
+第二轮执行：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile
+cmd /c mvn -pl fist-kit-app/fist-data/fist-support-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile
+cmd /c mvn -pl fist-kit-app/fist-boot-apidoc -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile
+```
+
+第二轮结果：
+
+- 三个目标模块均为 `BUILD SUCCESS`。
+- 日志未命中生产代码 `deprecated` 提示。
+- 当前唯一稳定复现的编译告警来自 JDK 8 `release` 模块中的 `package-info.java`：`@NullMarked` 元注解包含 `ElementType.MODULE`，在 `javac --release 8` 下会报告「未知的枚举常量 `java.lang.annotation.ElementType.MODULE`」。
+
+当前结论：
+
+- 历史文档中的若干「下一步」已经过时，例如 Groovy 测试迁移、真实数据库矩阵和 Sentinel / Nacos 复查都已完成。
+- 当前主代码层面没有新暴露出大批 Boot 4 废弃 API 调用点。
+- 升级工作重点应从「继续扫废弃 API」切换到「应用级启动、自动配置装配和跨模块组合验证」。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1488,6 +1537,12 @@ cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsum
 - `.codex/oauth2-resource-owner-deprecated-format-validate.log`
 - `.codex/external-jdbc-conditional-test.log`
 - `.codex/external-redis-conditional-test.log`
+- `.codex/boot4-deprecation-apidoc.log`
+- `.codex/boot4-deprecation-feign-sde.log`
+- `.codex/boot4-deprecation-web-data.log`
+- `.codex/boot4-deprecation-support-web.log`
+- `.codex/boot4-deprecation-support-data.log`
+- `.codex/boot4-deprecation-apidoc-noclean.log`
 
 ## 资料来源
 
@@ -1520,4 +1575,5 @@ cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsum
 - Redisson Context7 文档：`/redisson/redisson`，未直接覆盖 `RBlockingQueue.subscribeOnElements` 替代项。
 - Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `subscribeOnElements(Consumer<V>)` 废弃，`subscribeOnElements(Function<V, CompletionStage<Void>>)` 未废弃。
 - Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `BaseConfig#setPassword(String)` 已废弃，并在字节码提示中建议改用 `Config` 的 password 设置。
+- Spring Boot Context7 文档：`/spring-projects/spring-boot/v4.0.3`，确认 `spring-boot-properties-migrator` 可作为配置项迁移辅助依赖，并说明 Boot 4 默认优先使用 Jackson 3。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

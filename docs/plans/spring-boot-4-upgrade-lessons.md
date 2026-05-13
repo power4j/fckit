@@ -810,7 +810,42 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - 实际执行 MySQL、PostgreSQL、达梦和 Redis 验证前，先由实施人员在本地 shell 注入环境变量，再运行定向测试。
 - 外部数据库返回账号锁定或登录失败次数限制后必须停止重试，先由数据库管理员恢复账号或提供新的测试账号。
 
+## 经验 25：重新做废弃告警审计时，要先清理历史待办，再区分真实阻塞和 `clean compile` 假阻塞
+
+问题：
+
+在 Groovy/Spock 清理、Sentinel 依赖移除、真实数据库矩阵验证都已经完成后，历史调研文档里仍保留了多处「后续处理 Groovy」「后续补 MySQL / PostgreSQL / 达梦」「后续复查 Sentinel / Nacos」等旧阶段表述。如果继续顺着这些旧待办推进，会把已经完成的事项重新排成高优先级，浪费排查时间。
+
+错误尝试或风险：
+
+- 第一轮重新审计直接执行三组 `clean compile`，其中 `fist-boot-apidoc` 和 Web / Data 组合出现失败。若只看这轮结果，容易误判为新的 Boot 4 源码阻塞。
+- Web / Data 组合失败日志表现为依赖模块 `target/classes` 下类文件 `NoSuchFileException`，这类失败混入了 reactor 清理副作用，不能直接归因到源码迁移。
+- 在不复查源码现状的情况下继续沿用旧文档中的 `JsonNode.fields()`、`ObjectUtils.defaultIfNull(...)`、`Validate.notNull(...)`、`MutableObject.getValue()` 等待办，会把已经处理完的风险重新当作活跃问题。
+- 如果不先复扫 Groovy、Sentinel / Nacos 和真实资源验证状态，评审会看到同一文档同时出现「已完成」与「待验证」两套互相冲突的结论。
+
+有效方案：
+
+- 先做一次当前态复核，确认仓库内 `*.groovy`、Groovy/Spock/gmavenplus 构建链路、Sentinel / Nacos 使用点和前述典型废弃 API 已不再命中。
+- 第一轮 `clean compile` 只用于发现新的候选阻塞，不直接据此下结论。
+- 第二轮改用不带 `clean` 的目标模块 `compile`，专门提取当前源码还能稳定复现的 `deprecated` / `warning`。
+- 结合官方当前文档确认边界：Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3` 显示 `spring-boot-properties-migrator` 仍是配置项迁移的官方辅助工具，Jackson 3 已是 Boot 4 默认方向，因此后续重点应转向应用级启动与配置验证，而不是继续泛化代码层 API 扫描。
+
+验证证据：
+
+- `Get-ChildItem -Recurse -Filter *.groovy` 未命中；`rg` 复扫 `gmavenplus`、`spock`、`groovy-tables` 未命中。
+- `rg` 复扫 `JsonNode.fields(`、`Springfox`、`ObjectUtils.defaultIfNull`、`Validate.notNull`、`MutableObject.getValue(`、`org.springframework.lang.Nullable`、`SecurityJackson2Modules`、`OAuth2AuthorizationServerJackson2Module`、`MappingJackson2HttpMessageConverter` 在当前主代码范围未命中。
+- `cmd /c mvn -U -pl fist-kit-infra/fist-sde/fist-sde-client,fist-kit-infra/fist-sde/fist-sde-boot-starter,fist-kit-cloud/fist-cloud-rpc-feign -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile` 为 `BUILD SUCCESS`。
+- `cmd /c mvn -pl fist-kit-app/fist-web/fist-support-web -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" compile`、`fist-support-data` 同类命令和 `fist-boot-apidoc` 同类命令均为 `BUILD SUCCESS`，日志未命中新的生产代码 deprecation 提示。
+- 当前唯一稳定复现的编译告警来自 JDK 8 `release` 模块中 `package-info.java` 上的 `@NullMarked`，javac 报告「未知的枚举常量 `java.lang.annotation.ElementType.MODULE`」。
+
+后续复用规则：
+
+- 每完成一批升级工作后，必须回写文档，删除已经过时的「下一步」，否则后续审计会被历史状态污染。
+- `clean compile` 失败只能作为候选线索，必须用不带 `clean` 的定向 `compile` 或等价最小验证二次确认。
+- 升级中后期如果主代码废弃告警已基本清空，下一阶段应转向应用启动、自动配置装配、配置项迁移和跨模块组合验证。
+
 ## 当前剩余高优先级事项
 
-1. OAuth2 LOB 真实驱动矩阵：MySQL 8、PostgreSQL 16 和达梦均已通过。
-2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
+1. 当前剩余高优先级验证已从「真实资源矩阵」转向「应用级启动和组合行为」，优先覆盖 Gateway 最小应用上下文、API Doc 自动配置和 OAuth2 Server 组合启动。
+2. 继续评估 JDK 8 `release` 模块中 `@NullMarked package-info.java` 触发的 `ElementType.MODULE` 告警是否需要专项处理。
+3. 如需验证配置项迁移，可在应用级样例中临时接入 `spring-boot-properties-migrator`，验证完成后再移除。
