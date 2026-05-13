@@ -1394,7 +1394,7 @@ cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsum
 - PostgreSQL 16 首次真实环境验证失败，失败原因是官方 schema 使用 `blob` 类型；加入 PostgreSQL schema 变体后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 0。
 - Redis 7 首次真实环境验证失败，失败原因是测试写入队列名与 `@QueueConsumer("test")` 订阅队列名不一致；加入测试专用 `NameGenerator` 后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 0。
 - Redis 条件测试无环境变量回归为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 1 个。
-- 达梦真实验证已加载本地达梦 JDBC 驱动并发起连接；第一次失败为数据库认证失败，第二次只调整用户名大小写后失败为登录失败次数超过限制，未进入 schema 初始化和 LOB 读写阶段。
+- 达梦首次真实验证因账号认证状态失败；更新测试凭据后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，错误 0，跳过 0。
 
 错误尝试和修正：
 

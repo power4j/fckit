@@ -799,7 +799,7 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - PostgreSQL 16 首次真实环境验证因 `blob` 类型不兼容失败；加入 PostgreSQL schema 变体后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
 - Redis 7 首次真实环境验证因队列名不一致失败；加入测试专用 `NameGenerator` 后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
 - Redis 条件测试无环境变量回归为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
-- 达梦真实环境验证未完成：第一次失败为认证失败，第二次失败为登录失败次数超过限制；未进入 schema 初始化和 LOB 读写阶段。
+- 达梦首次真实环境验证因账号认证状态失败；更新测试凭据后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0，覆盖 schema 初始化、授权写入、按 ID 读取和按 access token 查询。
 - 本轮没有把达梦、MySQL、PostgreSQL 或 Redis 的真实地址、账号、密码写入仓库文件。
 
 后续复用规则：
@@ -812,5 +812,5 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 
 ## 当前剩余高优先级事项
 
-1. OAuth2 LOB 真实驱动矩阵：MySQL 8 和 PostgreSQL 16 已通过；达梦已验证到驱动加载和连接发起阶段，当前阻塞在测试账号认证状态。
+1. OAuth2 LOB 真实驱动矩阵：MySQL 8、PostgreSQL 16 和达梦均已通过。
 2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
