@@ -17,7 +17,8 @@
 package com.power4j.fist.boot.autoconfigure.redisson.queue;
 
 import com.power4j.fist.message.queue.QueueConsumer;
-import com.power4j.fist.redisson.common.DefaultNameGenerator;
+import com.power4j.fist.redisson.common.NameGenerator;
+import com.power4j.fist.redisson.common.RedisNamespace;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -57,10 +58,10 @@ class ExternalRedisQueueConsumerTest {
 	void shouldConsumeMessageFromExternalRedisBlockingQueue() throws Exception {
 		this.redisson = createRedisson();
 		String originName = "fist-it-" + UUID.randomUUID();
-		this.queueName = "queue:" + originName;
+		this.queueName = "queue::" + originName;
 		TestConsumer consumer = new TestConsumer();
-		QueueConsumerBeanProcessor processor = new QueueConsumerBeanProcessor(new DefaultNameGenerator(), this.redisson,
-				null);
+		QueueConsumerBeanProcessor processor = new QueueConsumerBeanProcessor(new TestNameGenerator(this.queueName),
+				this.redisson, null);
 
 		processor.postProcessAfterInitialization(consumer, "testConsumer");
 		RBlockingQueue<String> queue = this.redisson.getBlockingQueue(this.queueName);
@@ -85,6 +86,23 @@ class ExternalRedisQueueConsumerTest {
 
 	private static String defaultIfBlank(String value, String defaultValue) {
 		return StringUtils.hasText(value) ? value : defaultValue;
+	}
+
+	static class TestNameGenerator implements NameGenerator {
+
+		private final String queueName;
+
+		TestNameGenerator(String queueName) {
+			this.queueName = queueName;
+		}
+
+		@Override
+		public String generate(RedisNamespace namespace, String origin) {
+			Assertions.assertEquals(RedisNamespace.QUEUE, namespace);
+			Assertions.assertEquals("test", origin);
+			return this.queueName;
+		}
+
 	}
 
 	public static class TestConsumer {

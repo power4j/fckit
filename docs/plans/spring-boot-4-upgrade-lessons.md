@@ -778,6 +778,7 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - 第一次新增 `ExternalJdbcAuthorizationServiceTest` 后，`spring-javaformat:validate` 拦截构建，说明新增测试文件也必须走项目格式插件。
 - Redisson `4.3.1` 的 `SingleServerConfig#setPassword(String)` 继承自已废弃的 `BaseConfig#setPassword(String)`，测试源码直接使用会继续产生 deprecation 警告。
 - PostgreSQL 16 首次真实验证失败，根因是 Spring Authorization Server 官方 schema 使用 `blob`，PostgreSQL 不支持该类型。
+- Redis 7 首次真实验证已成功建立连接，但消费者没有在超时时间内收到消息。根因不是 Redis 连通性，而是测试写入的随机队列名与 `@QueueConsumer("test")` 实际订阅队列名不一致。
 
 有效方案：
 
@@ -786,6 +787,7 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - Redis 验证仅在设置 `FIST_IT_REDIS_URL` 后启用，密码和 database 也通过环境变量传入。
 - 测试只清理本次生成的授权 ID 或队列名，避免影响共享测试环境。
 - Redisson 密码配置改用 `Config#setPassword(String)`，避开 `BaseConfig#setPassword(String)` 的废弃入口。
+- Redis 真实验证使用测试专用 `NameGenerator`，将固定注解值映射到本次运行唯一队列名，避免共享队列污染，同时保证写入队列与订阅队列一致。
 - PostgreSQL 初始化 schema 时，将 LOB 字段从 `blob` 转换为 `text`，将时间字段从 `timestamp` 转换为 `timestamptz`。
 
 验证证据：
@@ -794,6 +796,8 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 - `cmd /c mvn -pl fist-kit-infra/fist-redisson -am "-Dtest=ExternalRedisQueueConsumerTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
 - MySQL 8 真实环境验证为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
 - PostgreSQL 16 首次真实环境验证因 `blob` 类型不兼容失败；加入 PostgreSQL schema 变体后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
+- Redis 7 首次真实环境验证因队列名不一致失败；加入测试专用 `NameGenerator` 后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
+- Redis 条件测试无环境变量回归为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
 - 本轮没有把达梦、MySQL、PostgreSQL 或 Redis 的真实地址、账号、密码写入仓库文件。
 
 后续复用规则：
@@ -806,5 +810,4 @@ OAuth2 授权服务的 LOB 读写和 Redisson 队列订阅已经通过本地 H2 
 ## 当前剩余高优先级事项
 
 1. OAuth2 LOB 真实驱动矩阵：MySQL 8 和 PostgreSQL 16 已通过，达梦仍需接入环境实际执行。
-2. Redisson 队列真实 Redis 验证：测试入口已具备，仍需设置 Redis 环境变量实际执行。
-3. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
+2. 继续按模块处理剩余 Boot 4 编译、弃用 API 与应用级启动验证。
