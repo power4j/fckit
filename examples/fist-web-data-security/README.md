@@ -4,4 +4,4 @@
 
 | 示例 | 重点 |
 | --- | --- |
-| `example-servlet` | Spring MVC、H2、FIST Data 参数解析、FIST Security 可信用户头与 Web 过滤器组合 |
+| `example-servlet` | Spring MVC、H2、FIST Data 参数解析、FIST Security 可信用户头、Web 过滤器和 OpenAPI 文档组合 |

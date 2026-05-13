@@ -28,8 +28,20 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-bom</artifactId>
+        <version>${springdoc-openapi.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>com.power4j.fist3</groupId>
         <artifactId>fist-boot-web-app</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist3</groupId>
+        <artifactId>fist-boot-apidoc</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

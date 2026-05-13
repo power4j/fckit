@@ -2079,9 +2079,9 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 达梦首次真实验证因账号认证状态失败；更新测试凭据后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0，覆盖 schema 初始化、授权写入、按 ID 读取和按 access token 查询。
 - MySQL、PostgreSQL、达梦和 Redis 外部资源矩阵已完成当前测试入口覆盖；后续风险转向更完整的应用级启动和业务集成验证。
 
-## Web/Data/Security 示例应用
+## Web/Data/Security/API Doc 示例应用
 
-本轮新增 `examples/fist-web-data-security/example-servlet`，用于覆盖 Web、Data、Security 三类 starter 在 Spring Boot 4 Servlet 应用中的组合启动路径。
+本轮新增并扩展 `examples/fist-web-data-security/example-servlet`，用于覆盖 Web、Data、Security、API Doc 四类 starter 在 Spring Boot 4 Servlet 应用中的组合启动路径。
 
 受影响文件：
 
@@ -2098,15 +2098,16 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 
 处理结果：
 
-- 示例应用引入 `fist-boot-web-app`、`fist-boot-data`、`fist-boot-security`、`spring-boot-starter-web`、`spring-boot-starter-security`、`spring-boot-starter-jdbc` 和 H2。
+- 示例应用引入 `fist-boot-web-app`、`fist-boot-data`、`fist-boot-security`、`fist-boot-apidoc`、`spring-boot-starter-web`、`spring-boot-starter-security`、`spring-boot-starter-jdbc`、`springdoc-openapi-starter-webmvc-api` 和 H2。
 - `ProfileController` 通过真实 HTTP 请求覆盖 H2 查询、`Pageable` 参数解析、`ObjectValidator` 校验、`UserInfoSupplier` 可信用户头解析和 FIST Web 请求 ID 读取。
-- 示例测试使用 `@SpringBootTest(webEnvironment = RANDOM_PORT)` 启动 Tomcat 11，并通过 `RestClient` 发送 GET / POST 请求。
+- 示例测试使用 `@SpringBootTest(webEnvironment = RANDOM_PORT)` 启动 Tomcat 11，并通过 `RestClient` 发送 GET / POST / OpenAPI 文档请求。
 - 测试断言 `TenantInvokeAspect`、`ObjectValidator`、`PasswordEncoder`、`UserDecoder`、`UserInfoSupplier`、`TraceInfoResolver`、`tenantContextFilter`、`headerMdcFilter` 和 `trustedUserFilter` 已装配。
+- 测试请求 `/v3/api-docs`，断言 OpenAPI JSON 包含 `inner_auth` 安全方案、`X-USER-IN` header 和示例业务路径。
 
 影响判断：
 
 - 这是示例和验证覆盖增强，不改变生产模块行为。
-- 该示例补上了此前仅有最小 `WebApplicationContextRunner` 组合上下文、缺少真实 HTTP 请求的覆盖缺口。
+- 该示例补上了此前仅有最小 `WebApplicationContextRunner` / `ApplicationContextRunner` 组合上下文、缺少真实 HTTP 和 OpenAPI 文档请求的覆盖缺口。
 - 示例使用 H2 内存库，不依赖外部数据库或 Redis 资源。
 
 验证结果：
@@ -2115,6 +2116,8 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 第二次测试运行失败，原因是 FIST Jackson `NumberStrModule` 会将 `long id` 序列化为字符串，断言从 `1` 调整为 `"1"` 后通过。
 - `cmd /c mvn -l .codex/web-data-security-example-test-3.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am test` 为 `BUILD SUCCESS`；新示例测试 1 个用例，失败 0，错误 0，跳过 0。
 - `cmd /c mvn -l .codex/web-data-security-example-format-validate.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
+- 扩展 API Doc 后，`cmd /c mvn -l .codex/web-data-security-apidoc-example-test.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am test` 为 `BUILD SUCCESS`；新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- API Doc 扩展后的格式命令 `cmd /c mvn -l .codex/web-data-security-apidoc-example-format-validate.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
 
 ## 本地证据
 
@@ -2137,6 +2140,8 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Groovy/Spock 移除目标模块测试日志：`.codex/groovy-removal-module-tests.log`
 - Web/Data/Security 示例验证日志：`.codex/web-data-security-example-test-3.log`
 - Web/Data/Security 示例格式命令日志：`.codex/web-data-security-example-format-validate.log`
+- Web/Data/Security/API Doc 示例验证日志：`.codex/web-data-security-apidoc-example-test.log`
+- Web/Data/Security/API Doc 示例格式命令日志：`.codex/web-data-security-apidoc-example-format-validate.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`

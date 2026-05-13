@@ -71,6 +71,27 @@ class WebDataSecurityExampleApplicationTest {
 		assertThat(this.applicationContext.containsBean("trustedUserFilter")).isTrue();
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	void shouldExposeOpenApiDocumentWithFistSecurityScheme() {
+		Map<String, Object> document = RestClient.create("http://localhost:" + this.port)
+			.get()
+			.uri("/v3/api-docs")
+			.retrieve()
+			.body(new ParameterizedTypeReference<>() {
+			});
+
+		Map<String, Object> components = (Map<String, Object>) document.get("components");
+		Map<String, Object> securitySchemes = (Map<String, Object>) components.get("securitySchemes");
+		Map<String, Object> innerAuth = (Map<String, Object>) securitySchemes.get("inner_auth");
+		Map<String, Object> paths = (Map<String, Object>) document.get("paths");
+
+		assertThat(innerAuth).containsEntry("type", "apiKey")
+			.containsEntry("in", "header")
+			.containsEntry("name", SecurityConstant.HEADER_USER_TOKEN_INNER);
+		assertThat(paths).containsKeys("/api/profiles/{id}", "/api/profiles");
+	}
+
 	private String encodeUser(String username) {
 		UserInfo userInfo = new UserInfo();
 		userInfo.setUserId(1001L);

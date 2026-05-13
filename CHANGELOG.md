@@ -8,7 +8,7 @@
 
 ### Added
 
-- 新增 `examples/fist-web-data-security/example-servlet`，提供 Web、Data、Security starter 在 Spring Boot 4 Servlet 应用中的组合启动示例。
+- 新增 `examples/fist-web-data-security/example-servlet`，提供 Web、Data、Security、API Doc starter 在 Spring Boot 4 Servlet 应用中的组合启动示例。
 
 ### Changed
 

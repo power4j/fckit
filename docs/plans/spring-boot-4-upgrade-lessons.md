@@ -1099,7 +1099,37 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 示例断言要尊重项目已有 Jackson、过滤器和参数解析约定，不能按裸 Spring Boot 默认行为假设响应形态。
 - examples 模块的格式跳过配置需要在交付说明中单独说明，不能把它当作格式插件已实际检查新增示例源码。
 
+## 经验 34：API Doc 示例验证要补齐 SpringDoc WebMVC 入口
+
+问题：
+
+`fist-boot-apidoc` 自身只声明 `springdoc-openapi-starter-common` 为 optional 依赖，最小上下文测试可以验证 `OpenAPI` bean 和 `OperationCustomizer`，但不能证明应用侧 `/v3/api-docs` endpoint 在 Boot 4 + SpringDoc 3 下真实可访问。
+
+错误尝试或风险：
+
+- 如果示例只引入 `fist-boot-apidoc`，应用侧未必具备 SpringDoc WebMVC endpoint。
+- 只断言 `OpenAPI` bean 会漏掉 WebMVC starter、endpoint 暴露、路径生成和安全方案序列化问题。
+- 本次首次加入 `springdoc-openapi-starter-webmvc-api:3.0.3` 时 Maven 从镜像仓库下载依赖，后续离线环境需要确认本地仓库已有该 artifact。
+
+有效方案：
+
+- 在组合示例中同时引入 `fist-boot-apidoc` 和 `springdoc-openapi-starter-webmvc-api`。
+- 使用真实 HTTP 请求访问 `/v3/api-docs`，而不是只读取 `OpenAPI` bean。
+- 断言 `components.securitySchemes.inner_auth` 中的 `type`、`in` 和 `name`，确认 FIST API Doc 自动配置的 `X-USER-IN` header 已进入最终 OpenAPI JSON。
+- 断言示例 controller 的 `/api/profiles/{id}` 和 `/api/profiles` 路径已进入文档，确认 endpoint 真正扫描了应用路由。
+
+验证证据：
+
+- `cmd /c mvn -l .codex/web-data-security-apidoc-example-test.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am test` 为 `BUILD SUCCESS`，新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- `cmd /c mvn -l .codex/web-data-security-apidoc-example-format-validate.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am spring-javaformat:validate` 为 `BUILD SUCCESS`，但 examples 模块配置为跳过格式校验。
+
+后续复用规则：
+
+- API Doc 的应用级验证应以 `/v3/api-docs` JSON 为准，最小上下文测试只作为自动配置入口的补充证据。
+- 示例侧需要显式提供 SpringDoc WebMVC 或 WebFlux endpoint starter，基础库不应把该依赖强行变成传递必选依赖。
+- 记录依赖下载行为，避免把首次联网解析误判为代码变更风险。
+
 ## 当前剩余高优先级事项
 
 1. 当前仓库内已有 SDE 示例完成配置项 migrator 使用流程验证，未发现 Boot 4 配置迁移诊断；内部应用侧真实配置验证仍是独立工作。
-2. Web/Data/Security 组合示例已经补齐真实 HTTP 请求覆盖；下一步可继续扩展 API Doc / OAuth2 Server 示例级请求，或转入内部应用配置迁移验证。
+2. Web/Data/Security/API Doc 组合示例已经补齐真实 HTTP 请求覆盖；下一步可继续扩展 OAuth2 Server 示例级请求，或转入内部应用配置迁移验证。

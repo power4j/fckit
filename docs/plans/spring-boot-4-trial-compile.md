@@ -1679,9 +1679,9 @@ cmd /c mvn -l .codex/properties-migrator-sde-dependency-tree.log -f examples/fis
 - `spring-boot-properties-migrator` 的主要价值在应用侧，尤其是内部项目的真实 `application.yml`、环境变量、启动参数和配置中心配置组合。
 - FIST Kit 仓库内验证只能证明 migrator 使用流程可执行，不能替代内部项目的配置迁移验证。
 
-## 2026-05-13：Web/Data/Security 示例应用验证
+## 2026-05-13：Web/Data/Security/API Doc 示例应用验证
 
-为补齐真实应用级覆盖，本轮新增 `examples/fist-web-data-security/example-servlet`。该示例组合 `fist-boot-web-app`、`fist-boot-data` 和 `fist-boot-security`，使用 Boot 4、Tomcat 11、H2、Spring Security 和真实 HTTP 请求验证 starter 装配。
+为补齐真实应用级覆盖，本轮新增并扩展 `examples/fist-web-data-security/example-servlet`。该示例组合 `fist-boot-web-app`、`fist-boot-data`、`fist-boot-security` 和 `fist-boot-apidoc`，使用 Boot 4、Tomcat 11、H2、Spring Security、SpringDoc 3 和真实 HTTP 请求验证 starter 装配。
 
 执行内容：
 
@@ -1689,12 +1689,15 @@ cmd /c mvn -l .codex/properties-migrator-sde-dependency-tree.log -f examples/fis
 - 示例应用提供 GET `/api/profiles/{id}`，覆盖 H2 查询、`Pageable` 参数解析、请求 ID 读取和可信用户头解析。
 - 示例应用提供 POST `/api/profiles`，覆盖 `ObjectValidator` 在真实请求中的调用。
 - 示例测试断言 FIST Web/Data/Security 的关键 bean 和 3 个 filter 已装配。
+- 示例测试请求 `/v3/api-docs`，覆盖 SpringDoc WebMVC endpoint、FIST API Doc `OpenAPI` bean 和 `inner_auth` 安全方案。
 
 执行命令：
 
 ```powershell
 cmd /c mvn -l .codex/web-data-security-example-test-3.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am test
 cmd /c mvn -l .codex/web-data-security-example-format-validate.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am spring-javaformat:validate
+cmd /c mvn -l .codex/web-data-security-apidoc-example-test.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am test
+cmd /c mvn -l .codex/web-data-security-apidoc-example-format-validate.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am spring-javaformat:validate
 ```
 
 错误尝试和修正：
@@ -1708,6 +1711,8 @@ cmd /c mvn -l .codex/web-data-security-example-format-validate.log -Pexamples -p
 - 新示例测试 1 个用例，失败 0，错误 0，跳过 0。
 - 该测试启动真实 Servlet Web 环境，并通过 GET / POST HTTP 请求覆盖 Web、Data、Security 自动配置组合。
 - 格式命令为 `BUILD SUCCESS`；examples 父模块当前配置为跳过 spring-javaformat 校验。
+- 扩展 API Doc 后，示例定向测试仍为 `BUILD SUCCESS`，新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- `/v3/api-docs` 响应包含 `inner_auth` 安全方案、`X-USER-IN` header 和 `/api/profiles/{id}`、`/api/profiles` 路径。
 
 ## 本地日志
 
@@ -1813,6 +1818,8 @@ cmd /c mvn -l .codex/web-data-security-example-format-validate.log -Pexamples -p
 - `.codex/properties-migrator-sde-dependency-tree.log`
 - `.codex/web-data-security-example-test-3.log`
 - `.codex/web-data-security-example-format-validate.log`
+- `.codex/web-data-security-apidoc-example-test.log`
+- `.codex/web-data-security-apidoc-example-format-validate.log`
 
 ## 资料来源
 
