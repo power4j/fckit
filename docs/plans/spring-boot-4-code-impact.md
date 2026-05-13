@@ -1845,6 +1845,7 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 
 - `ExternalJdbcAuthorizationServiceTest` 使用 `DriverManagerDataSource` 和 `DefaultAuthorizationService`，覆盖授权写入、按 ID 读取和按 access token 读取。
 - JDBC 驱动类和驱动 JAR 支持通过环境变量注入，避免把达梦等外部驱动绑定到源码。
+- `ExternalJdbcAuthorizationServiceTest` 检测到 PostgreSQL JDBC URL 时，初始化 schema 会将官方 schema 中的 `blob` 转换为 `text`，将 `timestamp` 转换为 `timestamptz`。
 - `ExternalRedisQueueConsumerTest` 使用真实 Redisson client 注册 `QueueConsumerBeanProcessor`，向本次生成的队列写入消息并等待消费方法回调。
 - Redisson 密码配置使用 `Config#setPassword(String)`，避免测试源码继续调用 Redisson `4.3.1` 中已废弃的 `BaseConfig#setPassword(String)`。
 
@@ -1852,13 +1853,15 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 
 - 这是测试能力增强，不改变生产代码和默认测试行为。
 - 未设置 `FIST_IT_JDBC_URL` 或 `FIST_IT_REDIS_URL` 时，测试类会编译但跳过。
-- 真实 MySQL、PostgreSQL、达梦和 Redis 环境需要在本地 shell 注入环境变量后再执行，不在仓库中固化。
+- 真实环境需要在本地 shell 注入环境变量后再执行，不在仓库中固化。
 
 验证结果：
 
 - `ExternalJdbcAuthorizationServiceTest` 定向验证为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
 - `ExternalRedisQueueConsumerTest` 定向验证为 `BUILD SUCCESS`，测试 1 个，跳过 1 个。
-- 本轮未执行真实数据库或 Redis 连接验证，剩余风险是各厂商 JDBC LOB 类型映射和共享 Redis 网络连通性仍未覆盖。
+- MySQL 8 真实环境验证为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
+- PostgreSQL 16 首次真实环境验证因官方 schema 的 `blob` 类型失败；加入 PostgreSQL schema 变体后重跑为 `BUILD SUCCESS`，测试 1 个，失败 0，跳过 0。
+- 剩余风险是达梦 JDBC LOB 类型映射和共享 Redis 网络连通性仍未覆盖。
 
 ## 本地证据
 

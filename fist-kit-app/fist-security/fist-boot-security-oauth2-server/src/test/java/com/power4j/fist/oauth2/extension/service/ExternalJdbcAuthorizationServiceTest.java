@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -43,6 +44,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Properties;
 import java.util.Set;
@@ -112,8 +114,22 @@ class ExternalJdbcAuthorizationServiceTest {
 		Assumptions.assumeTrue(Boolean.parseBoolean(env("FIST_IT_JDBC_INIT_SCHEMA")),
 				"外部数据库缺少 oauth2_authorization 表，需显式设置 FIST_IT_JDBC_INIT_SCHEMA=true 才自动建表");
 		try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
-			ScriptUtils.executeSqlScript(connection, new EncodedResource(new ClassPathResource(AUTHORIZATION_SCHEMA)));
+			ScriptUtils.executeSqlScript(connection, new EncodedResource(schemaResource(connection)));
 		}
+	}
+
+	private static ByteArrayResource schemaResource(Connection connection) throws Exception {
+		ClassPathResource resource = new ClassPathResource(AUTHORIZATION_SCHEMA);
+		String sql = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+		if (isPostgresql(connection)) {
+			sql = sql.replace(" blob DEFAULT NULL", " text DEFAULT NULL")
+				.replace(" timestamp DEFAULT NULL", " timestamptz DEFAULT NULL");
+		}
+		return new ByteArrayResource(sql.getBytes(StandardCharsets.UTF_8));
+	}
+
+	private static boolean isPostgresql(Connection connection) throws SQLException {
+		return connection.getMetaData().getURL().startsWith("jdbc:postgresql:");
 	}
 
 	private static boolean tableExists(JdbcTemplate jdbcTemplate) {
