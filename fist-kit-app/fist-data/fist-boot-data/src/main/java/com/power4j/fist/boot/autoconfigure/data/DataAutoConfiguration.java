@@ -19,7 +19,6 @@ package com.power4j.fist.boot.autoconfigure.data;
 import com.power4j.fist.data.crud.validate.DefaultObjectValidator;
 import com.power4j.fist.data.crud.validate.ObjectValidator;
 import com.power4j.fist.data.crud.validate.ValidateUtil;
-import com.power4j.fist.data.tenant.InTenantAspect;
 import com.power4j.fist.data.tenant.TenantContextFilter;
 import com.power4j.fist.data.tenant.TenantInvokeAspect;
 import jakarta.validation.ValidatorFactory;
@@ -49,11 +48,6 @@ import static jakarta.servlet.DispatcherType.REQUEST;
 @AutoConfiguration
 @EnableAspectJAutoProxy
 public class DataAutoConfiguration {
-
-	@Bean
-	public InTenantAspect inTenantAspect() {
-		return new InTenantAspect();
-	}
 
 	@Bean
 	public TenantInvokeAspect tenantInvokeAspect() {

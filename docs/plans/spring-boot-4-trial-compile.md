@@ -1251,6 +1251,51 @@ cmd /c mvn -U -pl fist-kit-app/fist-data/fist-boot-data,fist-kit-app/fist-data/f
 - 不带 `-am` 只跑 `fist-boot-data` 会解析远端 `4.0.0-SNAPSHOT` 上游模块，失败于本仓库 SNAPSHOT 依赖不可解析。
 - 普通权限组合验证被 Maven Central BOM POM 下载失败和本地缓存阻断；提升权限并加 `-U` 后通过。
 
+## Data `InTenant` 废弃注解入口移除
+
+日期：2026-05-13
+执行者：Codex
+
+目标：
+
+- 移除仓库内无实际业务使用的 `InTenant` / `InTenantAspect` 旧租户注解入口。
+- 保留并验证 `TenantInvokeAspect` 自动配置。
+- 消除 `fist-boot-data` 生产代码对自有废弃 API 的残留调用。
+
+变更：
+
+- `DataAutoConfiguration` 删除 `inTenantAspect` bean。
+- 删除 `InTenantAspect` 和 `InTenant`。
+- 删除已经失去意义的 `InTenantDeprecationTest`。
+- `DataAutoConfigurationTest` 改为断言 `TenantInvokeAspect` 存在，且 `inTenantAspect` 不存在。
+
+执行命令：
+
+```powershell
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data -am "-Dtest=DataAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data spring-javaformat:apply
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data -am "-Dtest=DataAutoConfigurationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+rg -n "InTenant|InTenantAspect" fist-kit-app/fist-data/fist-boot-data
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data -am test
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data -am -DskipTests "-Dmaven.compiler.showWarnings=true" "-Dmaven.compiler.showDeprecation=true" clean compile
+cmd /c mvn -pl fist-kit-app/fist-data/fist-boot-data -am spring-javaformat:validate
+```
+
+结果：
+
+- RED：第一次格式修复后，`DataAutoConfigurationTest` 在旧实现下失败，原因是上下文仍注册 `inTenantAspect`。
+- 实施后第一次 GREEN 被 `spring-javaformat:validate` 拦截，`DataAutoConfiguration.java` 存在格式差异；运行 `spring-javaformat:apply` 后恢复。
+- GREEN：`DataAutoConfigurationTest` 为 `BUILD SUCCESS`，1 个用例，失败 0。
+- 复扫：`fist-boot-data` 内 `InTenant` / `InTenantAspect` 无残留引用。
+- 模块测试：`fist-boot-data -am test` 为 `BUILD SUCCESS`，`fist-support-data` 12 个用例、`fist-boot-data` 2 个用例失败 0。
+- deprecation 明细编译：`fist-boot-data -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，不再出现 `InTenant` / `InTenantAspect` 相关提示。剩余可见项为既有 `PageData` unchecked 提示和 `fist-kit-api` 的 `ElementType.MODULE` 注解环境提示。
+- 格式校验：`fist-boot-data -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+影响：
+
+- 这是主版本内的破坏性 API 删除。下游仍使用 `@InTenant` 的代码需要迁移到当前租户调用模型。
+- 本仓库未发现除旧切面自注册、声明级废弃测试和文档记录外的业务使用。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：

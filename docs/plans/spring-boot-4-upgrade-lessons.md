@@ -694,6 +694,41 @@ Spring Cloud Gateway 5 在 Boot 4 下使用新的 WebFlux server starter 坐标�
 - 大模块验证优先使用一个合并 `-pl ... -am` 命令；如果拆分执行，也要按依赖顺序串行执行。
 - 单模块命令如果依赖未 install 的本仓库 SNAPSHOT，上游必须使用 `-am` 带入当前工作区。
 
+## 经验 22：主版本阶段优先删除无实际使用的废弃注解入口
+
+问题：
+
+`InTenant` 已由 `TenantInvokeAspect` 对应的新租户调用模型替代，仓库内除旧切面自注册、声明级废弃测试和文档记录外没有实际业务使用。继续保留 `InTenantAspect` 会让 `fist-boot-data` 在 deprecation 明细编译中持续报告生产调用点，也会让 Boot 4 主版本升级继续携带旧 API。
+
+错误尝试或风险：
+
+- 只为 `InTenant` 补充 `@Deprecated` 能消除声明侧警告，但不能消除 `InTenantAspect` 使用废弃注解的生产调用点警告。
+- `DataAutoConfigurationTest` 的 RED 阶段先被 `spring-javaformat:validate` 拦截；格式修复后，测试按预期失败，原因是应用上下文仍注册 bean 名称 `inTenantAspect`。
+- 删除 `DataAutoConfiguration` 中的旧 bean 方法后，目标测试第一次 GREEN 又被 `DataAutoConfiguration.java` 格式校验拦截；需要先运行 `spring-javaformat:apply`。
+- 下游应用如果仍使用 `@InTenant`，升级到当前主版本后会编译失败；迁移方案是改用当前保留的 `TenantInvokeAspect` 对应租户调用方式。
+
+有效方案：
+
+- 将 `DataAutoConfigurationTest` 从断言 `InTenantAspect` 存在改为断言 `TenantInvokeAspect` 存在，并断言 `inTenantAspect` 不存在。
+- 删除 `DataAutoConfiguration#inTenantAspect()` 自动配置入口。
+- 删除 `InTenantAspect`、`InTenant` 和已经失去意义的 `InTenantDeprecationTest`。
+- 使用 `rg` 复扫 `fist-boot-data`，确认 `InTenant` / `InTenantAspect` 在模块内无残留引用。
+
+验证证据：
+
+- RED：格式修复后，`DataAutoConfigurationTest` 在旧实现下失败，失败原因为 `ApplicationContext` 仍存在 `inTenantAspect` bean。
+- GREEN：删除旧入口和旧源码后，`DataAutoConfigurationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- 复扫：`rg -n "InTenant|InTenantAspect" fist-kit-app/fist-data/fist-boot-data` 未命中。
+- 模块测试：`fist-boot-data -am test` 为 `BUILD SUCCESS`，`fist-support-data` 12 个用例、`fist-boot-data` 2 个用例失败 0。
+- deprecation 明细编译：`fist-boot-data -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，不再出现 `InTenant` / `InTenantAspect` 相关提示。
+- 格式校验：`fist-boot-data -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 主版本升级阶段，如果废弃 API 在仓库内无实际业务使用，优先删除入口，而不是长期保留 `@Deprecated`。
+- 删除自动配置 bean 时，测试应同时覆盖「新 bean 存在」和「旧 bean 不存在」，避免只验证替代能力而遗漏旧入口残留。
+- 格式插件拦截属于实施流程问题，应记录到经验文档，但不能与代码语义失败混为一类。
+
 ## 当前剩余高优先级事项
 
 1. OAuth2 LOB 真实驱动矩阵：如决定引入测试环境，再补充 MySQL、PostgreSQL、达梦验证。

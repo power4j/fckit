@@ -1,9 +1,10 @@
 package com.power4j.fist.boot.autoconfigure.data;
 
-import com.power4j.fist.data.tenant.InTenantAspect;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+
+import com.power4j.fist.data.tenant.TenantInvokeAspect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,7 +21,8 @@ class DataAutoConfigurationTest {
 	@Test
 	void shouldCreateDefaultBeans() {
 		this.contextRunner.run((context) -> {
-			assertThat(context).getBeans(InTenantAspect.class).hasSize(1);
+			assertThat(context).getBeans(TenantInvokeAspect.class).hasSize(1);
+			assertThat(context).doesNotHaveBean("inTenantAspect");
 		});
 	}
 

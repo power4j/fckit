@@ -1760,6 +1760,41 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Data 组合 deprecation 明细编译为 `BUILD SUCCESS`，`InTenant` / `AuditFiller` 的声明侧缺注解警告已消失。
 - Data 组合 `spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## Data `InTenant` 废弃注解入口移除
+
+`InTenant` 已经没有仓库内实际业务使用，继续保留会让 `fist-boot-data` 生产代码持续引用自有废弃 API。本轮按主版本破坏性变更处理，删除旧注解入口。
+
+受影响文件：
+
+- `fist-kit-app/fist-data/fist-boot-data/src/main/java/com/power4j/fist/boot/autoconfigure/data/DataAutoConfiguration.java`
+- `fist-kit-app/fist-data/fist-boot-data/src/main/java/com/power4j/fist/data/tenant/InTenantAspect.java`
+- `fist-kit-app/fist-data/fist-boot-data/src/main/java/com/power4j/fist/data/tenant/annotation/InTenant.java`
+- `fist-kit-app/fist-data/fist-boot-data/src/test/java/com/power4j/fist/boot/autoconfigure/data/DataAutoConfigurationTest.java`
+- `fist-kit-app/fist-data/fist-boot-data/src/test/java/com/power4j/fist/data/tenant/annotation/InTenantDeprecationTest.java`
+
+处理结果：
+
+- `DataAutoConfiguration` 不再注册 `inTenantAspect`。
+- 删除 `InTenantAspect` 和 `InTenant`。
+- 删除 `InTenantDeprecationTest`。
+- `DataAutoConfigurationTest` 改为覆盖 `TenantInvokeAspect` 保留和旧 bean 移除。
+
+影响判断：
+
+- 下游应用如果仍编译引用 `@InTenant`，升级到当前主版本后会失败，需要迁移到当前租户调用模型。
+- 仓库内 `fist-boot-data` 已无 `InTenant` / `InTenantAspect` 残留引用。
+- 本轮不改变 `TenantInvokeAspect`、`TenantContextFilter` 或验证器自动配置。
+
+验证结果：
+
+- RED：`DataAutoConfigurationTest` 在旧实现下失败，原因是上下文仍存在 `inTenantAspect` bean。
+- 格式拦截：删除旧 bean 后首次目标测试被 `spring-javaformat:validate` 拦截，运行 `spring-javaformat:apply` 修复。
+- GREEN：`DataAutoConfigurationTest` 定向测试为 `BUILD SUCCESS`，1 个用例，失败 0。
+- 复扫：`rg -n "InTenant|InTenantAspect" fist-kit-app/fist-data/fist-boot-data` 未命中。
+- 模块测试：`fist-boot-data -am test` 为 `BUILD SUCCESS`，`fist-support-data` 12 个用例、`fist-boot-data` 2 个用例失败 0。
+- deprecation 明细编译：`fist-boot-data -am -DskipTests ... clean compile` 为 `BUILD SUCCESS`，不再出现 `InTenant` / `InTenantAspect` 相关提示。
+- 格式校验：`fist-boot-data -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
