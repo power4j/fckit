@@ -12,3 +12,4 @@ mvn compile -Pexamples
 |------|------|
 | [fist-logback/example-logback-basic](fist-logback/example-logback-basic) | 日志脱敏基础接入 |
 | [fist-logback/example-logback-extension](fist-logback/example-logback-extension) | 自定义 Detector / Transformer 扩展 |
+| [fist-web-data-security/example-servlet](fist-web-data-security/example-servlet) | Web、Data、Security starter 组合启动 |

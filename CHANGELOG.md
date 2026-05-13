@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- 新增 `examples/fist-web-data-security/example-servlet`，提供 Web、Data、Security starter 在 Spring Boot 4 Servlet 应用中的组合启动示例。
+
 ### Changed
 
 - Spring Boot 4 升级中为 SDE RestClient/WebClient 适配 Spring HTTP Service Clients，支持通过 HTTP service 接口方法上的 `@SecureExchange` 传递请求级策略上下文。

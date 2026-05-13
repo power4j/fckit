@@ -1066,7 +1066,40 @@ Spring Boot 4 配置项迁移不只涉及代码编译，还可能涉及 `applica
 - migrator 只作为升级期辅助依赖，不能提交到正式依赖中。
 - 当前仓库结论只覆盖 SDE 示例的工具使用流程和示例基线；内部项目仍需要用实际配置单独运行 migrator。
 
+## 经验 33：组合示例要覆盖真实 HTTP 请求
+
+问题：
+
+Web/Data/Security 的最小上下文测试可以证明自动配置类能装配，但不能证明真实 Servlet 容器、过滤器顺序、MVC 参数解析、Jackson 自动配置、数据库访问和安全上下文在同一次请求中能协同工作。Boot 4 升级后，这类风险需要用示例应用补齐。
+
+错误尝试或风险：
+
+- 第一次测试复用了 `ApplicationContextRunner` 风格的 `hasSingleBean` 断言，但 `@SpringBootTest` 注入的是普通 `ApplicationContext`，AssertJ 只提供 `ObjectAssert`，导致测试编译失败。
+- 第二次测试忽略了 FIST Web 的 Jackson 数字转字符串模块，直接断言 `long id` 为数字，导致运行期断言失败。
+- examples 父模块当前跳过 spring-javaformat 校验，格式命令通过不等于新增示例代码被格式插件实际检查。
+
+有效方案：
+
+- 在 `examples/fist-web-data-security/example-servlet` 中建立真实 Boot 4 Servlet 示例，而不是继续扩大最小上下文测试。
+- 使用 `@SpringBootTest(webEnvironment = RANDOM_PORT)` 启动 Tomcat 11，通过 `RestClient` 发起 GET / POST 请求。
+- GET 请求覆盖 H2 查询、`Pageable` 参数解析、请求 ID 读取、可信用户头解析和用户上下文读取。
+- POST 请求覆盖 `ObjectValidator` 在真实请求中的调用。
+- 自动配置 bean 断言使用 `applicationContext.getBeansOfType(...).hasSize(1)`，避免混用不同测试工具的断言扩展。
+
+验证证据：
+
+- RED：第一次测试编译失败，原因是误用 `hasSingleBean`。
+- RED：第二次测试运行失败，原因是 `long id` 被 FIST Jackson 自动配置序列化为字符串。
+- GREEN：`cmd /c mvn -l .codex/web-data-security-example-test-3.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am test` 为 `BUILD SUCCESS`，新示例测试 1 个用例，失败 0，错误 0，跳过 0。
+- 格式命令：`cmd /c mvn -l .codex/web-data-security-example-format-validate.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am spring-javaformat:validate` 为 `BUILD SUCCESS`，但 examples 模块配置为跳过格式校验。
+
+后续复用规则：
+
+- 组合 starter 风险收敛后，应优先补真实请求示例，而不是继续堆叠最小上下文测试。
+- 示例断言要尊重项目已有 Jackson、过滤器和参数解析约定，不能按裸 Spring Boot 默认行为假设响应形态。
+- examples 模块的格式跳过配置需要在交付说明中单独说明，不能把它当作格式插件已实际检查新增示例源码。
+
 ## 当前剩余高优先级事项
 
 1. 当前仓库内已有 SDE 示例完成配置项 migrator 使用流程验证，未发现 Boot 4 配置迁移诊断；内部应用侧真实配置验证仍是独立工作。
-2. 下一步优先补充更完整的 Web/Data/Security 示例应用或继续扩大现有示例的真实请求覆盖。
+2. Web/Data/Security 组合示例已经补齐真实 HTTP 请求覆盖；下一步可继续扩展 API Doc / OAuth2 Server 示例级请求，或转入内部应用配置迁移验证。
