@@ -1031,23 +1031,25 @@ OAuth2 Server 自动配置最小上下文已经证明 `AuthorizationServerAutoCo
 - 一旦测试 classpath 引入其他 starter，`ImportCandidates.load(...)` 的结果不能再直接等同于当前模块资源内容。
 - Boot 4 迁移中发现自动配置文件复制错误时，应同时维护 `AutoConfiguration.imports` 和兼容保留的 `spring.factories`。
 
-## 经验 32：配置项 migrator 只作为临时验证工具
+## 经验 32：配置项 migrator 的价值主要在应用侧
 
 问题：
 
-Spring Boot 4 配置项迁移不只涉及代码编译，还可能涉及 `application.yml` / `application.properties` 中的废弃或重命名配置。Spring Boot 官方提供 `spring-boot-properties-migrator`，但该依赖会在运行时分析环境并临时迁移配置，不应长期留在生产依赖中。
+Spring Boot 4 配置项迁移不只涉及代码编译，还可能涉及 `application.yml` / `application.properties`、环境变量、启动参数和外部配置中心中的废弃或重命名配置。Spring Boot 官方提供 `spring-boot-properties-migrator`，但该依赖会在运行时分析环境并临时迁移配置，不应长期留在生产依赖中。
 
 错误尝试或风险：
 
 - 如果验证后忘记移除 migrator，会给生产运行带来不必要的启动分析和临时迁移行为。
-- `examples/fist-sde` 不在根 reactor 中，配置迁移验证仍要沿用「先确认本地快照依赖可解析」的示例验证前提。
+- `examples/fist-sde` 不在根 reactor 中，使用流程验证仍要沿用「先确认本地快照依赖可解析」的示例验证前提。
+- 仓库示例通常只有有限配置，不能代表内部应用的完整运行配置；仅用示例验证容易低估配置迁移风险。
 - Maven `dependency:tree` 中 `-pl` 需要使用 artifactId 选择器 `:example-sde-server`；只写 `example-sde-server` 会找不到 reactor 项目。
 - `-Dincludes=org.springframework.boot:spring-boot-properties-migrator` 在 `cmd /c mvn` 下必须加引号，否则冒号会导致 Maven 误解析插件前缀。
 
 有效方案：
 
-- 临时在目标应用或示例的 POM 中加入 `org.springframework.boot:spring-boot-properties-migrator`，scope 使用 `runtime`。
-- 运行应用级启动测试，抓取 migrator 输出。
+- 临时在内部应用或示例的 POM 中加入 `org.springframework.boot:spring-boot-properties-migrator`，scope 使用 `runtime`。
+- 优先在内部应用的真实启动路径运行，包括真实 `application.yml`、环境变量、启动参数和配置中心配置。
+- 仓库示例只用于验证 migrator 接入、依赖确认、日志检查和依赖移除流程。
 - 使用 dependency tree 确认 migrator 确实进入目标应用 runtime classpath。
 - 验证完成后立即移除 migrator 依赖，只在文档中保留验证证据。
 
@@ -1062,9 +1064,9 @@ Spring Boot 4 配置项迁移不只涉及代码编译，还可能涉及 `applica
 
 - 配置项迁移验证必须在真实应用启动路径上运行，不能只做静态配置扫描。
 - migrator 只作为升级期辅助依赖，不能提交到正式依赖中。
-- 当前结论只覆盖仓库内 SDE 示例；下游业务应用仍需要用自己的配置单独运行 migrator。
+- 当前仓库结论只覆盖 SDE 示例的工具使用流程和示例基线；内部项目仍需要用实际配置单独运行 migrator。
 
 ## 当前剩余高优先级事项
 
-1. 当前仓库内已有 SDE 示例完成配置项 migrator 验证，未发现 Boot 4 配置迁移诊断；下游业务应用仍需用实际配置单独验证。
+1. 当前仓库内已有 SDE 示例完成配置项 migrator 使用流程验证，未发现 Boot 4 配置迁移诊断；内部应用侧真实配置验证仍是独立工作。
 2. 下一步优先补充更完整的 Web/Data/Security 示例应用或继续扩大现有示例的真实请求覆盖。

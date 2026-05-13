@@ -1645,9 +1645,9 @@ cmd /c mvn -l .codex/boot-security-format-validate-after-autoconfig.log -pl fist
 - `fist-boot-security -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 - 当前已具备 Web/Data/Security Servlet 组合上下文证据。
 
-## 2026-05-13：Spring Boot 配置项 migrator 验证
+## 2026-05-13：Spring Boot 配置项 migrator 使用流程验证
 
-根据 Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3`，`spring-boot-properties-migrator` 应作为 runtime 依赖临时加入应用，用于启动时分析环境、打印迁移诊断，并在迁移完成后移除。本轮选择已有应用级入口 `examples/fist-sde` 做配置项迁移验证。
+根据 Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3`，`spring-boot-properties-migrator` 应作为 runtime 依赖临时加入应用，用于启动时分析环境、打印迁移诊断，并在迁移完成后移除。本轮选择已有应用级入口 `examples/fist-sde` 验证 migrator 接入、依赖确认、日志检查和依赖移除流程。
 
 执行内容：
 
@@ -1675,7 +1675,9 @@ cmd /c mvn -l .codex/properties-migrator-sde-dependency-tree.log -f examples/fis
 - 四个示例测试各运行 1 个用例，失败 0，错误 0，跳过 0。
 - dependency tree 确认 `example-sde-server` runtime classpath 包含 `spring-boot-properties-migrator:4.0.6`。
 - migrator 日志未出现 `deprecated`、`renamed`、`replacement` 或 `PropertiesMigration` 运行期诊断。
-- 当前 SDE 示例配置未发现需要由 Boot 4 migrator 迁移的配置项。
+- 当前 SDE 示例配置未发现需要由 Boot 4 migrator 迁移的配置项；该结论只覆盖仓库示例配置和本次测试启动路径。
+- `spring-boot-properties-migrator` 的主要价值在应用侧，尤其是内部项目的真实 `application.yml`、环境变量、启动参数和配置中心配置组合。
+- FIST Kit 仓库内验证只能证明 migrator 使用流程可执行，不能替代内部项目的配置迁移验证。
 
 ## 本地日志
 
