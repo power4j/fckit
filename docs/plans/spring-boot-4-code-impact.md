@@ -1765,6 +1765,23 @@ SDE 示例验证后，继续扩大到 Web/Data/Security 组合装配。复查 `f
 - `fist-boot-security -am test` 为 `BUILD SUCCESS`。
 - `fist-boot-security -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 
+## 已验证：SDE 示例配置项 migrator
+
+按照 Spring Boot 4 文档建议，本轮临时将 `spring-boot-properties-migrator` 作为 runtime 依赖加入 `examples/fist-sde`，用于验证当前示例配置是否存在 Boot 4 废弃或重命名配置项。
+
+处理结果：
+
+- 临时接入 migrator 后，`examples/fist-sde` 整组测试仍为 `BUILD SUCCESS`。
+- dependency tree 确认 `example-sde-server` runtime classpath 包含 `spring-boot-properties-migrator:4.0.6`。
+- 运行日志未出现配置项迁移诊断。
+- 验证完成后已移除临时 migrator 依赖，源码不保留该 runtime 依赖。
+
+影响判断：
+
+- 当前 SDE 示例配置没有发现需要由 Spring Boot 4 migrator 迁移的配置项。
+- 该结论只覆盖仓库内已有 `examples/fist-sde` 示例配置，不代表下游应用配置已经完成迁移。
+- 下游应用升级时仍应临时接入 migrator，并在处理完诊断后移除。
+
 ## 已验证：API Doc 自动配置最小上下文
 
 为避免 API Doc 模块只有编译通过、没有装配证据，本轮补充了 Boot 4 下的最小自动配置测试。

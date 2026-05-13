@@ -1645,6 +1645,38 @@ cmd /c mvn -l .codex/boot-security-format-validate-after-autoconfig.log -pl fist
 - `fist-boot-security -am spring-javaformat:validate` 为 `BUILD SUCCESS`。
 - 当前已具备 Web/Data/Security Servlet 组合上下文证据。
 
+## 2026-05-13：Spring Boot 配置项 migrator 验证
+
+根据 Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3`，`spring-boot-properties-migrator` 应作为 runtime 依赖临时加入应用，用于启动时分析环境、打印迁移诊断，并在迁移完成后移除。本轮选择已有应用级入口 `examples/fist-sde` 做配置项迁移验证。
+
+执行内容：
+
+- 临时在 `examples/fist-sde/pom.xml` 加入 `org.springframework.boot:spring-boot-properties-migrator`，scope 为 `runtime`。
+- 执行 `examples/fist-sde` 整组测试，覆盖 server、feign、restclient、webclient 四个示例应用。
+- 使用 dependency tree 确认 migrator 已进入示例 runtime classpath。
+- 验证完成后移除临时 migrator 依赖，不将其保留到源码中。
+
+执行命令：
+
+```powershell
+cmd /c mvn -l .codex/properties-migrator-sde-examples.log -f examples/fist-sde/pom.xml test
+cmd /c mvn -l .codex/properties-migrator-sde-dependency-tree.log -f examples/fist-sde/pom.xml -pl :example-sde-server dependency:tree "-Dincludes=org.springframework.boot:spring-boot-properties-migrator"
+```
+
+错误尝试和修正：
+
+- 第一次执行 dependency tree 时使用 `-pl example-sde-server`，Maven 报告 reactor 中找不到该项目；修正为 `-pl :example-sde-server`。
+- 第二次执行 dependency tree 时未给 `-Dincludes=org.springframework.boot:spring-boot-properties-migrator` 加引号，`cmd /c mvn` 将冒号后的内容误解析为插件前缀，报 `No plugin found for prefix '.springframework.boot'`；加引号后通过。
+- 验证完成后移除临时依赖时，`examples/fist-sde/pom.xml` 只剩换行脏标记，已恢复到 HEAD。
+
+结果：
+
+- `examples/fist-sde` 在临时接入 migrator 后整组测试为 `BUILD SUCCESS`。
+- 四个示例测试各运行 1 个用例，失败 0，错误 0，跳过 0。
+- dependency tree 确认 `example-sde-server` runtime classpath 包含 `spring-boot-properties-migrator:4.0.6`。
+- migrator 日志未出现 `deprecated`、`renamed`、`replacement` 或 `PropertiesMigration` 运行期诊断。
+- 当前 SDE 示例配置未发现需要由 Boot 4 migrator 迁移的配置项。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1745,6 +1777,8 @@ cmd /c mvn -l .codex/boot-security-format-validate-after-autoconfig.log -pl fist
 - `.codex/boot-security-composed-context-test-2.log`
 - `.codex/boot-security-module-test-after-autoconfig.log`
 - `.codex/boot-security-format-validate-after-autoconfig.log`
+- `.codex/properties-migrator-sde-examples.log`
+- `.codex/properties-migrator-sde-dependency-tree.log`
 
 ## 资料来源
 
