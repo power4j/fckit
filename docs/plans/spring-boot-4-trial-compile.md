@@ -2058,3 +2058,33 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - 本轮没有加载 `.env.local`，没有连接真实数据库、Redis 或 Nacos。
 - 本轮验证为非 Web 模式，不代表 Servlet 容器、端口监听或管理端点完整通过。
 - 真实内部项目工作区未产生 Git 跟踪变更。
+
+## 内部应用 fist-monitor Boot 4 Web 模式启动与 migrator 诊断
+
+记录日期：2026-05-14；记录者：Codex。
+
+在非 Web 启动探测通过后，继续使用同一个临时副本开启 Servlet Web 模式，验证 `fist-monitor` 在 Boot 4 版本矩阵下是否可以启动 Tomcat、应用端口和管理端点。验证仍不加载 `.env.local`，不连接真实数据库、Redis 或 Nacos，不修改真实内部项目。
+
+启动命令要点：
+
+- 继续使用 `boot4-local` profile、本地 `file:` 配置模板和 `spring-boot:start spring-boot:stop`。
+- 移除 `--spring.main.web-application-type=none`，让应用按 Web 模式启动。
+- 设置 `--server.port=0` 和 `--management.server.port=0`，避免固定端口冲突。
+- 继续显式关闭 Nacos Config import check、Nacos Config、Discovery 和服务自动注册。
+- migrator 轮次通过 `spring-boot.run.additional-classpath-elements` 追加 `spring-boot-properties-migrator-4.0.6.jar` 和 `spring-boot-configuration-metadata-4.0.6.jar`。
+
+验证结果：
+
+- 不带 migrator 的 Boot 4 Web 启动/停止为 `BUILD SUCCESS`。
+- 追加 Boot 4.0.6 migrator 与 configuration metadata 后，Web 启动/停止仍为 `BUILD SUCCESS`。
+- 应用日志显示 Tomcat 11 启动，应用端口和管理端口均由随机端口分配。
+- Actuator 在管理端口暴露 15 个 endpoint，基础管理端点装配通过。
+- 应用日志未出现 `PropertiesMigration`、`deprecated`、`renamed` 或 `replacement` 配置迁移诊断。
+- 应用日志继续出现 Thymeleaf 模板目录缺失警告；该警告与配置迁移无关，需结合 `fist-monitor` 是否实际提供页面再判断是否保留 Thymeleaf。
+- Web 模式新增暴露 `jakarta.validation.NoProviderFoundException` 提示：classpath 中缺少 Bean Validation provider，例如 Hibernate Validator。当前不阻塞启动，但可能影响 `@Validated`、请求参数校验、配置属性校验或管理上下文中的校验行为。
+
+边界：
+
+- 本轮只证明 `fist-monitor` 在本地模板配置输入下可以启动 Servlet Web 容器和管理端点，不代表业务 HTTP 接口、数据库访问、Redis、Nacos Discovery 或真实配置中心路径已经通过。
+- Bean Validation provider 缺失应作为后续依赖图核查项，优先确认内部应用是否应通过 Web starter、validation starter 或业务 starter 引入 `hibernate-validator`。
+- migrator 诊断仍以应用自身日志为准；Maven `-l` 日志只能证明 Maven goal 执行成功。

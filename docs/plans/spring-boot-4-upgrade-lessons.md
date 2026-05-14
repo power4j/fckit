@@ -1344,3 +1344,40 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 非 Web 探测通过后，再开启 Web 模式验证 Servlet 容器、端口监听、Actuator 和管理端点。
 - migrator 诊断必须读取应用自身日志；Maven `-l` 只记录 Maven 主进程，不能作为唯一证据。
 - 真实 `.env.local` 或外部资源参与验证时，先规划日志脱敏方式。
+
+## 经验 41：非 Web 启动通过后必须补 Web 模式探测
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+`fist-monitor` 在 Boot 4 非 Web 模式下可以完成环境构建和 migrator 诊断，但非 Web 模式不会启动 Servlet 容器、管理端口和 Web 自动配置的完整分支。只依据非 Web 结果判断内部应用可运行，会漏掉 Web classpath 和运行期 provider 问题。
+
+错误尝试或风险：
+
+- 只跑 `--spring.main.web-application-type=none`，会把 Servlet 容器、Actuator Web 暴露和管理上下文排除在验证范围之外。
+- 只看 Maven `-l` 日志只能得到 `BUILD SUCCESS`，看不到应用日志中的 provider 缺失提示。
+- 看到 Tomcat 启动成功后直接认为 Web 栈完整可用，可能漏掉 Bean Validation provider 缺失对请求参数校验、方法校验和配置属性校验的影响。
+
+有效方案：
+
+- 非 Web 探测通过后，移除 `--spring.main.web-application-type=none`，使用相同本地 `file:` 配置模板补跑 Web 模式。
+- 使用 `--server.port=0` 和 `--management.server.port=0`，避免固定端口冲突。
+- 每轮 `spring-boot:start spring-boot:stop` 使用独立 JMX port，确保 stop goal 能控制本轮应用进程。
+- Web 模式也补跑一轮 Boot 4.0.6 `spring-boot-properties-migrator`，确认配置诊断与 Web 自动配置共同存在时仍能启动。
+- 诊断来源必须包含应用自身日志，重点搜索 `Application run failed`、`PropertiesMigration`、`deprecated`、`renamed`、`replacement` 和 provider 缺失信息。
+
+验证证据：
+
+- Boot 4 Web 模式下，不带 migrator 的 `fist-monitor` 启动/停止为 `BUILD SUCCESS`。
+- 追加 Boot 4.0.6 migrator 与 configuration metadata 后，Web 启动/停止仍为 `BUILD SUCCESS`。
+- 应用日志显示 Tomcat 11 启动应用端口和管理端口，Actuator 暴露 15 个 endpoint，并完成优雅停止。
+- 应用日志未出现 `PropertiesMigration`、`deprecated`、`renamed` 或 `replacement` 配置迁移诊断。
+- 应用日志出现 `jakarta.validation.NoProviderFoundException`，说明当前 classpath 缺少 Bean Validation provider；该问题未阻塞启动，但需要作为后续依赖核查项。
+
+后续复用规则：
+
+- 内部应用每个服务的启动验证至少分为非 Web 探测和 Web 探测两层；非 Web 只用于快速分离配置问题。
+- Web 探测通过标准不仅是 Maven `BUILD SUCCESS`，还要确认应用日志中没有启动失败、关键 provider 缺失或配置迁移诊断。
+- Bean Validation provider 缺失不应在验证报告中被归类为配置项迁移问题；应进入依赖图与 starter 装配核查。
+- 真实外部资源参与前，先保持随机端口和本地配置导入方式，减少数据库、Redis、Nacos 与 Web classpath 问题互相干扰。
