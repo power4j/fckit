@@ -1415,3 +1415,37 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 每个内部 Web 服务升级到 Boot 4 时，都应显式核查 validation provider，而不是依赖 Web starter 间接带入。
 - 应用确实使用校验能力时，优先在应用侧或内部应用父 POM 声明 `spring-boot-starter-validation`。
 - FIST Kit 支撑库如只需要注解和接口编译，保留 `jakarta.validation-api` 即可；是否携带 provider 应由应用运行时决定。
+
+## 经验 43：Boot 4 不应继续保留旧 Undertow starter
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+内部应用部分模块在默认打包 profile 中通过 `spring-boot-starter-undertow` 替换默认 Web 服务器。切到 Boot 4 parent 后，Maven 在项目读取阶段报该 starter 缺少版本，导致即使只想验证其他模块，也会被 reactor 中的旧 POM 阻塞。
+
+错误尝试或风险：
+
+- 只用 `-pl <目标模块> -am` 不能完全规避该问题；Maven 仍可能先读取 reactor 中其他模块的 POM。
+- 手工给旧 `spring-boot-starter-undertow` 指定版本不是推荐解法。Boot 4 依赖管理不再覆盖它，继续保留会把兼容性风险留到运行期。
+- 只收窄 reactor 可以暂时绕过目标模块验证，但不能作为全量内部应用升级方案。
+
+有效方案：
+
+- 先用单模块 `mvn -f <模块 pom> validate` 复现 `spring-boot-starter-undertow` 缺版本错误，确认问题发生在 POM 读取阶段。
+- 查 Spring Boot 4 Web server 文档和本地 `spring-boot-dependencies:4.0.6`，确认 Boot 4 受管理路线是 Tomcat / Jetty；Reactive 还包括 Reactor Netty。
+- 如无非 Tomcat 需求，直接删除 Undertow profile 并使用默认 Tomcat。
+- 如仍需要非默认 Servlet 容器，将 `spring-boot-starter-undertow` 替换为 `spring-boot-starter-jetty`。
+
+验证证据：
+
+- 修复前，`fist-cloud/fist-iam` 单模块 `validate` 失败，错误为 `spring-boot-starter-undertow` 缺少版本。
+- 临时副本中将 `fist-cloud/fist-iam`、`fist-cloud/fist-auth-v3` 和 `pac-cloud/demo-order` 的旧 Undertow starter 替换为 `spring-boot-starter-jetty`。
+- 替换后，3 个模块单模块 `validate` 均为 `BUILD SUCCESS`。
+- `fist-auth-v3` 和 `demo-order` 仍有部分内部 SNAPSHOT POM 未安装 warning；该 warning 属于后续本地安装 / 发布问题，不再是 Web server starter 迁移问题。
+
+后续复用规则：
+
+- 全量内部应用 Boot 4 试编译前，先统一处理所有 `spring-boot-starter-undertow`。
+- Web server 迁移应优先采用 Boot 4 受管理 starter，不在应用 POM 中保留未受管理的旧 starter。
+- 文档记录时区分「POM 读取阶段阻塞」和「依赖解析 / 编译阶段阻塞」，避免把后续 SNAPSHOT warning 误归因给 Jetty。

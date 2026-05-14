@@ -2122,3 +2122,41 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - 内部应用正式升级时，Web 应用如使用请求参数校验、方法校验或配置属性校验，应显式声明 `spring-boot-starter-validation`。
 - FIST Kit 侧暂不把 Hibernate Validator 作为 `fist-support-web` 的强制传递依赖；`fist-support-web` 当前只需要编译期 API，provider 更适合作为应用侧运行时选择。
 - 如果后续发现多个内部 Web 服务都需要同样依赖，可在内部项目的公共应用 BOM 或服务父 POM 中统一声明，而不是逐个服务分散补充。
+
+## 内部应用 Undertow starter 迁移验证
+
+记录日期：2026-05-14；记录者：Codex。
+
+`fist-monitor` 试编译前曾暴露一个 reactor 读取阶段阻塞：内部项目中仍有模块在默认打包 profile 中声明 `spring-boot-starter-undertow`，Boot 4 parent 不再管理该旧 starter，Maven 在进入目标模块编译前即失败。本轮继续在临时副本中验证替代方案。
+
+官方依据：
+
+- Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3` 的 Web server how-to 示例说明，Servlet 应用可排除默认 Tomcat 并加入 `spring-boot-starter-jetty`。
+- 同一文档的 embedded server 说明中，Servlet 栈示例列出默认 Tomcat 与可替换的 Jetty；Reactive 栈支持 Reactor Netty、Tomcat 和 Jetty。
+- 本地 `spring-boot-dependencies:4.0.6` 未管理 `spring-boot-starter-undertow`，但管理 `spring-boot-starter-jetty`、`spring-boot-starter-jetty-runtime`、`spring-boot-starter-tomcat` 和 `spring-boot-starter-tomcat-runtime`。
+
+错误复现：
+
+- 在 Boot 4 临时副本中执行 `cmd /c mvn -f fist-cloud/fist-iam/pom.xml "-P!config-nacos" -DskipTests validate`。
+- Maven 在项目读取阶段失败，错误为 `dependencies.dependency.version` for `org.springframework.boot:spring-boot-starter-undertow` is missing。
+
+临时修复方式：
+
+- 将 3 处旧 `spring-boot-starter-undertow` 替换为 `spring-boot-starter-jetty`：
+  - `fist-cloud/fist-iam`
+  - `fist-cloud/fist-auth-v3`
+  - `pac-cloud/demo-order`
+- 注释从「web服务器: undertow」同步改为「web服务器: jetty」。
+
+验证结果：
+
+- `fist-cloud/fist-iam` 单模块 `validate` 为 `BUILD SUCCESS`。
+- `fist-cloud/fist-auth-v3` 单模块 `validate` 为 `BUILD SUCCESS`。
+- `pac-cloud/demo-order` 单模块 `validate` 为 `BUILD SUCCESS`。
+- `fist-auth-v3` 和 `demo-order` 仍提示部分内部 `4.0.0-SNAPSHOT` POM 未安装，这是后续本地安装或发布问题；本轮验证只确认 Undertow 缺版本阻塞已经消除。
+
+建议：
+
+- 内部应用正式升级到 Boot 4 时，应删除 `spring-boot-starter-undertow` 路线，优先使用默认 Tomcat；确有非 Tomcat 需求时改为 `spring-boot-starter-jetty`。
+- 不建议通过手工指定旧 Undertow starter 版本绕过错误。Boot 4 依赖管理已不覆盖该 starter，继续保留会增加后续 Servlet 6.1 / Spring Framework 7 兼容风险。
+- 全量 reactor 试编译前，应先统一处理这 3 处 Web server starter，否则 Maven 会在项目读取阶段提前失败。
