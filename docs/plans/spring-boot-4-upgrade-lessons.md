@@ -1174,3 +1174,75 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 
 1. 当前仓库内已有 SDE 示例完成配置项 migrator 使用流程验证，未发现 Boot 4 配置迁移诊断；内部应用侧真实配置验证仍是独立工作。
 2. Web/Data/Security/API Doc 与 OAuth2 Server 示例已经补齐真实 HTTP 请求覆盖；下一步可转入内部应用配置迁移验证，或继续补充更完整的 OAuth2 授权码 / OIDC 流程示例。
+
+## 经验 36：应用侧配置迁移验证不应强依赖 Nacos
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+内部应用的生产默认路径通过 `spring.config.import` 加载 Nacos 配置，但 Boot 4 配置项迁移验证需要频繁修改、启动和回看 migrator 诊断。如果每轮都先导入 Nacos，会把验证节奏绑定到远程配置中心，也容易让临时配置污染共享环境。
+
+错误尝试或风险：
+
+- 直接把 `docs/config-template/spring-config-server` 下的模板导入 Nacos 后再验证，会引入额外环境步骤；每次调整模板都需要重新发布配置。
+- 只启动应用本地 `application.yml` / `features.yml` 不够，因为真实业务配置主要位于配置模板或配置中心，migrator 看不到这些配置时诊断不完整。
+- 在公开交付文档中记录 `.env.local` 的真实值、Nacos namespace、group 或配置内容，会扩大敏感信息暴露面。
+
+有效方案：
+
+- 将应用侧配置迁移验证拆成「本地配置源优先」和「Nacos 回归」两段。
+- 高频验证阶段优先使用 Spring Boot Config Data 的 `spring.config.import=optional:file:...`，直接导入配置模板目录中的 `application.yml` 和服务级 YAML。
+- `config-server-spring` profile 属于遗留配置，本地没有 Spring Cloud Config Server，因此不作为当前可执行验证路径。
+- 只有在本地配置源验证稳定后，再用 Nacos 做一次接近生产路径的回归验证。
+- `spring-boot-properties-migrator` 仍只作为 runtime 临时依赖；处理完诊断后必须移除。
+
+验证证据：
+
+- Spring Boot 4.0.3 官方文档确认 `spring.config.import` 可导入 `optional:file:./dev.properties`，导入配置会参与环境构建，且导入文件优先级高于声明它的文件。
+- Spring Boot 4.0.3 官方文档确认 `spring.config.import` 支持 `optional:` 前缀，适合本地验证时容忍缺失文件。
+- 内部应用 `features.yml` 已存在 `config-server-spring` profile，但该配置为遗留路径，本地没有可用 Spring Cloud Config Server。
+- 内部配置模板目录已存在 `application.yml`、`fist-auth.yml`、`fist-iam.yml`、`fist-iam-task.yml`、`fist-gateway.yml`、`fist-monitor.yml` 和 `hikaricp.yaml`。
+
+后续复用规则：
+
+- 应用侧 migrator 首轮验证不以 Nacos 为前置条件。
+- 优先用本地 `file:` 导入跑出配置诊断，再决定是否需要 Nacos 回归。
+- 不再投入 Spring Cloud Config Server native/Git 后端验证，除非内部项目重新启用该配置中心路径。
+- 公开文档只记录配置文件类别、加载方式和诊断类别，不记录真实环境值、用户名、密码、连接串或配置内容原文。
+
+## 经验 37：内部应用本地 file import 验证要用 start/stop 而不是 run
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+内部应用首轮配置迁移验证需要确认 `fist-monitor` 可以在不导入 Nacos、不启动 Config Server 的情况下读取本地配置模板并完成 Spring 环境构建。直接使用 `spring-boot:run` 容易遇到 reactor 执行范围、内部依赖未安装和进程常驻问题。
+
+错误尝试或风险：
+
+- `spring-boot:run` 与 `-am` 同用时，Maven 会先在父 POM 上执行 run goal，父 POM 没有 main class，直接失败。
+- 只对 `fist-monitor` 执行 run goal 时，内部依赖 `fist-common:9.2.0` 未安装到本地 Maven 仓库，Maven 会去远程仓库解析内部构件并失败。
+- 关闭 Nacos 配置中心导入后，Nacos Config starter 仍会执行 import check；如果不显式关闭，会报缺少 `nacos:` import。
+- `spring-boot:run` 会让应用常驻，靠超时中断容易留下 Java 子进程。
+- 内部应用启动日志会打印环境变量摘要；接入真实 `.env.local` 后，原始日志不能直接进入公开交付文档。
+
+有效方案：
+
+- 先执行 `cmd /c mvn -pl common/fist-common -am "-P!config-nacos" -DskipTests install`，把内部依赖安装到本地 Maven 仓库。
+- 再只对 `fist-monitor` 执行 `spring-boot:start spring-boot:stop`，并显式指定 main class。
+- 使用 `boot4-local` profile，避免 `default` profile 激活 Nacos import。
+- 通过 `spring.config.import=optional:file:...` 导入公共配置模板和 `fist-monitor` 服务配置模板。
+- 同时设置 `spring.cloud.nacos.config.enabled=false`、`spring.cloud.nacos.config.import-check.enabled=false`、`spring.cloud.discovery.enabled=false`、`spring.cloud.nacos.discovery.enabled=false` 和 `spring.cloud.service-registry.auto-registration.enabled=false`。
+
+验证证据：
+
+- 内部依赖安装命令为 `BUILD SUCCESS`。
+- `spring-boot:start spring-boot:stop` 命令为 `BUILD SUCCESS`，`MonitorApplication` 使用 `boot4-local` profile 启动并停止。
+- 验证完成后复查 Java 进程，仅剩本次验证前已存在的 Java 进程，没有新增残留进程。
+
+后续复用规则：
+
+- 内部应用启动探测优先使用 `spring-boot:start spring-boot:stop`，不要用常驻 `spring-boot:run`。
+- 首轮配置迁移验证先使用非 Web 模式确认环境构建；后续需要验证 Servlet 容器时，再改为 Web 模式并使用明确的启动/停止控制。
+- 真实 `.env.local` 参与验证时，日志只保留脱敏后的配置迁移诊断和错误类别。

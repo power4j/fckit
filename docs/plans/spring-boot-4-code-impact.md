@@ -2209,3 +2209,33 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认自定义 Authorization Server 配置可通过 `OAuth2AuthorizationServerConfigurer` 注入 repository、authorization service、settings 和 token generator。
 - JSpecify Context7 文档：`/jspecify/jspecify`，确认 `@Nullable` 可用于返回值、参数、泛型类型参数和数组维度。
 - OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`
+
+## 内部应用配置加载影响修正
+
+记录日期：2026-05-14；记录者：Codex。
+
+内部应用配置验证不再以 Nacos 导入为首选路线。Spring Boot 4 的 Config Data 机制允许通过 `spring.config.import` 导入本地文件或配置树。内部应用虽然保留了 `config-server-spring` profile，但本地没有可用 Spring Cloud Config Server，该路径属于遗留配置，不作为当前升级验证路线。
+
+影响判断：
+
+- FIST Kit v4 本仓库不重新引入 Nacos 或 Spring Cloud Alibaba；库侧结论仍保持「未实际使用，应用侧按需显式引入」。
+- 内部应用 Boot 4 验证需要覆盖配置中心等价输入，但不要求首轮使用 Nacos。
+- `spring-boot-properties-migrator` 的实际价值仍在应用启动阶段，需要让它看到完整配置输入；本地 `file:` 导入可以满足首轮诊断需要。
+
+建议的配置源优先级：
+
+1. `file:` 导入配置模板：改动最快，适合首轮 migrator 诊断和启动错误排查。
+2. Nacos：放在最终回归阶段，验证生产式配置路径。
+
+需要避免的做法：
+
+- 不把 Nacos 配置导入作为当前阶段阻塞条件。
+- 不再投入 Spring Cloud Config Server native/Git 后端验证，除非内部项目重新启用该配置中心路径。
+- 不在公共调研文档中记录 `.env.local` 的值、数据库连接串、配置中心 namespace / group 或配置模板原文。
+- 不把 `spring-boot-properties-migrator` 写入正式 BOM、starter 或可发布依赖。
+
+首轮内部应用验证补充：
+
+- `fist-monitor` 可以通过 `boot4-local` profile、`spring.config.import=optional:file:...` 和 `spring-boot:start spring-boot:stop` 完成本地配置模板启动探测。
+- 该验证只证明本地 Config Data 输入和 Spring 环境构建可行，不代表 Nacos Config、Nacos Discovery 或完整 Web 运行路径已经通过。
+- 本地验证阶段需要显式关闭 Nacos Config import check 和服务注册发现，否则 Nacos Config starter 会要求存在 `nacos:` import。

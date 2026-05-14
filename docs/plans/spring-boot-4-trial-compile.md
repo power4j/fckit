@@ -1876,6 +1876,7 @@ cmd /c mvn -l .codex/oauth2-server-example-format-validate-3.log -Pexamples -pl 
 
 - Spring Boot 4.0 Migration Guide：`https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide`
 - Spring Boot 4.0.6 发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
+- Spring Boot 4.0.3 外部化配置文档：`https://github.com/spring-projects/spring-boot/blob/v4.0.3/documentation/spring-boot-docs/src/docs/antora/modules/reference/pages/features/external-config.adoc`，确认 `spring.config.import` 支持 `optional:file:` 和 `optional:configtree:`。
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
 - Spring Framework 当前 Javadoc Context7 文档：`/websites/spring_io_spring-framework_current_javadoc-api`，`LobCreator` / `LobHandler` 自 6.2 起弃用，替代项为 `SqlBinaryValue` / `SqlCharacterValue`
 - Apache Commons Lang Context7 文档：`/websites/commons_apache_proper_commons-lang_apidocs`，`ObjectUtils.defaultIfNull(T, T)` 弃用并推荐 `ObjectUtils.getIfNull(Object, Object)`
@@ -1906,3 +1907,54 @@ cmd /c mvn -l .codex/oauth2-server-example-format-validate-3.log -Pexamples -pl 
 - Redisson `4.3.1` 本地 JAR：`F:\pkg-maven\repository\org\redisson\redisson\4.3.1\redisson-4.3.1.jar`，`javap -v` 确认 `BaseConfig#setPassword(String)` 已废弃，并在字节码提示中建议改用 `Config` 的 password 设置。
 - Spring Boot Context7 文档：`/spring-projects/spring-boot/v4.0.3`，确认 `spring-boot-properties-migrator` 可作为配置项迁移辅助依赖，并说明 Boot 4 默认优先使用 Jackson 3。
 - 本地 OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`
+
+## 内部应用配置迁移验证策略修正
+
+记录日期：2026-05-14；记录者：Codex。
+
+用户反馈不建议从 Nacos 加载配置，因为升级验证需要频繁调整。复核 Spring Boot 4 外部化配置文档和内部应用配置结构后，调整策略如下：
+
+- 不把 Nacos 导入作为 migrator 首轮验证前置条件。
+- 内部应用默认 profile 仍保留 Nacos 路径；升级验证新增本地配置源路径，不改变生产配置约定。
+- 首轮优先使用 `spring.config.import=optional:file:...` 直接导入配置模板中的公共配置和服务级配置。
+- `config-server-spring` profile 属于遗留配置，本地没有可用 Spring Cloud Config Server，因此当前不走 Config Server native/Git 后端。
+- Nacos 只放在本地配置验证通过后的回归阶段，用于确认生产式配置中心路径没有额外兼容问题。
+
+内部应用当前结构：
+
+- 服务本地 `application.yml` 统一导入 `classpath:features.yml`。
+- 默认 profile 的 `features.yml` 导入 `nacos:application.yml` 和 `nacos:${spring.application.name}.yml`；`fist-iam` 额外导入 `nacos:${spring.application.name}-task.yml`。
+- `config-server-spring` profile 已存在，并使用 `spring.config.import: configserver:`；该路径是遗留配置，本地没有对应服务。
+- 配置模板位于内部项目的 `docs/config-template/spring-config-server/pac-platform`，包含公共配置、服务配置、任务配置和连接池配置模板。
+
+推荐验证顺序：
+
+1. 在内部应用侧临时接入 `spring-boot-properties-migrator`，scope 为 `runtime`。
+2. 先选择 `fist-monitor` 做最小服务启动验证，使用本地文件导入配置模板。
+3. 根据 migrator 输出和启动错误调整本地模板或启动参数；日志只保留配置键类别和问题类别。
+4. 扩展到 `fist-auth`、`fist-iam`、`fist-gateway`。
+5. 最后再决定是否做 Nacos 回归验证。
+
+本地 file import 建议：
+
+- 使用独立 profile，例如 `boot4-local`，避免 `default` profile 激活 `features.yml` 中的 Nacos import。
+- 启动参数直接声明 `--spring.config.import=optional:file:<模板目录>/application.yml,optional:file:<模板目录>/<服务名>.yml`，不写入真实用户名、密码或连接串。
+- `fist-iam` 需要额外导入任务配置模板；其他服务先导入公共配置和对应服务配置。
+
+首个服务建议命令模板：
+
+```powershell
+cmd /c mvn -pl common/fist-common -am "-P!config-nacos" -DskipTests install
+cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start spring-boot:stop "-Dspring-boot.run.main-class=com.power4j.fist.monitor.MonitorApplication" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --spring.config.import=optional:file:D:/git-repo/xd-pac-v9/pac-cloud-boot3-10.x/docs/config-template/spring-config-server/pac-platform/application.yml,optional:file:D:/git-repo/xd-pac-v9/pac-cloud-boot3-10.x/docs/config-template/spring-config-server/pac-platform/fist-monitor.yml --spring.cloud.nacos.config.enabled=false --spring.cloud.nacos.config.import-check.enabled=false --spring.cloud.discovery.enabled=false --spring.cloud.nacos.discovery.enabled=false --spring.cloud.service-registry.auto-registration.enabled=false --server.port=0"
+```
+
+该命令的目的不是验证 Nacos Discovery，而是先验证应用在本地模板配置输入下能否完成环境构建，并为后续临时接入 `spring-boot-properties-migrator` 提供稳定启动路径。`-P!config-nacos` 用于尝试关闭默认激活的 Nacos Config 依赖；运行参数中的 Nacos Config 和 discovery 开关用于避免本地配置迁移阶段尝试读取或注册远程配置中心。
+
+首轮验证结果：
+
+- `cmd /c mvn -pl fist-cloud/fist-monitor -am "-P!config-nacos" spring-boot:run ...` 失败，原因是 `spring-boot:run` 会在 reactor 中先对父 POM 执行，父 POM 没有 main class。
+- `cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:run ...` 失败，原因是只运行目标模块时，内部依赖 `fist-common:9.2.0` 尚未安装到本地 Maven 仓库。
+- `cmd /c mvn -pl common/fist-common -am "-P!config-nacos" -DskipTests install` 通过，将父 POM、`common` POM 和 `fist-common` 安装到本地 Maven 仓库。
+- 关闭 Nacos Config import check 之前，应用启动失败，错误为缺少 `nacos:` import；这说明本地 file import 验证需要同时设置 `spring.cloud.nacos.config.enabled=false` 和 `spring.cloud.nacos.config.import-check.enabled=false`。
+- `cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start spring-boot:stop ...` 通过；`MonitorApplication` 使用 `boot4-local` profile 完成启动，并由 Maven stop goal 停止。
+- 启动日志会打印环境变量摘要。本轮没有加载真实 `.env.local` 值；后续接入真实环境变量时必须对日志采集做脱敏，避免记录连接串、用户名或密码。
