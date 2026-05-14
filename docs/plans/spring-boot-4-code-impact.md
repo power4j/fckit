@@ -2244,3 +2244,5 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 在临时副本中将 `fist-monitor` 最小链路切到 Boot 4.0.6、Spring Cloud 2025.1.1、Spring Cloud Alibaba 2025.1.0.0 和 FIST Kit 4.0.0-SNAPSHOT 后，`fist-common` 与 `fist-monitor` 可完成 `test-compile`。
 - 试编译暴露出 reactor 级影响：其他模块仍引用 `spring-boot-starter-undertow`，Boot 4 parent 不再管理该旧 starter，导致未收窄 reactor 时 Maven 在项目读取阶段失败。
 - FIST Kit v4 SNAPSHOT 应先安装到本地 Maven 仓库，否则内部应用临时试编译会尝试从远程仓库解析未发布组件。
+- `fist-monitor` 在 Boot 4 临时副本中可完成非 Web 启动/停止探测；追加 Boot 4.0.6 migrator 后仍可启动，并且未输出配置迁移诊断。
+- 当前启动验证没有覆盖真实 `.env.local`、数据库、Redis、Nacos、Servlet 容器端口监听或管理端点，仅证明本地配置模板输入下的非 Web 环境构建可行。

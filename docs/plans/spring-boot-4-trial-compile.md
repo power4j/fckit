@@ -2025,3 +2025,36 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 
 - 其他模块中的 `spring-boot-starter-undertow` 需要迁移到 Boot 4 的新 Web Server starter 坐标，或由应用显式声明版本。
 - 后续应在 `fist-monitor` Boot 4 临时编译成功的基础上，继续做 Boot 4 启动探测和 migrator 诊断。
+
+## 内部应用 fist-monitor Boot 4 启动与 migrator 诊断
+
+记录日期：2026-05-14；记录者：Codex。
+
+在 `fist-monitor` Boot 4 临时试编译通过后，继续使用临时副本验证启动路径。验证仍使用 `boot4-local` profile、本地 `file:` 配置模板、禁用 Nacos Config / Discovery，并使用 `spring-boot:start spring-boot:stop` 避免常驻进程。
+
+启动命令要点：
+
+- 使用独立 JMX port，避免与其他本地 Java 进程或历史探测冲突。
+- 使用 `--spring.main.web-application-type=none`，先验证非 Web 环境构建。
+- 使用 `--spring.config.import=optional:file:<模板目录>/application.yml,optional:file:<模板目录>/fist-monitor.yml`。
+- 显式设置 `spring.cloud.nacos.config.enabled=false`、`spring.cloud.nacos.config.import-check.enabled=false`、`spring.cloud.discovery.enabled=false`、`spring.cloud.nacos.discovery.enabled=false` 和 `spring.cloud.service-registry.auto-registration.enabled=false`。
+
+migrator 命令要点：
+
+```powershell
+cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start spring-boot:stop "-Dspring-boot.run.additional-classpath-elements=<spring-boot-properties-migrator-4.0.6.jar>,<spring-boot-configuration-metadata-4.0.6.jar>" ...
+```
+
+验证结果：
+
+- 不带 migrator 的 Boot 4 `fist-monitor` 启动/停止为 `BUILD SUCCESS`。
+- 追加 Boot 4.0.6 migrator 与 configuration metadata 后，启动/停止仍为 `BUILD SUCCESS`。
+- 应用日志未出现 `PropertiesMigration`、`deprecated`、`renamed` 或 `replacement` 配置迁移诊断。
+- 应用日志出现 Thymeleaf 模板目录缺失警告；该警告与 Boot 4 配置迁移无关，属于当前 `fist-monitor` 非 Web 探测下可接受的运行期提示。
+- Maven `-l` 仍只记录 Maven 主进程日志；应用启动日志需要从应用自身日志和控制台输出采集。
+
+边界：
+
+- 本轮没有加载 `.env.local`，没有连接真实数据库、Redis 或 Nacos。
+- 本轮验证为非 Web 模式，不代表 Servlet 容器、端口监听或管理端点完整通过。
+- 真实内部项目工作区未产生 Git 跟踪变更。

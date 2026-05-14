@@ -1314,3 +1314,33 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 首轮应用侧 Boot 4 试编译先收窄到单服务链路，避免全 reactor 旧模块阻塞目标问题定位。
 - 全量应用升级前，需要统一处理所有模块的旧 Boot starter 坐标，尤其是 `spring-boot-starter-undertow`。
 - SNAPSHOT 基础库必须先本地安装，或使用已发布版本；不能让内部应用试编译依赖远程解析未发布构件。
+
+## 经验 40：Boot 4 启动探测先用非 Web 模式分离配置问题
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+`fist-monitor` 作为首个内部应用样本，目标是先确认 Boot 4 版本矩阵、本地配置模板和 migrator 组合能否完成 Spring 环境构建。如果一开始就启动完整 Web 容器和管理端点，数据库、端口、模板目录、Nacos Discovery 等问题会和配置迁移诊断混在一起。
+
+有效方案：
+
+- 在临时副本中使用 `spring-boot:start spring-boot:stop`，并为每轮探测指定独立 JMX port。
+- 启动参数设置 `--spring.main.web-application-type=none`，先验证非 Web 环境构建。
+- 使用本地 `file:` 配置模板导入公共配置和服务配置。
+- 显式关闭 Nacos Config import check、Nacos Config、Discovery 和服务自动注册。
+- 追加 Boot 4.0.6 的 `spring-boot-properties-migrator` 和 `spring-boot-configuration-metadata`，执行配置迁移诊断。
+
+验证证据：
+
+- 不带 migrator 的 Boot 4 `fist-monitor` 启动/停止为 `BUILD SUCCESS`。
+- 追加 Boot 4.0.6 migrator 后，启动/停止仍为 `BUILD SUCCESS`。
+- 应用日志未出现 `PropertiesMigration`、`deprecated`、`renamed` 或 `replacement` 配置迁移诊断。
+- 应用日志出现 Thymeleaf 模板目录缺失警告；该警告不是配置迁移诊断，暂不作为 Boot 4 阻塞项。
+
+后续复用规则：
+
+- 单服务 Boot 4 首轮启动探测先使用非 Web 模式，确认配置和自动配置主路径可启动。
+- 非 Web 探测通过后，再开启 Web 模式验证 Servlet 容器、端口监听、Actuator 和管理端点。
+- migrator 诊断必须读取应用自身日志；Maven `-l` 只记录 Maven 主进程，不能作为唯一证据。
+- 真实 `.env.local` 或外部资源参与验证时，先规划日志脱敏方式。
