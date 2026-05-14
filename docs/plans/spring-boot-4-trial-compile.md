@@ -1945,7 +1945,7 @@ cmd /c mvn -l .codex/oauth2-server-example-format-validate-3.log -Pexamples -pl 
 
 ```powershell
 cmd /c mvn -pl common/fist-common -am "-P!config-nacos" -DskipTests install
-cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start spring-boot:stop "-Dspring-boot.run.main-class=com.power4j.fist.monitor.MonitorApplication" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --spring.config.import=optional:file:D:/git-repo/xd-pac-v9/pac-cloud-boot3-10.x/docs/config-template/spring-config-server/pac-platform/application.yml,optional:file:D:/git-repo/xd-pac-v9/pac-cloud-boot3-10.x/docs/config-template/spring-config-server/pac-platform/fist-monitor.yml --spring.cloud.nacos.config.enabled=false --spring.cloud.nacos.config.import-check.enabled=false --spring.cloud.discovery.enabled=false --spring.cloud.nacos.discovery.enabled=false --spring.cloud.service-registry.auto-registration.enabled=false --server.port=0"
+cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start spring-boot:stop "-Dspring-boot.run.main-class=com.power4j.fist.monitor.MonitorApplication" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.web-application-type=none --spring.config.import=optional:file:<内部项目根目录>/docs/config-template/spring-config-server/pac-platform/application.yml,optional:file:<内部项目根目录>/docs/config-template/spring-config-server/pac-platform/fist-monitor.yml --spring.cloud.nacos.config.enabled=false --spring.cloud.nacos.config.import-check.enabled=false --spring.cloud.discovery.enabled=false --spring.cloud.nacos.discovery.enabled=false --spring.cloud.service-registry.auto-registration.enabled=false --server.port=0"
 ```
 
 该命令的目的不是验证 Nacos Discovery，而是先验证应用在本地模板配置输入下能否完成环境构建，并为后续临时接入 `spring-boot-properties-migrator` 提供稳定启动路径。`-P!config-nacos` 用于尝试关闭默认激活的 Nacos Config 依赖；运行参数中的 Nacos Config 和 discovery 开关用于避免本地配置迁移阶段尝试读取或注册远程配置中心。
@@ -1958,3 +1958,31 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - 关闭 Nacos Config import check 之前，应用启动失败，错误为缺少 `nacos:` import；这说明本地 file import 验证需要同时设置 `spring.cloud.nacos.config.enabled=false` 和 `spring.cloud.nacos.config.import-check.enabled=false`。
 - `cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start spring-boot:stop ...` 通过；`MonitorApplication` 使用 `boot4-local` profile 完成启动，并由 Maven stop goal 停止。
 - 启动日志会打印环境变量摘要。本轮没有加载真实 `.env.local` 值；后续接入真实环境变量时必须对日志采集做脱敏，避免记录连接串、用户名或密码。
+
+## 内部应用 fist-monitor 配置 migrator 机制验证
+
+记录日期：2026-05-14；记录者：Codex。
+
+在 Boot 3.5.11 基线下，使用 `spring-boot.run.additional-classpath-elements` 将 `spring-boot-properties-migrator` 临时追加到 `fist-monitor` 启动 classpath，验证应用侧 migrator 接入机制。该验证不修改内部应用 POM，也不代表 Boot 4 最终配置迁移诊断已经完成；Boot 4 诊断应在内部应用依赖升级到 Boot 4 后，使用匹配的 migrator 版本重新执行。
+
+有效命令要点：
+
+```powershell
+cmd /c mvn dependency:get "-Dartifact=org.springframework.boot:spring-boot-properties-migrator:3.5.11"
+cmd /c mvn dependency:get "-Dartifact=org.springframework.boot:spring-boot-configuration-metadata:3.5.11"
+cmd /c mvn dependency:get "-Dartifact=com.vaadin.external.google:android-json:0.0.20131108.vaadin1"
+cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start spring-boot:stop "-Dspring-boot.run.additional-classpath-elements=<migrator.jar>,<configuration-metadata.jar>,<android-json.jar>" ...
+```
+
+错误尝试：
+
+- 只追加 `spring-boot-properties-migrator` 主 jar 时，启动失败，缺少 `ConfigurationMetadataRepositoryJsonBuilder`。
+- 追加 migrator 和 `spring-boot-configuration-metadata` 后，启动仍失败，缺少 `org.json.JSONObject`。
+- `spring-boot.run.additional-classpath-elements` 不会自动解析传递依赖，必须显式列出 migrator、configuration metadata 和 `android-json` 三个 jar。
+
+验证结果：
+
+- 补齐三个 jar 后，`fist-monitor` 在 `boot4-local` profile、本地 `file:` 配置模板、禁用 Nacos Config / Discovery 的条件下启动并停止成功。
+- 应用日志未出现 `PropertiesMigration`、`deprecated`、`renamed` 或 `replacement` 诊断。
+- Maven `-l` 只能记录 Maven 主进程，不能完整记录 forked 应用日志；migrator 诊断需要从应用自身日志或控制台输出中采集。
+- 内部项目工作区保持干净；生成日志和 target 输出不进入 Git 跟踪。

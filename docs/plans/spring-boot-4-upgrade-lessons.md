@@ -1246,3 +1246,37 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 内部应用启动探测优先使用 `spring-boot:start spring-boot:stop`，不要用常驻 `spring-boot:run`。
 - 首轮配置迁移验证先使用非 Web 模式确认环境构建；后续需要验证 Servlet 容器时，再改为 Web 模式并使用明确的启动/停止控制。
 - 真实 `.env.local` 参与验证时，日志只保留脱敏后的配置迁移诊断和错误类别。
+
+## 经验 38：命令行追加 migrator 要补齐传递依赖
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+为了避免修改内部应用 POM，首轮尝试使用 Spring Boot Maven Plugin 的 `spring-boot.run.additional-classpath-elements` 临时追加 `spring-boot-properties-migrator`。该方式适合快速验证，但不会像 Maven dependency 一样自动把传递依赖加入应用 classpath。
+
+错误尝试或风险：
+
+- `mvn help:describe -Dplugin=org.springframework.boot:spring-boot-maven-plugin:3.5.11` 在 Windows `cmd /c mvn` 下未加引号时，插件坐标被错误解析；带冒号的 Maven 参数要加引号。
+- 只追加 `spring-boot-properties-migrator` 主 jar 时，启动失败，缺少 `ConfigurationMetadataRepositoryJsonBuilder`。
+- 同时追加 migrator 和 `spring-boot-configuration-metadata` 后，启动仍失败，缺少 `org.json.JSONObject`。
+- Maven `-l` 只记录 Maven 主进程日志，不能完整记录 forked 应用日志；如果只看 Maven 日志，会漏掉应用侧 migrator 诊断或启动错误。
+
+有效方案：
+
+- 先用 `mvn help:describe` 确认 `run` goal 支持 `spring-boot.run.additional-classpath-elements`。
+- 用 `mvn dependency:get` 准备 `spring-boot-properties-migrator`、`spring-boot-configuration-metadata` 和 `com.vaadin.external.google:android-json`。
+- 在 `spring-boot:start spring-boot:stop` 中把三个 jar 一起追加到 `spring-boot.run.additional-classpath-elements`。
+- 应用日志和控制台输出一起作为诊断来源；公开文档只记录脱敏后的诊断类别。
+
+验证证据：
+
+- 补齐三个 jar 后，内部 `fist-monitor` 在本地 `file:` 配置模板下启动/停止成功。
+- 成功日志未出现 `PropertiesMigration`、`deprecated`、`renamed` 或 `replacement` 诊断。
+- 该验证运行在 Boot 3.5.11 基线，只证明 migrator 接入机制和本地配置加载路径可用；Boot 4 诊断仍需在应用依赖切换到 Boot 4 后使用匹配版本重跑。
+
+后续复用规则：
+
+- 长期或多服务验证优先使用临时 POM runtime 依赖，减少手工 classpath 遗漏；命令行追加 jar 更适合一次性探测。
+- 如果继续使用命令行追加 jar，必须把 migrator 传递依赖显式写入命令模板。
+- 每轮应用日志采集前先确认是否加载真实环境变量，避免把 `.env.local` 值写入过程记录。

@@ -2239,3 +2239,5 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-monitor` 可以通过 `boot4-local` profile、`spring.config.import=optional:file:...` 和 `spring-boot:start spring-boot:stop` 完成本地配置模板启动探测。
 - 该验证只证明本地 Config Data 输入和 Spring 环境构建可行，不代表 Nacos Config、Nacos Discovery 或完整 Web 运行路径已经通过。
 - 本地验证阶段需要显式关闭 Nacos Config import check 和服务注册发现，否则 Nacos Config starter 会要求存在 `nacos:` import。
+- 在不修改内部应用 POM 的情况下，可以通过 `spring-boot.run.additional-classpath-elements` 临时追加 `spring-boot-properties-migrator`；但必须同时追加 `spring-boot-configuration-metadata` 和 `android-json` 运行时依赖。
+- Boot 3.5.11 基线下的 migrator 机制验证已通过，未出现配置迁移诊断；Boot 4 最终诊断仍需等内部应用依赖切换到 Boot 4 后使用匹配版本重跑。
