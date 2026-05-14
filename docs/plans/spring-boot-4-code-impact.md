@@ -2241,3 +2241,6 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 本地验证阶段需要显式关闭 Nacos Config import check 和服务注册发现，否则 Nacos Config starter 会要求存在 `nacos:` import。
 - 在不修改内部应用 POM 的情况下，可以通过 `spring-boot.run.additional-classpath-elements` 临时追加 `spring-boot-properties-migrator`；但必须同时追加 `spring-boot-configuration-metadata` 和 `android-json` 运行时依赖。
 - Boot 3.5.11 基线下的 migrator 机制验证已通过，未出现配置迁移诊断；Boot 4 最终诊断仍需等内部应用依赖切换到 Boot 4 后使用匹配版本重跑。
+- 在临时副本中将 `fist-monitor` 最小链路切到 Boot 4.0.6、Spring Cloud 2025.1.1、Spring Cloud Alibaba 2025.1.0.0 和 FIST Kit 4.0.0-SNAPSHOT 后，`fist-common` 与 `fist-monitor` 可完成 `test-compile`。
+- 试编译暴露出 reactor 级影响：其他模块仍引用 `spring-boot-starter-undertow`，Boot 4 parent 不再管理该旧 starter，导致未收窄 reactor 时 Maven 在项目读取阶段失败。
+- FIST Kit v4 SNAPSHOT 应先安装到本地 Maven 仓库，否则内部应用临时试编译会尝试从远程仓库解析未发布组件。

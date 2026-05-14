@@ -1986,3 +1986,42 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - 应用日志未出现 `PropertiesMigration`、`deprecated`、`renamed` 或 `replacement` 诊断。
 - Maven `-l` 只能记录 Maven 主进程，不能完整记录 forked 应用日志；migrator 诊断需要从应用自身日志或控制台输出中采集。
 - 内部项目工作区保持干净；生成日志和 target 输出不进入 Git 跟踪。
+
+## 内部应用 fist-monitor Boot 4 试编译
+
+记录日期：2026-05-14；记录者：Codex。
+
+为避免直接修改内部项目，先将内部项目复制到主仓库 `target/` 下的临时副本，并排除 `.git`、`target`、`logs`、`.idea` 和 `.env.local`。临时副本只用于试编译，不进入 Git 跟踪。
+
+临时版本矩阵：
+
+- Spring Boot：`4.0.6`
+- Spring Cloud：`2025.1.1`
+- Spring Cloud Alibaba：`2025.1.0.0`
+- FIST Kit：`4.0.0-SNAPSHOT`
+- Spring Boot Admin：`4.0.4`
+- SpringDoc：`3.0.3`
+- Spring Authorization Server：`7.0.5`
+
+错误尝试：
+
+- 根 POM 直接切到 Boot 4 后，即使只指定 `-pl fist-cloud/fist-monitor -am`，Maven 仍会先读取全 reactor。其他模块中的 `spring-boot-starter-undertow` 在 Boot 4 下不再由 Boot parent 管理，导致项目读取阶段失败。
+- 为聚焦 `fist-monitor`，临时副本中将根模块收窄为 `common`、`fist-cloud`，并将 `fist-cloud` 子模块收窄为 `fist-monitor`。
+- 收窄 reactor 后，编译进入 `fist-common`，但本地 Maven 仓库缺少 FIST Kit v4 的 `fist-kit-api` 和 `fist-support-web` jar，导致依赖解析失败。
+
+有效方案：
+
+- 在 FIST Kit v4 主仓库执行定向安装：`cmd /c mvn -pl fist-kit-infra/fist-kit-api,fist-kit-app/fist-web/fist-support-web -am -DskipTests install`。
+- 在临时副本中执行：`cmd /c mvn -pl fist-cloud/fist-monitor -am "-P!config-nacos" -DskipTests test-compile`。
+
+验证结果：
+
+- FIST Kit v4 定向安装为 `BUILD SUCCESS`。
+- 内部应用临时副本中，`fist-common` 编译 10 个源码文件，`fist-monitor` 编译 2 个源码文件，最终 `BUILD SUCCESS`。
+- 本轮只验证 `fist-monitor` 最小编译链路，不代表 `fist-auth`、`fist-iam`、`fist-gateway` 或示例模块已经可编译。
+- 本轮没有运行 Boot 4 启动验证，也没有加载 `.env.local`。
+
+后续处理：
+
+- 其他模块中的 `spring-boot-starter-undertow` 需要迁移到 Boot 4 的新 Web Server starter 坐标，或由应用显式声明版本。
+- 后续应在 `fist-monitor` Boot 4 临时编译成功的基础上，继续做 Boot 4 启动探测和 migrator 诊断。

@@ -1280,3 +1280,37 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 长期或多服务验证优先使用临时 POM runtime 依赖，减少手工 classpath 遗漏；命令行追加 jar 更适合一次性探测。
 - 如果继续使用命令行追加 jar，必须把 migrator 传递依赖显式写入命令模板。
 - 每轮应用日志采集前先确认是否加载真实环境变量，避免把 `.env.local` 值写入过程记录。
+
+## 经验 39：内部应用 Boot 4 试编译要先收窄 reactor
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+内部应用是多模块 Maven 工程。即使只想验证 `fist-monitor`，Maven 也会先读取 reactor 中所有模块的 POM。Boot 4 下部分旧 starter 坐标不再由父 POM 管理，其他模块的 POM 问题会在目标模块编译前阻塞构建。
+
+错误尝试或风险：
+
+- 只用 `-pl fist-cloud/fist-monitor -am` 不能避免 Maven 读取全 reactor POM。
+- 直接将根 POM parent 切到 Boot 4 后，`fist-iam`、`fist-auth` 和示例模块中的 `spring-boot-starter-undertow` 缺少版本，构建在项目读取阶段失败，尚未进入 `fist-monitor`。
+- 内部应用引用 FIST Kit `4.0.0-SNAPSHOT` 时，如果本地仓库没有安装对应 jar，Maven 会去远程仓库解析未发布组件并失败。
+- 在真实内部项目上直接改 POM 做试编译，会混入大量临时变更，不利于复盘和回滚。
+
+有效方案：
+
+- 复制内部项目到主仓库 `target/` 下的临时副本，排除 `.git`、`.env.local`、`target`、`logs` 和 IDE 目录。
+- 在临时副本中收窄 reactor：根模块只保留 `common`、`fist-cloud`，`fist-cloud` 只保留 `fist-monitor`。
+- 将临时副本版本矩阵切到 Boot 4：Spring Boot `4.0.6`、Spring Cloud `2025.1.1`、Spring Cloud Alibaba `2025.1.0.0`、FIST Kit `4.0.0-SNAPSHOT`。
+- 先在 FIST Kit v4 主仓库安装 `fist-kit-api` 和 `fist-support-web` 及其依赖，再编译内部临时副本。
+
+验证证据：
+
+- FIST Kit v4 定向安装 `fist-kit-api` 与 `fist-support-web` 为 `BUILD SUCCESS`。
+- 内部临时副本中执行 `fist-monitor` 最小链路 `test-compile` 为 `BUILD SUCCESS`。
+- 编译覆盖 `fist-common` 10 个源码文件和 `fist-monitor` 2 个源码文件。
+
+后续复用规则：
+
+- 首轮应用侧 Boot 4 试编译先收窄到单服务链路，避免全 reactor 旧模块阻塞目标问题定位。
+- 全量应用升级前，需要统一处理所有模块的旧 Boot starter 坐标，尤其是 `spring-boot-starter-undertow`。
+- SNAPSHOT 基础库必须先本地安装，或使用已发布版本；不能让内部应用试编译依赖远程解析未发布构件。
