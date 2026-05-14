@@ -1381,3 +1381,37 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - Web 探测通过标准不仅是 Maven `BUILD SUCCESS`，还要确认应用日志中没有启动失败、关键 provider 缺失或配置迁移诊断。
 - Bean Validation provider 缺失不应在验证报告中被归类为配置项迁移问题；应进入依赖图与 starter 装配核查。
 - 真实外部资源参与前，先保持随机端口和本地配置导入方式，减少数据库、Redis、Nacos 与 Web classpath 问题互相干扰。
+
+## 经验 42：Boot 4 Web 应用要显式确认 Bean Validation provider
+
+记录日期：2026-05-14；记录者：Codex。
+
+问题：
+
+`fist-monitor` 在 Boot 4 Web 模式下启动成功，但日志提示 `jakarta.validation.NoProviderFoundException`。这说明 classpath 中存在 `jakarta.validation-api`，但没有 Hibernate Validator 等 Bean Validation provider。该问题不会必然阻塞应用启动，却会影响运行期校验能力。
+
+错误尝试或风险：
+
+- 误认为 `spring-boot-starter-web` 一定会传递引入 Hibernate Validator；Boot 4.0.6 依赖树中没有这个传递关系。
+- 只看应用是否启动成功，会漏掉 provider 缺失对 `@Validated`、请求参数校验、方法校验和配置属性校验的影响。
+- 把 provider 缺失当成 migrator 配置项问题处理，会偏离真实原因；这属于运行时依赖图问题。
+
+有效方案：
+
+- 先跑 dependency tree，确认 `jakarta.validation-api`、`spring-boot-starter-validation` 和 `hibernate-validator` 的实际来源。
+- 在临时副本的应用模块中显式加入 `spring-boot-starter-validation`，不要先改真实内部项目。
+- 重跑 Web 启动和 Web + migrator 启动，确认 Hibernate Validator 初始化、Tomcat 启动、Actuator 暴露和优雅停止都通过。
+- 检索应用日志中新时间段，确认不再出现新的 `NoProviderFoundException`。
+
+验证证据：
+
+- 修复前 dependency tree 显示 `fist-support-web` 只传递 `jakarta.validation-api:3.1.1`。
+- 修复后 dependency tree 显示 `spring-boot-starter-validation:4.0.6 -> spring-boot-validation:4.0.6 -> hibernate-validator:9.0.1.Final`。
+- 修复后不带 migrator 的 Web 启动/停止为 `BUILD SUCCESS`，日志出现 `Hibernate Validator 9.0.1.Final`。
+- 修复后带 migrator 的 Web 启动/停止为 `BUILD SUCCESS`，新时间段没有 `NoProviderFoundException`，也没有配置迁移诊断。
+
+后续复用规则：
+
+- 每个内部 Web 服务升级到 Boot 4 时，都应显式核查 validation provider，而不是依赖 Web starter 间接带入。
+- 应用确实使用校验能力时，优先在应用侧或内部应用父 POM 声明 `spring-boot-starter-validation`。
+- FIST Kit 支撑库如只需要注解和接口编译，保留 `jakarta.validation-api` 即可；是否携带 provider 应由应用运行时决定。

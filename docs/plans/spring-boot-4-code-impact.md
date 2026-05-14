@@ -2247,4 +2247,6 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-monitor` 在 Boot 4 临时副本中可完成非 Web 启动/停止探测；追加 Boot 4.0.6 migrator 后仍可启动，并且未输出配置迁移诊断。
 - `fist-monitor` 在 Boot 4 临时副本中也可完成 Servlet Web 模式启动/停止探测；Tomcat 11、随机应用端口、随机管理端口和 15 个 Actuator endpoint 均可装配启动。
 - Web 模式下新增发现 classpath 缺少 Bean Validation provider，日志提示 `jakarta.validation.NoProviderFoundException`。该问题当前不阻塞 `fist-monitor` 启动，但可能影响请求参数校验、方法校验、配置属性校验或管理上下文校验，需要在内部应用依赖图中确认 `hibernate-validator` 的引入方式。
+- 依赖树确认 `spring-boot-starter-web:4.0.6` 不再为 `fist-monitor` 带入 Bean Validation provider；临时加入 `spring-boot-starter-validation` 后，可带入 `spring-boot-validation:4.0.6` 和 `hibernate-validator:9.0.1.Final`，Web 启动和带 migrator 的 Web 启动均通过且不再出现新的 provider 缺失提示。
+- FIST Kit 侧 `fist-support-web` 当前只声明 `jakarta.validation-api`，不强制携带 provider；内部应用正式升级时应在应用侧或应用父 POM 中显式声明 `spring-boot-starter-validation`。
 - 当前启动验证没有覆盖真实 `.env.local`、数据库、Redis、Nacos、真实业务 HTTP 接口或生产配置中心路径；结论只覆盖本地配置模板输入下的编译、非 Web 启动、Web 容器启动和管理端点装配。

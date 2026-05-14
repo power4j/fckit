@@ -2088,3 +2088,37 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - 本轮只证明 `fist-monitor` 在本地模板配置输入下可以启动 Servlet Web 容器和管理端点，不代表业务 HTTP 接口、数据库访问、Redis、Nacos Discovery 或真实配置中心路径已经通过。
 - Bean Validation provider 缺失应作为后续依赖图核查项，优先确认内部应用是否应通过 Web starter、validation starter 或业务 starter 引入 `hibernate-validator`。
 - migrator 诊断仍以应用自身日志为准；Maven `-l` 日志只能证明 Maven goal 执行成功。
+
+## 内部应用 fist-monitor Bean Validation provider 修复验证
+
+记录日期：2026-05-14；记录者：Codex。
+
+基于 Web 模式启动发现的 `jakarta.validation.NoProviderFoundException`，继续在临时副本中核查依赖树并验证最小修复方式。该验证只修改临时副本，不修改真实内部项目。
+
+依赖树结论：
+
+- 修复前，`fist-monitor -> fist-common -> fist-support-web` 只带入 `jakarta.validation:jakarta.validation-api:3.1.1`。
+- 修复前，`spring-boot-starter-web:4.0.6` 没有传递带入 `hibernate-validator`。
+- 因此，Web 模式下 Spring 可以看到 Jakarta Validation API，但找不到 Bean Validation provider。
+
+临时修复方式：
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+```
+
+验证结果：
+
+- 在临时副本的 `fist-monitor` 中加入 `spring-boot-starter-validation` 后，依赖树新增 `spring-boot-validation:4.0.6` 和 `hibernate-validator:9.0.1.Final`。
+- 不带 migrator 的 Boot 4 Web 启动/停止为 `BUILD SUCCESS`，应用日志出现 `Hibernate Validator 9.0.1.Final` 初始化信息，未再出现新的 `NoProviderFoundException`。
+- 追加 Boot 4.0.6 migrator 与 configuration metadata 后，Web 启动/停止仍为 `BUILD SUCCESS`。
+- 修复后带 migrator 的 Web 启动日志未出现 `PropertiesMigration`、`deprecated`、`renamed`、`replacement` 或 `Application run failed`。
+
+建议：
+
+- 内部应用正式升级时，Web 应用如使用请求参数校验、方法校验或配置属性校验，应显式声明 `spring-boot-starter-validation`。
+- FIST Kit 侧暂不把 Hibernate Validator 作为 `fist-support-web` 的强制传递依赖；`fist-support-web` 当前只需要编译期 API，provider 更适合作为应用侧运行时选择。
+- 如果后续发现多个内部 Web 服务都需要同样依赖，可在内部项目的公共应用 BOM 或服务父 POM 中统一声明，而不是逐个服务分散补充。
