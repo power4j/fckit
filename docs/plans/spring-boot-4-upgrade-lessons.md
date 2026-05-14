@@ -1129,7 +1129,48 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 示例侧需要显式提供 SpringDoc WebMVC 或 WebFlux endpoint starter，基础库不应把该依赖强行变成传递必选依赖。
 - 记录依赖下载行为，避免把首次联网解析误判为代码变更风险。
 
+## 经验 35：OAuth2 Server 示例要接入真实 Authorization Server 端点
+
+问题：
+
+`fist-boot-security-oauth2-server` 的模块测试已覆盖自动配置 Bean、`DefaultAuthorizationService` 与 H2 schema，但缺少应用级 HTTP 请求。Boot 4 升级后，仅靠上下文测试不能证明 Spring Authorization Server 7 的 endpoint matcher、token endpoint converter、client authentication、授权保存和 token claims 回写能在真实 Servlet 容器中一起工作。
+
+错误尝试或风险：
+
+- 第一次测试编译失败，原因是将 metadata 响应中的 `grant_types_supported` / `token_endpoint_auth_methods_supported` 直接转为 `Iterable<?>` 后调用 AssertJ `contains(String)`，泛型捕获导致编译器无法匹配 varargs。
+- 第二次测试启动前失败，原因是示例最终依赖树缺少 `commons-logging:commons-logging`，`SpringExtension` 初始化 `TestContextManager` 时无法加载 `org.apache.commons.logging.LogFactory`。
+- `mvn dependency:tree -Dincludes=org.springframework:spring-jcl,commons-logging:commons-logging` 在 `cmd /c mvn` 下如果不加引号，会被 Maven 误解析成插件前缀。
+- 如果只验证 `/.well-known/oauth-authorization-server`，仍不能证明 FIST 自定义 `OAuth2TokenGenerator` 参与 token 颁发。
+
+有效方案：
+
+- 新增 `examples/fist-oauth2-server/example-authorization-server`，使用 `@SpringBootTest(webEnvironment = RANDOM_PORT)` 启动真实 Tomcat 11。
+- 通过 `OAuth2AuthorizationServerConfigurer` 手工接入项目自动配置提供的 `OAuth2TokenGenerator` 和 `AuthenticationConverter`，而不是只导入官方最小默认配置。
+- 使用 H2 和 Spring Authorization Server 7 官方 `oauth2-authorization-schema.sql`，示例中提供 `DefaultAuthorizationService`，使 HTTP token 请求落到 FIST 授权服务实现。
+- `RegisteredClient` 显式使用 `OAuth2TokenFormat.REFERENCE`，确保 FIST 的 `DefaultOAuth2AccessTokenGenerator` 负责 access token 生成。
+- 测试先请求 `/.well-known/oauth-authorization-server`，再通过 `client_secret_basic` 请求 `/oauth2/token`，最后用 `authorizationService.findByToken(...)` 回查 token claims。
+- 示例 POM 显式声明 `commons-logging`，保证 Spring 7 测试上下文和应用启动具备 `LogFactory`。
+
+验证证据：
+
+- RED：`cmd /c mvn -l .codex/oauth2-server-example-test.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 编译失败，原因是 AssertJ 泛型断言不匹配。
+- RED：`cmd /c mvn -l .codex/oauth2-server-example-test-2.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 运行失败，原因是缺少 `org.apache.commons.logging.LogFactory`。
+- GREEN：`cmd /c mvn -l .codex/oauth2-server-example-test-3.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 为 `BUILD SUCCESS`，新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- 回归：`cmd /c mvn -l .codex/oauth2-server-example-test-4.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 为 `BUILD SUCCESS`，新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- 最终回归：`cmd /c mvn -l .codex/oauth2-server-example-test-5.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 为 `BUILD SUCCESS`，新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- 最终断言补强后回归：`cmd /c mvn -l .codex/oauth2-server-example-test-6.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 为 `BUILD SUCCESS`，新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- 格式命令：`cmd /c mvn -l .codex/oauth2-server-example-format-validate.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
+- 最终格式命令：`cmd /c mvn -l .codex/oauth2-server-example-format-validate-2.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
+- 最终断言补强后格式命令：`cmd /c mvn -l .codex/oauth2-server-example-format-validate-3.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
+
+后续复用规则：
+
+- OAuth2 Server 应用级验证至少覆盖公开 metadata 和一次 token 请求；只启动上下文不够。
+- 自定义 token 生成器的验证应回查授权服务中的 token claims，而不是只检查 HTTP token 响应中的标准字段。
+- Spring Authorization Server 7 示例应优先复用官方 `OAuth2AuthorizationServerConfigurer`，项目扩展通过 configurer 明确注入。
+- Maven 命令中带冒号的 `-Dincludes` 等参数在 Windows `cmd /c mvn` 下必须加引号。
+
 ## 当前剩余高优先级事项
 
 1. 当前仓库内已有 SDE 示例完成配置项 migrator 使用流程验证，未发现 Boot 4 配置迁移诊断；内部应用侧真实配置验证仍是独立工作。
-2. Web/Data/Security/API Doc 组合示例已经补齐真实 HTTP 请求覆盖；下一步可继续扩展 OAuth2 Server 示例级请求，或转入内部应用配置迁移验证。
+2. Web/Data/Security/API Doc 与 OAuth2 Server 示例已经补齐真实 HTTP 请求覆盖；下一步可转入内部应用配置迁移验证，或继续补充更完整的 OAuth2 授权码 / OIDC 流程示例。

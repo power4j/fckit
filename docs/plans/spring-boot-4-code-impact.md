@@ -2119,6 +2119,49 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 扩展 API Doc 后，`cmd /c mvn -l .codex/web-data-security-apidoc-example-test.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am test` 为 `BUILD SUCCESS`；新示例测试 2 个用例，失败 0，错误 0，跳过 0。
 - API Doc 扩展后的格式命令 `cmd /c mvn -l .codex/web-data-security-apidoc-example-format-validate.log -Pexamples -pl examples/fist-web-data-security/example-servlet -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
 
+## OAuth2 Server 示例应用
+
+本轮新增 `examples/fist-oauth2-server/example-authorization-server`，用于覆盖 OAuth2 Authorization Server 在 Spring Boot 4 Servlet 应用中的真实 metadata 和 token 请求。
+
+受影响文件：
+
+- `examples/pom.xml`
+- `examples/README.md`
+- `examples/fist-oauth2-server/pom.xml`
+- `examples/fist-oauth2-server/README.md`
+- `examples/fist-oauth2-server/example-authorization-server/pom.xml`
+- `examples/fist-oauth2-server/example-authorization-server/src/main/java/com/power4j/fist3/examples/oauth2/server/*`
+- `examples/fist-oauth2-server/example-authorization-server/src/main/resources/application.yml`
+- `examples/fist-oauth2-server/example-authorization-server/src/test/java/com/power4j/fist3/examples/oauth2/server/AuthorizationServerExampleApplicationTest.java`
+
+处理结果：
+
+- 示例应用引入 `fist-boot-security`、`fist-boot-security-oauth2-server`、Spring Boot Web / Security / JDBC starter、Spring Authorization Server、Spring Security OAuth2 JOSE、H2 和 `commons-logging`。
+- 示例使用 `OAuth2AuthorizationServerConfigurer` 装配 Authorization Server 端点，并注入 FIST 自动配置提供的 `OAuth2TokenGenerator` 与 `AuthenticationConverter`。
+- 示例使用 H2 初始化 Spring Authorization Server 7 官方 `oauth2-authorization-schema.sql`，并用 `DefaultAuthorizationService` 保存授权。
+- 示例 `RegisteredClient` 使用 `client_secret_basic`、`client_credentials` 和 `OAuth2TokenFormat.REFERENCE`，确保 access token 由 FIST `DefaultOAuth2AccessTokenGenerator` 生成。
+- 示例测试使用 `@SpringBootTest(webEnvironment = RANDOM_PORT)` 启动 Tomcat 11，并通过 `RestClient` 发送 metadata 与 token 请求。
+- token 请求后通过 `authorizationService.findByToken(...)` 回查 claims，断言 `client_id`、`active` 和 license 字段存在。
+
+影响判断：
+
+- 这是示例和验证覆盖增强，不改变生产模块行为。
+- 该示例补上了此前 OAuth2 Server 只有自动配置和服务级测试、缺少真实 HTTP endpoint 请求的覆盖缺口。
+- 示例使用 H2 内存库，不依赖外部数据库、Redis 或真实账号资源。
+
+验证结果：
+
+- 第一次测试编译失败，原因是 AssertJ `Iterable<?>` 泛型断言无法直接匹配 `contains(String)`；改为 `asInstanceOf(LIST)` 后通过编译。
+- 第二次测试运行失败，原因是示例 classpath 缺少 `commons-logging:commons-logging`，导致 `TestContextManager` 无法加载 `org.apache.commons.logging.LogFactory`；显式声明依赖后通过。
+- 首次 dependency tree 命令因 `-Dincludes` 未加引号被 Maven 误解析为插件前缀，后续加引号重跑成功。
+- `cmd /c mvn -l .codex/oauth2-server-example-test-3.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 为 `BUILD SUCCESS`；新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- `cmd /c mvn -l .codex/oauth2-server-example-test-4.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 回归为 `BUILD SUCCESS`；新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- `cmd /c mvn -l .codex/oauth2-server-example-test-5.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 最终回归为 `BUILD SUCCESS`；新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- `cmd /c mvn -l .codex/oauth2-server-example-test-6.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test` 最终断言补强后回归为 `BUILD SUCCESS`；新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- 格式命令 `cmd /c mvn -l .codex/oauth2-server-example-format-validate.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
+- 最终格式命令 `cmd /c mvn -l .codex/oauth2-server-example-format-validate-2.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
+- 最终断言补强后格式命令 `cmd /c mvn -l .codex/oauth2-server-example-format-validate-3.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate` 为 `BUILD SUCCESS`；examples 继承配置会跳过格式校验。
+
 ## 本地证据
 
 - 阶段 2 试编译日志：`.codex/trial-compile-*.log`
@@ -2142,6 +2185,10 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Web/Data/Security 示例格式命令日志：`.codex/web-data-security-example-format-validate.log`
 - Web/Data/Security/API Doc 示例验证日志：`.codex/web-data-security-apidoc-example-test.log`
 - Web/Data/Security/API Doc 示例格式命令日志：`.codex/web-data-security-apidoc-example-format-validate.log`
+- OAuth2 Server 示例验证日志：`.codex/oauth2-server-example-test-3.log`、`.codex/oauth2-server-example-test-4.log`、`.codex/oauth2-server-example-test-5.log`、`.codex/oauth2-server-example-test-6.log`
+- OAuth2 Server 示例格式命令日志：`.codex/oauth2-server-example-format-validate.log`、`.codex/oauth2-server-example-format-validate-2.log`、`.codex/oauth2-server-example-format-validate-3.log`
+- OAuth2 Server 示例失败记录日志：`.codex/oauth2-server-example-test.log`、`.codex/oauth2-server-example-test-2.log`
+- OAuth2 Server 示例依赖树日志：`.codex/oauth2-server-example-dependency-tree-3.log`、`.codex/oauth2-server-example-full-dependency-tree.log`
 - Spring Boot `4.0.6` 本地 JAR：`F:\pkg-maven\repository\org\springframework\boot\spring-boot-webflux\4.0.6\spring-boot-webflux-4.0.6.jar`
 - Spring Boot 官方发布记录：`https://spring.io/blog/2026/04/23/spring-boot-4-0-6-available-now`
 - Spring Boot Context7 文档：`/spring-projects/spring-boot`，`DataSourceAutoConfiguration` 位于 `org.springframework.boot.jdbc.autoconfigure`
@@ -2159,5 +2206,6 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Spring Security `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-core\7.0.5\spring-security-core-7.0.5.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql`。
 - Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认自定义 token 生成应通过 `OAuth2TokenGenerator` / `DelegatingOAuth2TokenGenerator` 配置。
+- Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认自定义 Authorization Server 配置可通过 `OAuth2AuthorizationServerConfigurer` 注入 repository、authorization service、settings 和 token generator。
 - JSpecify Context7 文档：`/jspecify/jspecify`，确认 `@Nullable` 可用于返回值、参数、泛型类型参数和数组维度。
 - OpenRewrite dry-run patch：`target/rewrite/rewrite.patch`

@@ -9,6 +9,7 @@
 ### Added
 
 - 新增 `examples/fist-web-data-security/example-servlet`，提供 Web、Data、Security、API Doc starter 在 Spring Boot 4 Servlet 应用中的组合启动示例。
+- 新增 `examples/fist-oauth2-server/example-authorization-server`，提供 OAuth2 Authorization Server 在 Spring Boot 4 中的 metadata 和 client credentials token 请求示例。
 
 ### Changed
 

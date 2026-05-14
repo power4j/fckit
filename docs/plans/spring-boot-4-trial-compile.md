@@ -1714,6 +1714,44 @@ cmd /c mvn -l .codex/web-data-security-apidoc-example-format-validate.log -Pexam
 - 扩展 API Doc 后，示例定向测试仍为 `BUILD SUCCESS`，新示例测试 2 个用例，失败 0，错误 0，跳过 0。
 - `/v3/api-docs` 响应包含 `inner_auth` 安全方案、`X-USER-IN` header 和 `/api/profiles/{id}`、`/api/profiles` 路径。
 
+## OAuth2 Server 示例级 HTTP 验证
+
+日期：2026-05-14
+执行者：Codex
+
+本轮新增 `examples/fist-oauth2-server/example-authorization-server`，用于覆盖 `fist-boot-security-oauth2-server` 在 Spring Boot 4 + Spring Authorization Server 7 下的应用级端点请求。
+
+验证命令：
+
+```powershell
+cmd /c mvn -l .codex/oauth2-server-example-test.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test
+cmd /c mvn -l .codex/oauth2-server-example-test-2.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test
+cmd /c mvn -l .codex/oauth2-server-example-dependency-tree-3.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am dependency:tree "-Dincludes=org.springframework:spring-jcl,commons-logging:commons-logging"
+cmd /c mvn -l .codex/oauth2-server-example-full-dependency-tree.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am dependency:tree
+cmd /c mvn -l .codex/oauth2-server-example-test-3.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test
+cmd /c mvn -l .codex/oauth2-server-example-format-validate.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate
+cmd /c mvn -l .codex/oauth2-server-example-test-4.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test
+cmd /c mvn -l .codex/oauth2-server-example-test-5.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test
+cmd /c mvn -l .codex/oauth2-server-example-format-validate-2.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate
+cmd /c mvn -l .codex/oauth2-server-example-test-6.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am test
+cmd /c mvn -l .codex/oauth2-server-example-format-validate-3.log -Pexamples -pl examples/fist-oauth2-server/example-authorization-server -am spring-javaformat:validate
+```
+
+错误尝试和修正：
+
+- 第一次测试编译失败，原因是 AssertJ 对 `Iterable<?>` 的 `contains(String)` 泛型捕获不匹配；改用 `asInstanceOf(LIST)` 后通过编译。
+- 第二次测试运行失败，原因是目标示例 classpath 缺少 `commons-logging:commons-logging`；示例 POM 显式声明该标准依赖后启动通过。
+- 首次执行 dependency tree 时未给 `-Dincludes=org.springframework:spring-jcl,commons-logging:commons-logging` 加引号，Maven 将参数误解析为插件前缀；重跑时加引号。
+
+结果：
+
+- OAuth2 Server 示例定向测试为 `BUILD SUCCESS`。
+- 新示例测试 2 个用例，失败 0，错误 0，跳过 0。
+- 测试启动真实 Tomcat 11，访问 `/.well-known/oauth-authorization-server` 并断言 issuer、token endpoint、`client_credentials` 和 `client_secret_basic`。
+- 测试通过 HTTP POST `/oauth2/token` 完成 client credentials token 请求，并通过 `DefaultAuthorizationService` 回查 access token claims，确认 FIST `DefaultOAuth2AccessTokenGenerator` 已参与颁发。
+- 回归测试 `oauth2-server-example-test-4.log`、`oauth2-server-example-test-5.log` 和 `oauth2-server-example-test-6.log` 均为 `BUILD SUCCESS`。
+- 格式命令为 `BUILD SUCCESS`；examples 父模块当前配置为跳过 spring-javaformat 校验。
+
 ## 本地日志
 
 本阶段日志保存在 `.codex/`，不提交：
@@ -1820,6 +1858,19 @@ cmd /c mvn -l .codex/web-data-security-apidoc-example-format-validate.log -Pexam
 - `.codex/web-data-security-example-format-validate.log`
 - `.codex/web-data-security-apidoc-example-test.log`
 - `.codex/web-data-security-apidoc-example-format-validate.log`
+- `.codex/oauth2-server-example-test.log`
+- `.codex/oauth2-server-example-test-2.log`
+- `.codex/oauth2-server-example-test-3.log`
+- `.codex/oauth2-server-example-test-4.log`
+- `.codex/oauth2-server-example-test-5.log`
+- `.codex/oauth2-server-example-test-6.log`
+- `.codex/oauth2-server-example-format-validate.log`
+- `.codex/oauth2-server-example-format-validate-2.log`
+- `.codex/oauth2-server-example-format-validate-3.log`
+- `.codex/oauth2-server-example-dependency-tree.log`
+- `.codex/oauth2-server-example-dependency-tree-2.log`
+- `.codex/oauth2-server-example-dependency-tree-3.log`
+- `.codex/oauth2-server-example-full-dependency-tree.log`
 
 ## 资料来源
 
@@ -1831,6 +1882,7 @@ cmd /c mvn -l .codex/web-data-security-apidoc-example-format-validate.log -Pexam
 - Spring JDBC `7.0.7` 本地 JAR：`F:\pkg-maven\repository\org\springframework\spring-jdbc\7.0.7\spring-jdbc-7.0.7.jar`
 - Spring Authorization Server `7.0.5` 本地 JAR：`F:\pkg-maven\repository\org\springframework\security\spring-security-oauth2-authorization-server\7.0.5\spring-security-oauth2-authorization-server-7.0.5.jar`，确认内置 `oauth2-authorization-schema.sql`
 - Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认自定义 token 生成应通过 `OAuth2TokenGenerator` / `DelegatingOAuth2TokenGenerator` 配置。
+- Spring Authorization Server Context7 文档：`/spring-projects/spring-authorization-server`，确认最小默认配置可使用 `OAuth2AuthorizationServerConfiguration`，自定义配置可使用 `OAuth2AuthorizationServerConfigurer` 注入 `RegisteredClientRepository`、`OAuth2AuthorizationService`、`AuthorizationServerSettings` 和 `OAuth2TokenGenerator`。
 - Jackson Databind `2.21.3` 本地 JAR：`F:\pkg-maven\repository\com\fasterxml\jackson\core\jackson-databind\2.21.3\jackson-databind-2.21.3.jar`
 - Jackson Databind `3.1.2` 本地 JAR：`F:\pkg-maven\repository\tools\jackson\core\jackson-databind\3.1.2\jackson-databind-3.1.2.jar`
 - MyBatis Plus `3.5.16` 本地 JAR：`F:\pkg-maven\repository\com\baomidou\mybatis-plus-spring-boot4-starter\3.5.16\mybatis-plus-spring-boot4-starter-3.5.16.jar`

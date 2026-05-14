@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: fist-oauth2-authorization-server-example
+  datasource:
+    url: jdbc:h2:mem:fist_oauth2_authorization_server_example;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql
