@@ -1761,3 +1761,29 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 遇到相同需求时，先判断是「配置输入验证」还是「真实资源验证」。
 - 配置输入验证走本地 `config/` 文件和 `spring.config.import=file:`。
 - 真实资源验证再启用 `.env.local`，并只保留脱敏结果。
+
+## 经验 52：本地 `config/` 目录需要防误提交保护
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+内部项目通过 `optional:file:./config/${spring.application.name}.yml` 验证本地配置输入后，`config/` 目录会自然成为放置本地数据库、Redis、Nacos、OAuth 2.0 和下游服务配置的入口。如果没有忽略规则，实施人员容易把本地配置文件误提交。
+
+有效方案：
+
+- 在内部项目 `.gitignore` 中忽略 `fist-cloud/*/config/*.yml`、`*.yaml`、`*.properties`。
+- 只提交 `config/README.md` 这类说明文件，记录用途、文件名约定和敏感信息边界。
+- 用脱敏本地文件验证 `optional:file:` 导入；验证完成后只提交忽略规则和说明，不提交具体配置文件。
+
+验证证据：
+
+- `fist-gateway` 使用被忽略的本地 `config/fist-gateway.yml` 覆盖 `app-info.version`。
+- `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`，启动 banner 显示本地文件覆盖后的版本号，说明 `optional:file:./config/${spring.application.name}.yml` 已生效。
+- `fist-gateway -am test-compile` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 后续服务如需本地配置输入，优先沿用 `fist-cloud/<service>/config/`。
+- 本地配置文件不提交；提交内容只保留 README、profile 和必要的 ignore 规则。
+- 如需真实资源，环境变量来自 `.env.local`，但不读取或记录其具体内容。

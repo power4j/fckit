@@ -2393,3 +2393,39 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests te
 - 本轮只覆盖本地 profile 启动，不覆盖真实 Redis、Nacos Discovery、Nacos Config、真实 OAuth 2.0 introspection 或下游服务转发。
 - `fist-gateway` 是 WebFlux 应用，启动容器是 Reactor Netty；Tomcat / Jetty 的 Servlet 容器策略不适用于该模块。
 - 外部本地配置文件导入使用 `optional:file:`，缺失时不阻塞启动；后续可将配置模板复制或整理到本地 `config/` 目录做配置迁移验证。
+
+## 真实内部项目 fist-gateway 本地配置导入验证
+
+记录日期：2026-05-18；记录者：Codex。
+
+在 `fist-gateway` 基础 `boot4-local` 启动通过后，继续验证本地配置模板输入方式。本轮使用被 Git 忽略的脱敏本地配置文件，不读取 `.env.local`，不连接真实数据库、Redis、Nacos 或下游服务。
+
+落地变更：
+
+- 内部项目 `.gitignore` 增加 `fist-cloud/*/config/*.yml`、`*.yaml`、`*.properties`，避免本地配置输入文件被误提交。
+- 新增 `fist-cloud/fist-gateway/config/README.md`，记录本地配置文件用途和敏感信息边界。
+
+验证方式：
+
+- 在本地被忽略的 `fist-cloud/fist-gateway/config/fist-gateway.yml` 中使用脱敏配置覆盖 `app-info.version`、部分 gateway route、CORS 和授权跳过配置。
+- 通过启动 banner 中的版本号变化确认 `optional:file:./config/${spring.application.name}.yml` 已被导入。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests test-compile
+```
+
+验证结果：
+
+- `process-resources` 为 `BUILD SUCCESS`。
+- `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动 banner 显示本地配置文件覆盖后的版本号，确认本地 `config/fist-gateway.yml` 已参与配置合成。
+- `fist-gateway -am test-compile` 为 `BUILD SUCCESS`。
+
+边界：
+
+- 本轮只验证本地配置输入和应用启动，不验证真实路由转发。
+- 本地配置文件不提交，后续真实资源验证仍通过 `.env.local` 提供本机环境变量并保持脱敏记录。
