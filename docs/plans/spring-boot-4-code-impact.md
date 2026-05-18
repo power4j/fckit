@@ -2259,3 +2259,6 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - FIST Kit v4 的 `DefaultAuthorizationService` 已移除旧 `LobHandler` 构造器和 RowMapper `setLobHandler` 路线；内部应用中继承并覆盖授权服务 RowMapper 的代码需要重做，而不是简单保留 Boot 3 写法。
 - Boot 4 测试源码需要同步迁移自动配置包；`org.springframework.boot.autoconfigure.jdbc`、`org.springframework.boot.autoconfigure.sql.init`、`org.springframework.boot.autoconfigure.jackson` 等 Boot 3 包路径在当前测试编译中已失效。
 - 由于 `fist-auth-v3` 的授权服务持久化包含自定义 `AuthUser` 反序列化和 Jackson mixin，Jackson 3 迁移不能只以主代码编译通过为准，后续必须补充授权数据读写和历史数据兼容验证。
+- 真实内部项目已在提交 `b3e0f5dc fix: restore auth user authorization json` 中补齐该验证：`JdbcAuthorizationServiceTest` 使用 H2 和 Spring Authorization Server 7 官方 schema 覆盖 `AuthUser` principal 的授权保存、按 ID 读取、按 access token 读取，以及历史 JSON 读取。
+- 本次验证确认一个运行期风险：Spring Security Jackson module 可能把内部 `AuthUser` principal 读回为基础 `org.springframework.security.core.userdetails.User`，导致 `userId`、`nickName`、`avatarUrl` 和 `additionInfo` 等扩展字段丢失。应用侧需要注册 Jackson 3 `AuthUser` 模块，并在 RowMapper 读取后从原始 `attributes` JSON 恢复实际子类。
+- 内部项目当前验证命令 `cmd /c mvn -pl fist-cloud/fist-auth-v3,fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`；包含 `JdbcAuthorizationServiceTest` 的受影响测试集也为 `BUILD SUCCESS`，`fist-auth-v3` 17 个测试、`fist-iam` 19 个测试均通过。
