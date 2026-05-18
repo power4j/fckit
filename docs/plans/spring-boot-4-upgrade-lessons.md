@@ -1539,6 +1539,8 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 真实内部项目 `pac-cloud-boot3-10.x` 已补充 `JdbcAuthorizationServiceTest`，使用 H2 和 Spring Authorization Server 7 官方授权表结构覆盖新写入授权记录、按 ID 读取、按 access token 读取和历史 `AuthUser` JSON 读取。
 - 定向测试命令 `cmd /c mvn -pl fist-cloud/fist-auth-v3,fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests=false "-Dtest=JdbcAuthorizationServiceTest,OAuth2ErrorMessagePropagationTest,PasswordMfaOauthFailureHandlerTest,PasswordMfaAwarePasswordAuthenticationProviderTest,PasswordMfaGrantAuthenticationProviderTest,PasswordMfaResendAuthenticationProviderTest,PasswordMfaTokenEndpointIntegrationTest,LoginModeManageServiceTest,LoginModeResolverTest,UserAuthControlRepositoryImplIntegrationTest,TaskHistoryPoolIntegrationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` 为 `BUILD SUCCESS`；`fist-auth-v3` 17 个测试、`fist-iam` 19 个测试均通过。
 - 真实内部项目提交 `b3e0f5dc fix: restore auth user authorization json` 已落地：应用侧注册 Jackson 3 `AuthUserJsonModule`，并在 RowMapper 读取后将被 Spring Security module 恢复为基础 `User` 的 principal 替换回内部 `AuthUser`。
+- 真实内部项目提交 `d01c71f8 fix: remove auth user jackson2 leftovers` 已删除旧 `AuthUserMixin` 与 Jackson 2 `AuthUserDeserializer`，避免授权 principal 继续存在两套反序列化实现。
+- 全 reactor `cmd /c mvn "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`，说明测试源码 Boot 3 自动配置包迁移阻塞在当前真实仓库已解除。
 
 后续复用规则：
 
@@ -1546,3 +1548,4 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 历史授权数据兼容性需要使用真实结构样本或脱敏样本验证，不以编译通过替代。
 - 如果应用侧 principal 扩展了 Spring Security `User`，需要同时验证「写出类型信息」和「读回实际子类」；Spring Security Jackson module 能恢复基础用户对象，不代表内部扩展字段仍在。
 - FIST Kit v4 的 `DefaultAuthorizationService` 负责标准授权服务 JSON 与 LOB 读写，应用侧自定义 principal 仍应通过应用自己的 Jackson 3 module、RowMapper 或授权服务扩展点补足。
+- Boot 4 上下文测试应从 Spring 容器获取 `tools.jackson.databind.ObjectMapper`；继续按 Jackson 2 `com.fasterxml.jackson.databind.ObjectMapper` 取 bean 会得到 `NoSuchBeanDefinitionException`。

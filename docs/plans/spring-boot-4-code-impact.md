@@ -2262,3 +2262,5 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 真实内部项目已在提交 `b3e0f5dc fix: restore auth user authorization json` 中补齐该验证：`JdbcAuthorizationServiceTest` 使用 H2 和 Spring Authorization Server 7 官方 schema 覆盖 `AuthUser` principal 的授权保存、按 ID 读取、按 access token 读取，以及历史 JSON 读取。
 - 本次验证确认一个运行期风险：Spring Security Jackson module 可能把内部 `AuthUser` principal 读回为基础 `org.springframework.security.core.userdetails.User`，导致 `userId`、`nickName`、`avatarUrl` 和 `additionInfo` 等扩展字段丢失。应用侧需要注册 Jackson 3 `AuthUser` 模块，并在 RowMapper 读取后从原始 `attributes` JSON 恢复实际子类。
 - 内部项目当前验证命令 `cmd /c mvn -pl fist-cloud/fist-auth-v3,fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`；包含 `JdbcAuthorizationServiceTest` 的受影响测试集也为 `BUILD SUCCESS`，`fist-auth-v3` 17 个测试、`fist-iam` 19 个测试均通过。
+- 内部项目后续全 reactor 验证 `cmd /c mvn "-P!config-nacos" -DskipTests test-compile` 已通过，14 个模块均为 `SUCCESS`。这说明此前已知的 Boot 3 测试自动配置包阻塞在当前真实仓库中已解除。
+- 内部项目提交 `d01c71f8 fix: remove auth user jackson2 leftovers` 已删除无引用的 `AuthUserMixin` 与旧 `AuthUserDeserializer`，并将 `ExternalLoginExchangeDtoJacksonContextTest` 改为使用 Boot 4/Jackson 3 的 `tools.jackson.databind.ObjectMapper`。
