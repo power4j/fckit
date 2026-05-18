@@ -2272,3 +2272,9 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-auth-v3` 需要显式声明 `spring-boot-starter-security`，仅保留 `spring-security-config` 可能满足编译但不足以提供 Boot 4 Web 应用启动所需的安全自动配置基础。
 - `AuthorizationServerSettings` 应作为应用 bean 暴露并注入授权服务器过滤器链，避免后续组件需要该设置时找不到全局 bean。
 - Druid Boot 3 starter 当前仍会引用 Boot 3 自动配置包；`fist-auth-v3` 本轮启动命令通过排除 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure` 隔离该问题。后续需要明确替换为 Boot 4 可用依赖或回到 Boot 默认数据源路线，不能长期依赖命令行 exclude。
+- 内部项目提交 `e63d4a1d fix: migrate iam boot4 startup` 已让 `fist-iam` 在 `boot4-local` profile 下完成 Boot 4 启动 / 停止、主代码编译和 `test-compile`。
+- Logbook `3.9.0` 在 Boot 4 / Jackson 3 组合下仍要求 Jackson 2 `ObjectMapper`；内部项目已升级到 Logbook `4.0.4`。
+- `fist-iam` 主代码中的 `SysDataController`、`TrusfortHttpSyncClient`、`PermissionClient`、`SysDataManagerImpl`、`DataImportServiceImpl` 和 `MenuItemStreamHandler` 已迁移到 Jackson 3 `tools.jackson.*`。
+- Jackson 3 `JsonNode.properties()` 返回 Set；替换 Jackson 2 `JsonNode.fields()` 时需要同步调整迭代方式。
+- `fist-iam` 本地启动需要最小 H2 schema 覆盖 `fiamc_lock_guard`，并设置 `idempotent-guard.jdbc.table-name=fiamc_lock_guard`，否则 idempotent guard 会按默认 `lock_guard` 表名执行 schema check。
+- `fist-iam` 当前 Boot 4 本地启动耗时接近 30 秒，`spring-boot:start` 需要设置 `spring-boot.start.maxAttempts=120`，避免 Maven 插件先于应用启动完成而超时。

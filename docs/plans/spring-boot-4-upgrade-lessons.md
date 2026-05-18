@@ -1621,3 +1621,38 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 授权服务模块的 Boot 4 迁移要同时做编译验证、`test-compile`、定向单测和本地启动探测。
 - 遇到 Druid Boot 3 自动配置引用旧 `org.springframework.boot.autoconfigure.jdbc` 包时，应单独制定数据源依赖策略，不把启动命令中的 exclude 固化为长期配置。
 - `.env.local` 仅作为本机真实资源验证输入；公开文档只记录资源类型、验证阶段和脱敏结果。
+
+## 经验 49：第三方 starter 与应用代码的 Jackson 2 残留要分层处理
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+`fist-iam` Boot 4 本地启动时，旧 Logbook `3.9.0` 首先要求 Spring 容器提供 Jackson 2 `com.fasterxml.jackson.databind.ObjectMapper`。升级 Logbook 后，启动继续暴露内部控制器、同步客户端和数据导入代码仍注入或直接创建 Jackson 2 `ObjectMapper`。这说明 Boot 4/Jackson 3 迁移不能只扫授权服务或测试代码，需要同时覆盖第三方 starter 和应用主代码。
+
+错误尝试或风险：
+
+- 为满足旧 starter 而补一个 Jackson 2 `ObjectMapper` bean，会在 Boot 4 应用内长期保留两套 JSON 运行时，增加行为差异。
+- 只升级 Logbook 后立即认为 IAM JSON 迁移完成，会漏掉 `SysDataController`、`TrusfortHttpSyncClient`、`PermissionClient`、`SysDataManagerImpl` 和数据迁移处理器中的 Jackson 2 类型。
+- Jackson 3 `JsonNode.properties()` 返回 Set，不再是 Jackson 2 `fields()` 的 Iterator 形态，不能只做方法名替换。
+
+有效方案：
+
+- 将 Logbook 升级到 `4.0.4`，使用当前 Boot 4 / Spring 7 兼容线。
+- 应用主代码统一迁移到 `tools.jackson.*`，删除 Jackson 3 下无效的 checked `IOException` / `JsonProcessingException` 捕获。
+- `JsonNode.fields()` 改为 `JsonNode.properties()` 后，按 Set 迭代处理。
+- 对本地启动 profile，补齐 H2 schema 和 idempotent guard 表名，使启动失败点可以继续前进到真实应用装配。
+
+验证证据：
+
+- 真实内部项目提交 `e63d4a1d fix: migrate iam boot4 startup` 已落地上述改动。
+- `cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" spring-javaformat:apply compile` 为 `BUILD SUCCESS`。
+- `cmd /c mvn -pl fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`。
+- `cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=120" spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动日志确认 Tomcat `11.0.21`、Hikari / H2、Hibernate Validator `9.0.1.Final` 和 `fiamc_lock_guard` schema check 均通过。
+
+后续复用规则：
+
+- 每个内部应用启动失败时，按「第三方 starter」「应用主代码」「测试/本地 profile」分层定位 Jackson 2 残留。
+- 本地启动 profile 应尽量承载稳定的 Nacos / Druid 隔离和 H2 schema；命令行只保留 profile、test classpath 和启动等待参数。
+- 启动耗时接近或超过 30 秒的服务，应显式设置 `spring-boot.start.maxAttempts`，避免误判为应用启动失败。

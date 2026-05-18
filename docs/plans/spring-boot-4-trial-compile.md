@@ -2274,3 +2274,44 @@ cmd /c mvn -pl fist-cloud/fist-auth-v3 -am "-P!config-nacos" -DskipTests=false "
 - 启动命令仍临时排除 Nacos 与 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure`，用于隔离 auth 自身 Boot 4 启动问题。
 - Druid Boot 3 starter 仍引用 Boot 3 自动配置包，不能把当前命令行排除视为最终方案；后续需要明确 Druid Boot 4 策略或切换到 Boot 默认数据源路线。
 - 本轮没有验证真实 `.env.local`、真实数据库、Redis、Nacos、OAuth2 真实登录流程或历史授权数据。
+
+## 真实内部项目 fist-iam Boot 4 本地启动适配
+
+记录日期：2026-05-18；记录者：Codex。
+
+在真实内部项目 `pac-cloud-boot3-10.x` 的 `10.x` 分支中，继续推进 `fist-iam` Boot 4 运行级启动。本轮仍不加载 `.env.local`，不连接真实数据库、Redis 或 Nacos。
+
+落地变更：
+
+- 根 POM 将 Logbook 从 `3.9.0` 升级到 `4.0.4`，消除旧 Logbook 自动配置要求 Jackson 2 `ObjectMapper` 的启动阻塞。
+- `fist-iam` 主代码中的 `ObjectMapper`、`TypeReference`、`JsonNode` 和 `JacksonException` 迁移到 Jackson 3 `tools.jackson.*`。
+- `PermissionClient` 将 Jackson 2 `JsonNode.fields()` 改为 Jackson 3 `JsonNode.properties()`，并按 Set 迭代。
+- 新增 `fist-cloud/fist-iam/src/main/resources/application-boot4-local.yml`，使用 H2、随机业务端口和随机管理端口，关闭 Nacos config / discovery / registration / health，并排除 Nacos 与 Druid Boot 3 自动配置。
+- 新增 `schema-boot4-local.sql`，为本地启动提供最小 H2 schema。
+- `application-test.yml` 和测试 `schema.sql` 补齐 idempotent guard 表名与 `fiamc_lock_guard`。
+
+验证命令：
+
+```powershell
+cmd /c mvn -pl common/fist-common,common/fist-iam-data,common/fist-component-mail,common/fist-component-sms,common/fist-trusfort-support -am "-P!config-nacos" -DskipTests install
+cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" spring-javaformat:apply compile
+cmd /c mvn -pl fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile
+cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=120" spring-boot:start spring-boot:stop
+```
+
+验证结果：
+
+- 本地 reactor 依赖 install 为 `BUILD SUCCESS`。
+- `fist-iam` 主代码 `compile` 为 `BUILD SUCCESS`。
+- `fist-iam -am test-compile` 为 `BUILD SUCCESS`。
+- `process-resources` 为 `BUILD SUCCESS`，确认本地 profile 和 schema 进入 `target/classes`。
+- `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`，`fist-iam` 使用 `boot4-local` profile 启动并停止。
+- 启动日志确认 Tomcat `11.0.21` 随机业务端口和随机管理端口启动，Hikari 使用 H2，Hibernate Validator `9.0.1.Final` 初始化，`fiamc_lock_guard` schema check 通过。
+- 真实内部项目提交：`e63d4a1d fix: migrate iam boot4 startup`。
+
+边界：
+
+- 本轮只验证本地 H2 / 本地 profile 启动，不覆盖真实 `.env.local`、真实数据库、Redis、Nacos、业务 HTTP 接口或生产配置中心。
+- `application-boot4-local.yml` 仍临时排除 Druid Boot 3 自动配置；后续仍需制定 Druid Boot 4 或默认数据源策略。
+- `spring-boot:start` 默认等待时间不足以覆盖 `fist-iam` 当前启动耗时，需要设置 `spring-boot.start.maxAttempts=120`。
