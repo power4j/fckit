@@ -2279,6 +2279,9 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-iam` 本地 Boot 4 启动验证已通过：`boot4-local` profile 使用随机端口、H2、本地 schema、关闭 Nacos Config / Discovery / 服务注册，并临时排除 Druid Boot 3 自动配置。
 - 内部项目本地配置策略修正：优先通过本地 profile 或 `spring.config.import=file:` 加载配置模板，方便调整和测试；Nacos Config 不作为首轮启动依赖，Nacos Discovery 可作为后续服务发现专项验证。
 - 内部项目提交 `e63d4a1d fix: migrate iam boot4 startup` 已让 `fist-iam` 在 `boot4-local` profile 下完成 Boot 4 启动 / 停止、主代码编译和 `test-compile`。
+- 内部项目提交 `9c9dcf09 test: add gateway boot4 local profile` 已为 `fist-gateway` 增加 `boot4-local` profile。该 profile 关闭 Nacos Config、Nacos Discovery、服务注册、Redis 和 Redisson，使用 `optional:file:./config/application.yml` 与 `optional:file:./config/${spring.application.name}.yml` 支持本地文件配置输入。
+- `fist-gateway` 是 WebFlux 应用，Boot 4 本地启动使用 Reactor Netty。Tomcat / Jetty 的 Servlet 容器策略只适用于 Servlet Web 模块，不适用于该网关模块。
+- `fist-gateway` 当前 Boot 4 本地启动 / 停止验证为 `BUILD SUCCESS`，`fist-gateway -am test-compile` 也为 `BUILD SUCCESS`。本轮未验证真实 Redis、Nacos Discovery、Nacos Config、真实 OAuth 2.0 introspection 或下游服务转发。
 - Logbook `3.9.0` 在 Boot 4 / Jackson 3 组合下仍要求 Jackson 2 `ObjectMapper`；内部项目已升级到 Logbook `4.0.4`。
 - `fist-iam` 主代码中的 `SysDataController`、`TrusfortHttpSyncClient`、`PermissionClient`、`SysDataManagerImpl`、`DataImportServiceImpl` 和 `MenuItemStreamHandler` 已迁移到 Jackson 3 `tools.jackson.*`。
 - Jackson 3 `JsonNode.properties()` 返回 Set；替换 Jackson 2 `JsonNode.fields()` 时需要同步调整迭代方式。

@@ -1697,3 +1697,39 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 每个内部应用启动失败时，按「第三方 starter」「应用主代码」「测试/本地 profile」分层定位 Jackson 2 残留。
 - 本地启动 profile 应尽量承载稳定的 Nacos / Druid 隔离和 H2 schema；命令行只保留 profile、test classpath 和启动等待参数。
 - 启动耗时接近或超过 30 秒的服务，应显式设置 `spring-boot.start.maxAttempts`，避免误判为应用启动失败。
+
+## 经验 50：Gateway 本地启动优先验证配置源和 Reactive Web 装配
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+`fist-gateway` 默认依赖 Nacos Config、Nacos Discovery、Redis / Redisson 和外部下游服务。直接按默认 profile 启动会把配置中心、服务发现和真实资源混在一起，无法快速判断 Boot 4 / Spring Cloud Gateway 自身是否可以装配。
+
+错误尝试或风险：
+
+- 以 Nacos Config 作为首轮启动前置条件，会把配置中心可用性误判为 Boot 4 兼容性问题。
+- 在网关模块套用 Servlet 容器策略会产生误判。`fist-gateway` 使用 WebFlux，Boot 4 本地启动容器是 Reactor Netty，不是 Tomcat 或 Jetty。
+- 直接加载完整配置模板可能引入真实 OAuth 2.0 introspection、Redis 和服务发现依赖，不适合首轮启动隔离。
+
+有效方案：
+
+- 新增 `application-boot4-local.yml`，使用随机业务端口和随机管理端口。
+- 在本地 profile 中关闭 Nacos Config、Nacos Discovery、服务注册和 Nacos health。
+- 排除 Nacos、Redis 和 Redisson 自动配置，先验证 Gateway / WebFlux / FIST route guard 的应用装配。
+- 使用 `optional:file:./config/application.yml` 与 `optional:file:./config/${spring.application.name}.yml` 作为本地配置输入入口，后续可把配置模板整理到本地 `config/` 目录逐项验证。
+- 提供最小本地 route、授权跳过规则和占位 OAuth 2.0 opaque-token 配置，避免依赖配置中心即可完成启动。
+
+验证证据：
+
+- 真实内部项目提交 `9c9dcf09 test: add gateway boot4 local profile` 已落地上述 profile。
+- `cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests process-resources` 为 `BUILD SUCCESS`。
+- `cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动日志确认 Reactor Netty 随机业务端口和随机管理端口启动，Gateway route predicate factory、NoOp cache、FIST Jackson 3 和 Gateway auth filter 完成装配。
+- `cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 网关的 Boot 4 验证先证明本地 Reactive Web 应用可以启动，再逐步打开本地配置模板、Redis、Nacos Discovery 和真实下游服务。
+- Nacos Config 不作为首轮启动验证依赖；Nacos Discovery 只在服务发现专项验证中打开。
+- 公开文档只记录资源类型、验证阶段和脱敏结果，不记录 `.env.local`、配置模板中的凭证或真实服务地址。

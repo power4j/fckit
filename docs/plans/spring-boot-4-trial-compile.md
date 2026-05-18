@@ -2355,3 +2355,41 @@ cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-boot.
 - 本轮只验证本地 H2 / 本地 profile 启动，不覆盖真实 `.env.local`、真实数据库、Redis、Nacos、业务 HTTP 接口或生产配置中心。
 - `application-boot4-local.yml` 仍临时排除 Druid Boot 3 自动配置；后续仍需制定 Druid Boot 4 或默认数据源策略。
 - `spring-boot:start` 默认等待时间不足以覆盖 `fist-iam` 当前启动耗时，需要设置 `spring-boot.start.maxAttempts=120`。
+
+## 真实内部项目 fist-gateway Boot 4 本地启动适配
+
+记录日期：2026-05-18；记录者：Codex。
+
+在 `fist-auth-v3` 与 `fist-iam` 启动验证后，继续验证真实内部项目 `fist-gateway`。本轮采用本地 `boot4-local` profile，不加载 `.env.local`，不连接真实数据库、Redis 或 Nacos。Nacos Config 不作为首轮启动依赖；Nacos Discovery 保留到后续服务发现专项验证。
+
+落地变更：
+
+- 新增 `fist-cloud/fist-gateway/src/main/resources/application-boot4-local.yml`。
+- 本地 profile 使用随机业务端口和随机管理端口。
+- 关闭 Nacos Config、Nacos Discovery、服务注册和 Nacos health。
+- 排除 Nacos 自动配置、Redisson 自动配置和 Redis 自动配置，避免首轮启动依赖真实外部资源。
+- 增加 `optional:file:./config/application.yml` 与 `optional:file:./config/${spring.application.name}.yml`，便于后续把配置模板整理成本地文件后加载。
+- 提供最小 gateway route 和本地授权配置，避免依赖配置中心即可完成应用装配。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests test-compile
+```
+
+验证结果：
+
+- `process-resources` 为 `BUILD SUCCESS`。
+- `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`，`fist-gateway` 使用 `boot4-local` profile 启动并停止。
+- 启动日志确认 WebFlux 应用使用 Reactor Netty，业务端口和管理端口均为随机端口。
+- 启动日志确认 FIST Jackson 3 配置、Gateway route predicate factory、NoOp cache 和 Gateway auth filter 完成装配。
+- `fist-gateway -am test-compile` 为 `BUILD SUCCESS`。
+- 真实内部项目提交：`9c9dcf09 test: add gateway boot4 local profile`。
+
+边界：
+
+- 本轮只覆盖本地 profile 启动，不覆盖真实 Redis、Nacos Discovery、Nacos Config、真实 OAuth 2.0 introspection 或下游服务转发。
+- `fist-gateway` 是 WebFlux 应用，启动容器是 Reactor Netty；Tomcat / Jetty 的 Servlet 容器策略不适用于该模块。
+- 外部本地配置文件导入使用 `optional:file:`，缺失时不阻塞启动；后续可将配置模板复制或整理到本地 `config/` 目录做配置迁移验证。
