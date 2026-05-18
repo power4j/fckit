@@ -1384,7 +1384,7 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 
 ## 经验 42：Boot 4 Web 应用要显式确认 Bean Validation provider
 
-记录日期：2026-05-14；记录者：Codex。
+记录日期：2026-05-14；更新日期：2026-05-18；记录者：Codex。
 
 问题：
 
@@ -1409,6 +1409,8 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 修复后 dependency tree 显示 `spring-boot-starter-validation:4.0.6 -> spring-boot-validation:4.0.6 -> hibernate-validator:9.0.1.Final`。
 - 修复后不带 migrator 的 Web 启动/停止为 `BUILD SUCCESS`，日志出现 `Hibernate Validator 9.0.1.Final`。
 - 修复后带 migrator 的 Web 启动/停止为 `BUILD SUCCESS`，新时间段没有 `NoProviderFoundException`，也没有配置迁移诊断。
+- 真实内部项目提交 `735754fe fix: add monitor validation provider` 已在 `fist-monitor` 显式加入 `spring-boot-starter-validation`。
+- 真实内部项目 `fist-monitor` Boot 4 Web 启动 / 停止为 `BUILD SUCCESS`，日志确认 Hibernate Validator `9.0.1.Final` 初始化、Tomcat `11.0.21` 随机端口启动并完成 graceful shutdown。
 
 后续复用规则：
 

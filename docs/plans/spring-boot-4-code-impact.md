@@ -2264,3 +2264,5 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 内部项目当前验证命令 `cmd /c mvn -pl fist-cloud/fist-auth-v3,fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`；包含 `JdbcAuthorizationServiceTest` 的受影响测试集也为 `BUILD SUCCESS`，`fist-auth-v3` 17 个测试、`fist-iam` 19 个测试均通过。
 - 内部项目后续全 reactor 验证 `cmd /c mvn "-P!config-nacos" -DskipTests test-compile` 已通过，14 个模块均为 `SUCCESS`。这说明此前已知的 Boot 3 测试自动配置包阻塞在当前真实仓库中已解除。
 - 内部项目提交 `d01c71f8 fix: remove auth user jackson2 leftovers` 已删除无引用的 `AuthUserMixin` 与旧 `AuthUserDeserializer`，并将 `ExternalLoginExchangeDtoJacksonContextTest` 改为使用 Boot 4/Jackson 3 的 `tools.jackson.databind.ObjectMapper`。
+- 内部项目提交 `735754fe fix: add monitor validation provider` 已在 `fist-monitor` 显式加入 `spring-boot-starter-validation`。真实仓库中 `fist-monitor` Boot 4 Web 启动 / 停止验证为 `BUILD SUCCESS`，日志确认 Hibernate Validator `9.0.1.Final` 初始化、Tomcat `11.0.21` 随机端口启动并完成 graceful shutdown。
+- `fist-monitor` 本地启动仍会初始化 Nacos client 并尝试连接默认本机地址；该现象不阻塞当前启动 / 停止，但后续本地 profile 需要继续处理 Nacos 客户端完全隔离或改为明确的本地配置导入。
