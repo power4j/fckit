@@ -1449,3 +1449,93 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 - 全量内部应用 Boot 4 试编译前，先统一处理所有 `spring-boot-starter-undertow`。
 - Web server 迁移应优先采用 Boot 4 受管理 starter，不在应用 POM 中保留未受管理的旧 starter。
 - 文档记录时区分「POM 读取阶段阻塞」和「依赖解析 / 编译阶段阻塞」，避免把后续 SNAPSHOT warning 误归因给 Jetty。
+
+## 经验 44：内部 SNAPSHOT 基础库要以本地 install 为前提
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+FIST Kit v4 `4.0.0-SNAPSHOT` 处于大版本升级适配阶段，并未发布到中心仓库。内部应用试编译如果缺少本地 install，Maven 会尝试从远程仓库解析未发布组件，导致错误方向被误判为远程依赖缺失。
+
+错误尝试或风险：
+
+- 把 `4.0.0-SNAPSHOT` 当作已发布依赖处理，会浪费时间排查远程仓库、镜像和 settings。
+- 在离线模式下，如果本地仓库缺少 Boot 4 官方依赖或 `_remote.repositories` 记录不匹配，也会产生依赖解析失败；该问题应与 FIST Kit v4 本地 install 问题区分。
+
+有效方案：
+
+- 内部项目验证前，先确认 FIST Kit v4 已本地 install。
+- 内部应用试编译使用同一个本地 Maven 仓库和 settings，保证 SNAPSHOT 基础库、Boot 4 官方依赖和外部生态依赖解析路径一致。
+- 只在缺少 Spring Boot、SpringDoc、Jetty、DevTools 等外部发布依赖时联网补齐；不把 FIST Kit v4 交给远程仓库解析。
+
+验证证据：
+
+- 用户确认 FIST Kit `4.0.0-SNAPSHOT` 已本地 install 后，内部应用验证继续以本地仓库为准。
+- 补齐 `spring-boot-devtools:4.0.6` 后，`fist-auth-v3` 与 `fist-iam` 主代码 `compile` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 所有内部应用 Boot 4 验证命令都显式指定本地 Maven 仓库。
+- 报告中描述 FIST Kit v4 时使用「本地 install 的 `4.0.0-SNAPSHOT`」，不写成「已发布版本」。
+
+## 经验 45：Spring Security 7 与 Authorization Server 7 会同时影响授权服务代码
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+`fist-auth-v3` 切到 Boot 4 后，授权服务器配置和自定义登录配置器同时出现编译错误。错误不是单一依赖缺失，而是 Spring Security 7 与 Spring Authorization Server 7 API 包路径和方法签名变化共同造成。
+
+错误尝试或风险：
+
+- 只补 `spring-security-config` 依赖不能解决旧 `OAuth2AuthorizationServerConfigurer` 包路径。
+- 只迁移 Authorization Server 包路径后，如果未运行格式校验，会被 Spring Java Format 拦截。
+- 只看主代码编译通过，仍会漏掉测试源码中的 Boot 3 自动配置包迁移。
+
+有效方案：
+
+- 参考 FIST Kit v4 OAuth2 Server 示例中的当前写法，迁移 `OAuth2AuthorizationServerConfigurer` 包路径。
+- 对继承 `AbstractHttpConfigurer` 的自定义类，按 Spring Security 7 签名调整 `init(HttpSecurity)`。
+- 每次 Java 源码改动后先运行 `spring-javaformat:apply` 或格式校验，再继续编译。
+
+验证证据：
+
+- 迁移 `OAuth2AuthorizationServerConfigurer` 到 `org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization` 后，旧包缺失错误消失。
+- 调整 `FormIdentityLoginConfigurer#init` 后，Spring Security 7 接口签名错误消失。
+- `fist-auth-v3` 主代码最终通过 `compile`。
+
+后续复用规则：
+
+- 其他内部授权服务或网关模块升级时，优先检索 `OAuth2AuthorizationServerConfigurer`、`AbstractHttpConfigurer`、`SecurityConfigurer` 和自定义 grant provider。
+- 授权服务器配置迁移应同时覆盖主代码、测试代码和示例代码，避免只修运行模块。
+
+## 经验 46：Jackson 3 编译通过不等于授权数据兼容通过
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jackson`。`fist-auth-v3` 中 OAuth2 授权数据持久化曾通过自定义 RowMapper、mixin 和 `AuthUserDeserializer` 控制 JSON 读写；该部分与 FIST Kit v4 `DefaultAuthorizationService` 的新实现发生 API 不匹配。
+
+错误尝试或风险：
+
+- 继续用 Jackson 2 的 `ObjectMapper` 传给 FIST Kit v4 RowMapper 会出现类型不兼容。
+- 继续调用旧 `LobHandler` 构造器、`getLobHandler()` 或 `setLobHandler(...)` 会编译失败。
+- 为了让主代码先编译通过而临时移除自定义 RowMapper 覆盖，只能作为探测手段，不能作为正式迁移结论。
+
+有效方案：
+
+- 主代码试编译阶段先按 FIST Kit v4 `DefaultAuthorizationService` 新构造器收敛，确认应用主体能通过 `compile`。
+- 将授权数据 JSON 读写、`AuthUser` 反序列化、历史 token 数据兼容性列为单独验证项。
+- 正式迁移时应基于 Jackson 3 API 重写自定义 mixin / deserializer，或复用 FIST Kit v4 提供的标准授权服务扩展点。
+
+验证证据：
+
+- 移除旧 `LobHandler` 路线并按 FIST Kit v4 构造器调用后，`JdbcAuthorizationService` 主代码编译通过。
+- `fist-auth-v3` 主代码通过 `compile`，但仍存在 Jackson 2 相关废弃警告和测试迁移缺口。
+
+后续复用规则：
+
+- OAuth2 授权服务迁移必须增加数据库级或 H2 级授权数据读写测试。
+- 历史授权数据兼容性需要使用真实结构样本或脱敏样本验证，不以编译通过替代。

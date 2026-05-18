@@ -2253,3 +2253,9 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Spring Boot 4 文档和本地 BOM 均指向 Tomcat / Jetty 路线；临时副本中将 3 处 Undertow 替换为 `spring-boot-starter-jetty` 后，3 个模块的单模块 `validate` 均为 `BUILD SUCCESS`。
 - `fist-auth-v3` 和 `demo-order` 替换 Jetty 后仍有内部 SNAPSHOT POM 未安装 warning；这不是 Undertow 阻塞，后续全量编译前需要继续补齐 FIST Kit v4 和内部模块本地安装。
 - 当前启动验证没有覆盖真实 `.env.local`、数据库、Redis、Nacos、真实业务 HTTP 接口或生产配置中心路径；结论只覆盖本地配置模板输入下的编译、非 Web 启动、Web 容器启动和管理端点装配。
+- `fist-auth-v3` 与 `fist-iam` 主代码试编译已推进通过，说明 Boot 4 / FIST Kit v4 组合下的主要应用层编译阻塞集中在依赖坐标、Spring Security 7、Spring Authorization Server 7、Jackson 3 和测试自动配置包迁移。
+- Spring Authorization Server 7 中 `OAuth2AuthorizationServerConfigurer` 已迁移到 Spring Security 包 `org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization`；旧包 `org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers` 不能继续使用。
+- Spring Security 7 的 `SecurityConfigurer#init` 签名变化会影响继承 `AbstractHttpConfigurer` 的自定义配置器；旧代码中声明 `throws Exception` 的 `init(HttpSecurity)` 需要调整。
+- FIST Kit v4 的 `DefaultAuthorizationService` 已移除旧 `LobHandler` 构造器和 RowMapper `setLobHandler` 路线；内部应用中继承并覆盖授权服务 RowMapper 的代码需要重做，而不是简单保留 Boot 3 写法。
+- Boot 4 测试源码需要同步迁移自动配置包；`org.springframework.boot.autoconfigure.jdbc`、`org.springframework.boot.autoconfigure.sql.init`、`org.springframework.boot.autoconfigure.jackson` 等 Boot 3 包路径在当前测试编译中已失效。
+- 由于 `fist-auth-v3` 的授权服务持久化包含自定义 `AuthUser` 反序列化和 Jackson mixin，Jackson 3 迁移不能只以主代码编译通过为准，后续必须补充授权数据读写和历史数据兼容验证。

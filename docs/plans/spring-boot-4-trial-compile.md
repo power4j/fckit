@@ -2160,3 +2160,48 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - 内部应用正式升级到 Boot 4 时，应删除 `spring-boot-starter-undertow` 路线，优先使用默认 Tomcat；确有非 Tomcat 需求时改为 `spring-boot-starter-jetty`。
 - 不建议通过手工指定旧 Undertow starter 版本绕过错误。Boot 4 依赖管理已不覆盖该 starter，继续保留会增加后续 Servlet 6.1 / Spring Framework 7 兼容风险。
 - 全量 reactor 试编译前，应先统一处理这 3 处 Web server starter，否则 Maven 会在项目读取阶段提前失败。
+
+## 内部应用 fist-auth / fist-iam Boot 4 主代码试编译
+
+记录日期：2026-05-18；记录者：Codex。
+
+在 `fist-monitor` 启动探测和 Undertow 迁移验证之后，继续扩大内部应用样本到 `fist-auth-v3` 与 `fist-iam`。本轮仍只修改临时副本，不修改真实内部项目；FIST Kit `4.0.0-SNAPSHOT` 以前置本地 install 为准，不再尝试从远程仓库解析未发布组件。
+
+临时版本矩阵：
+
+- Spring Boot `4.0.6`
+- Spring Cloud `2025.1.1`
+- Spring Cloud Alibaba `2025.1.0.0`
+- FIST Kit `4.0.0-SNAPSHOT`
+- Spring Authorization Server `7.0.5`
+- SpringDoc `3.0.3`
+- Spring Boot Admin `4.0.4`
+- MyBatis Plus Boot 4 starter
+
+临时适配动作：
+
+- 将内部应用依赖管理中的 `mybatis-plus-spring-boot3-starter` 替换为 `mybatis-plus-spring-boot4-starter`。
+- 将 `fist-auth-v3`、`fist-iam` 的 `spring-boot-starter-undertow` 替换为 `spring-boot-starter-jetty`。
+- 为 `fist-auth-v3` 显式补充 `spring-security-config`，满足 Spring Security 7 下安全配置类编译。
+- 将 `OAuth2AuthorizationServerConfigurer` 从旧 Spring Authorization Server 包迁移到 Spring Security 7 包：`org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization`。
+- 将 Boot 3 的 `Jackson2ObjectMapperBuilderCustomizer` 迁移到 Boot 4 的 `JsonMapperBuilderCustomizer`，并使用 Jackson 3 的 `tools.jackson.databind` 类型。
+- 将 `FormIdentityLoginConfigurer#init(HttpSecurity)` 调整为 Spring Security 7 签名，不再声明 `throws Exception`。
+- 将内部 `JdbcAuthorizationService` 调整为 FIST Kit v4 `DefaultAuthorizationService` 的新构造器，移除旧 `LobHandler` 构造参数路径。
+- 移除 `fist-iam-data` 测试范围内的 Nacos Config starter；该数据模块编译不需要配置中心依赖，且注释原意也是排除配置中心。
+
+验证结果：
+
+- `fist-auth-v3` 主代码在 Boot 4 / FIST Kit v4 临时矩阵下完成 `compile`。
+- `fist-iam` 主代码在补齐本地 Maven 仓库中的 `spring-boot-devtools:4.0.6` 后完成 `compile`。
+- 最终命令 `mvn ... -pl fist-cloud/fist-auth-v3,fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests compile` 为 `BUILD SUCCESS`。
+
+仍未通过的范围：
+
+- `test-compile` 仍失败，失败点已从主代码转移到测试源码。
+- 测试源码中仍引用 Boot 3 自动配置包，例如 `org.springframework.boot.autoconfigure.jdbc`、`org.springframework.boot.autoconfigure.sql.init`、`org.springframework.boot.autoconfigure.jackson`；Boot 4 需要迁移到新的自动配置包。
+- `fist-auth-v3` 编译仍有 Jackson 2 相关废弃警告，例如 `MappingJackson2HttpMessageConverter` 和 Spring Security Jackson 2 模块；这些警告不阻塞主代码编译，但属于后续运行时兼容性风险。
+
+边界：
+
+- 本轮只证明 `fist-auth-v3` 与 `fist-iam` 主代码可以在临时版本矩阵下编译，不代表测试、应用启动、OAuth2 授权流程、数据库、Redis、Nacos 或真实业务接口已经通过。
+- 内部 OAuth2 授权数据持久化的 Jackson 2 自定义 RowMapper 覆盖被临时移除以适配 FIST Kit v4 API；正式迁移不能只按编译结果处理，需要单独验证授权数据 JSON 读写、`AuthUser` 反序列化和历史 token 数据兼容性。
