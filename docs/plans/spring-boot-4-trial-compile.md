@@ -2131,8 +2131,8 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 
 官方依据：
 
-- Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3` 的 Web server how-to 示例说明，Servlet 应用可排除默认 Tomcat 并加入 `spring-boot-starter-jetty`。
-- 同一文档的 embedded server 说明中，Servlet 栈示例列出默认 Tomcat 与可替换的 Jetty；Reactive 栈支持 Reactor Netty、Tomcat 和 Jetty。
+- Spring Boot Context7 文档 `/spring-projects/spring-boot/v4.0.3` 的 Web server how-to 说明，Servlet Web 应用默认通过 Tomcat 工作；只有明确需要替换默认容器时，才排除 Tomcat 并加入 `spring-boot-starter-jetty`。
+- 同一文档的 embedded server 说明中，Servlet 栈支持 Tomcat 与 Jetty；Reactive 栈支持 Reactor Netty、Tomcat 和 Jetty。
 - 本地 `spring-boot-dependencies:4.0.6` 未管理 `spring-boot-starter-undertow`，但管理 `spring-boot-starter-jetty`、`spring-boot-starter-jetty-runtime`、`spring-boot-starter-tomcat` 和 `spring-boot-starter-tomcat-runtime`。
 
 错误复现：
@@ -2140,13 +2140,13 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - 在 Boot 4 临时副本中执行 `cmd /c mvn -f fist-cloud/fist-iam/pom.xml "-P!config-nacos" -DskipTests validate`。
 - Maven 在项目读取阶段失败，错误为 `dependencies.dependency.version` for `org.springframework.boot:spring-boot-starter-undertow` is missing。
 
-临时修复方式：
+临时验证方式：
 
-- 将 3 处旧 `spring-boot-starter-undertow` 替换为 `spring-boot-starter-jetty`：
+- 临时副本曾将 3 处旧 `spring-boot-starter-undertow` 替换为 `spring-boot-starter-jetty`，用于验证 Boot 4 受管理 Servlet 容器 starter 可以消除 POM 读取阶段阻塞：
   - `fist-cloud/fist-iam`
   - `fist-cloud/fist-auth-v3`
   - `pac-cloud/demo-order`
-- 注释从「web服务器: undertow」同步改为「web服务器: jetty」。
+- 真实内部项目落地时按项目原策略修正为 Tomcat：`pkg-all` 表示随包带默认 Web 容器；关闭 `pkg-all` 表示不打包 Web 容器，保留从外部路径加载容器 jar 的部署模式。
 
 验证结果：
 
@@ -2157,7 +2157,7 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 
 建议：
 
-- 内部应用正式升级到 Boot 4 时，应删除 `spring-boot-starter-undertow` 路线，优先使用默认 Tomcat；确有非 Tomcat 需求时改为 `spring-boot-starter-jetty`。
+- 内部应用正式升级到 Boot 4 时，应删除 `spring-boot-starter-undertow` 路线。没有外部容器 jar 加载需求时使用默认 Tomcat；需要不打包容器时关闭 `pkg-all`；确有非 Tomcat Servlet 容器需求时才改为 `spring-boot-starter-jetty`。
 - 不建议通过手工指定旧 Undertow starter 版本绕过错误。Boot 4 依赖管理已不覆盖该 starter，继续保留会增加后续 Servlet 6.1 / Spring Framework 7 兼容风险。
 - 全量 reactor 试编译前，应先统一处理这 3 处 Web server starter，否则 Maven 会在项目读取阶段提前失败。
 
@@ -2181,7 +2181,7 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 临时适配动作：
 
 - 将内部应用依赖管理中的 `mybatis-plus-spring-boot3-starter` 替换为 `mybatis-plus-spring-boot4-starter`。
-- 将 `fist-auth-v3`、`fist-iam` 的 `spring-boot-starter-undertow` 替换为 `spring-boot-starter-jetty`。
+- 将 `fist-auth-v3`、`fist-iam` 的 `spring-boot-starter-undertow` 移出默认路线；真实项目落地时 `pkg-all` 使用 `spring-boot-starter-tomcat`，关闭 `pkg-all` 支持不打包 Web 容器。
 - 为 `fist-auth-v3` 显式补充 `spring-security-config`，满足 Spring Security 7 下安全配置类编译。
 - 将 `OAuth2AuthorizationServerConfigurer` 从旧 Spring Authorization Server 包迁移到 Spring Security 7 包：`org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization`。
 - 将 Boot 3 的 `Jackson2ObjectMapperBuilderCustomizer` 迁移到 Boot 4 的 `JsonMapperBuilderCustomizer`，并使用 Jackson 3 的 `tools.jackson.databind` 类型。

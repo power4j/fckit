@@ -1433,22 +1433,24 @@ Web/Data/Security 的最小上下文测试可以证明自动配置类能装配�
 有效方案：
 
 - 先用单模块 `mvn -f <模块 pom> validate` 复现 `spring-boot-starter-undertow` 缺版本错误，确认问题发生在 POM 读取阶段。
-- 查 Spring Boot 4 Web server 文档和本地 `spring-boot-dependencies:4.0.6`，确认 Boot 4 受管理路线是 Tomcat / Jetty；Reactive 还包括 Reactor Netty。
-- 如无非 Tomcat 需求，直接删除 Undertow profile 并使用默认 Tomcat。
+- 查 Spring Boot 4 Web server 文档和本地 `spring-boot-dependencies:4.0.6`，确认 Servlet 栈受管理路线是 Tomcat / Jetty，且默认容器是 Tomcat；Reactive 还包括 Reactor Netty。
+- 如无外部容器 jar 加载需求，删除 Undertow 路线并使用默认 Tomcat。
+- 如需要不打包 Web 容器，关闭默认打包 profile，保留外部路径加载容器 jar 的部署模式。
 - 如仍需要非默认 Servlet 容器，将 `spring-boot-starter-undertow` 替换为 `spring-boot-starter-jetty`。
 
 验证证据：
 
 - 修复前，`fist-cloud/fist-iam` 单模块 `validate` 失败，错误为 `spring-boot-starter-undertow` 缺少版本。
-- 临时副本中将 `fist-cloud/fist-iam`、`fist-cloud/fist-auth-v3` 和 `pac-cloud/demo-order` 的旧 Undertow starter 替换为 `spring-boot-starter-jetty`。
-- 替换后，3 个模块单模块 `validate` 均为 `BUILD SUCCESS`。
+- 临时副本中曾将 `fist-cloud/fist-iam`、`fist-cloud/fist-auth-v3` 和 `pac-cloud/demo-order` 的旧 Undertow starter 替换为 `spring-boot-starter-jetty`，验证 Boot 4 受管理 Servlet 容器 starter 可以消除 POM 读取阶段阻塞。
+- 真实内部项目落地时，3 个模块的 `pkg-all` 已修正为 `spring-boot-starter-tomcat`，对应「默认打包容器使用 Tomcat；关闭 `pkg-all` 时不打包容器」的项目策略。
+- 容器替换后，相关模块单模块 `validate` 均为 `BUILD SUCCESS`。
 - `fist-auth-v3` 和 `demo-order` 仍有部分内部 SNAPSHOT POM 未安装 warning；该 warning 属于后续本地安装 / 发布问题，不再是 Web server starter 迁移问题。
 
 后续复用规则：
 
 - 全量内部应用 Boot 4 试编译前，先统一处理所有 `spring-boot-starter-undertow`。
 - Web server 迁移应优先采用 Boot 4 受管理 starter，不在应用 POM 中保留未受管理的旧 starter。
-- 文档记录时区分「POM 读取阶段阻塞」和「依赖解析 / 编译阶段阻塞」，避免把后续 SNAPSHOT warning 误归因给 Jetty。
+- 文档记录时区分「POM 读取阶段阻塞」和「依赖解析 / 编译阶段阻塞」，避免把后续 SNAPSHOT warning 误归因给 Web 容器 starter。
 
 ## 经验 44：内部 SNAPSHOT 基础库要以本地 install 为前提
 

@@ -2250,8 +2250,8 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 依赖树确认 `spring-boot-starter-web:4.0.6` 不再为 `fist-monitor` 带入 Bean Validation provider；临时加入 `spring-boot-starter-validation` 后，可带入 `spring-boot-validation:4.0.6` 和 `hibernate-validator:9.0.1.Final`，Web 启动和带 migrator 的 Web 启动均通过且不再出现新的 provider 缺失提示。
 - FIST Kit 侧 `fist-support-web` 当前只声明 `jakarta.validation-api`，不强制携带 provider；内部应用正式升级时应在应用侧或应用父 POM 中显式声明 `spring-boot-starter-validation`。
 - 内部应用中 `fist-iam`、`fist-auth-v3` 和 `demo-order` 的默认打包 profile 仍声明 `spring-boot-starter-undertow`。Boot 4.0.6 dependency management 不再管理该 starter，Maven 会在项目读取阶段报缺少版本。
-- Spring Boot 4 文档和本地 BOM 均指向 Tomcat / Jetty 路线；临时副本中将 3 处 Undertow 替换为 `spring-boot-starter-jetty` 后，3 个模块的单模块 `validate` 均为 `BUILD SUCCESS`。
-- `fist-auth-v3` 和 `demo-order` 替换 Jetty 后仍有内部 SNAPSHOT POM 未安装 warning；这不是 Undertow 阻塞，后续全量编译前需要继续补齐 FIST Kit v4 和内部模块本地安装。
+- Spring Boot 4 文档和本地 BOM 均指向 Tomcat / Jetty 路线；Servlet Web 默认容器是 Tomcat，Jetty 是明确替换默认容器时的候选项。临时副本中曾将 3 处 Undertow 替换为 `spring-boot-starter-jetty` 验证阻塞可消除；真实内部项目已按项目策略改为 `pkg-all` 默认打包 Tomcat。
+- `fist-auth-v3` 和 `demo-order` 在临时替换容器后仍有内部 SNAPSHOT POM 未安装 warning；这不是 Undertow 阻塞，后续全量编译前需要继续补齐 FIST Kit v4 和内部模块本地安装。
 - 当前启动验证没有覆盖真实 `.env.local`、数据库、Redis、Nacos、真实业务 HTTP 接口或生产配置中心路径；结论只覆盖本地配置模板输入下的编译、非 Web 启动、Web 容器启动和管理端点装配。
 - `fist-auth-v3` 与 `fist-iam` 主代码试编译已推进通过，说明 Boot 4 / FIST Kit v4 组合下的主要应用层编译阻塞集中在依赖坐标、Spring Security 7、Spring Authorization Server 7、Jackson 3 和测试自动配置包迁移。
 - Spring Authorization Server 7 中 `OAuth2AuthorizationServerConfigurer` 已迁移到 Spring Security 包 `org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization`；旧包 `org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers` 不能继续使用。
