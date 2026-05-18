@@ -2279,6 +2279,46 @@ cmd /c mvn -pl fist-cloud/fist-auth-v3 -am "-P!config-nacos" -DskipTests=false "
 
 记录日期：2026-05-18；记录者：Codex。
 
+在 `fist-auth-v3` 启动验证后，继续将真实内部项目 `fist-iam` 推进到 Boot 4 本地启动。验证采用本地 `boot4-local` profile 和 H2，不加载 `.env.local`，不连接真实数据库、Redis 或 Nacos。内部项目已有配置模板，后续本地验证优先通过本地文件或 profile 加载配置，Nacos Config 不作为首轮依赖；Nacos Discovery 放到服务发现专项阶段单独验证。
+
+落地变更：
+
+- `logbook.version` 从 `3.9.0` 升级到 `4.0.4`，解除 Logbook Boot 3 / Jackson 2 自动配置对 `com.fasterxml.jackson.databind.ObjectMapper` 的启动期依赖。
+- `fist-iam` 主代码中应用侧 JSON 处理迁移到 Jackson 3 `tools.jackson.*`，包括 Trusfort 同步客户端、权限文档解析、系统数据导入 / 导出和菜单迁移处理。
+- `PermissionClient` 将 Jackson 2 `JsonNode.fields()` 替换为 Jackson 3 可用的 `JsonNode.properties()`。
+- 新增 `fist-cloud/fist-iam/src/main/resources/application-boot4-local.yml`，使用随机端口、H2 本地数据源、关闭 Nacos Config / Discovery / 服务注册，并排除 Nacos 与 Druid Boot 3 自动配置。
+- 新增 `schema-boot4-local.sql`，提供 H2 启动所需的任务历史、认证控制和 idempotent guard 最小表结构。
+- 测试源码中相关 Jackson 2 `ObjectMapper` / `JsonProcessingException` 同步迁移到 Jackson 3。
+
+验证命令：
+
+```powershell
+cmd /c mvn -pl fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile
+cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" spring-javaformat:apply test-compile
+cmd /c mvn -pl fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests=false "-Dtest=TrusfortHttpSyncClientTest,RoleTreeServiceTest,SiteUserControllerPasswordMfaApiTest,SiteUserControllerAuthControlApiTest,DeptControllerCascadeDeleteApiTest,LoginModeManageServiceTest,LoginModeResolverTest,UserAuthControlRepositoryImplIntegrationTest,TaskHistoryPoolIntegrationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+```
+
+验证结果：
+
+- `fist-iam -am test-compile` 为 `BUILD SUCCESS`。
+- 定向测试 35 个用例全部通过，失败 0，错误 0，跳过 0。
+- `boot4-local` 启动 / 停止为 `BUILD SUCCESS`。
+- 启动日志确认 Tomcat `11.0.21` 随机业务端口和随机管理端口启动，Hikari 使用 H2，MyBatis Plus 初始化，FIST Jackson 3 配置加载，`fiamc_lock_guard` schema check 通过，Actuator 管理端口启动。
+- 停止阶段出现 H2 `Database is already closed` warning，但应用已完成 graceful shutdown，Maven 结果为成功，当前判断为 H2 本地关闭阶段非阻塞现象。
+- 真实内部项目提交：`e63d4a1d fix: migrate iam boot4 startup`、`748f94d4 test: migrate iam jackson3 tests`。
+
+边界：
+
+- 本轮只覆盖本地 H2 启动路径，不代表真实数据库、Redis、Nacos Discovery、Nacos Config 或完整业务 HTTP 回归已经通过。
+- `boot4-local` 通过排除 Druid Boot 3 自动配置隔离启动问题；Druid Boot 4 策略仍需单独确认。
+- 本地配置模板适合作为配置迁移和启动排障入口；生产式 Nacos 配置与发现应在本地启动稳定后再验证。
+
+## 真实内部项目 fist-iam Boot 4 本地启动适配
+
+记录日期：2026-05-18；记录者：Codex。
+
 在真实内部项目 `pac-cloud-boot3-10.x` 的 `10.x` 分支中，继续推进 `fist-iam` Boot 4 运行级启动。本轮仍不加载 `.env.local`，不连接真实数据库、Redis 或 Nacos。
 
 落地变更：

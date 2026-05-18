@@ -1622,6 +1622,47 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 遇到 Druid Boot 3 自动配置引用旧 `org.springframework.boot.autoconfigure.jdbc` 包时，应单独制定数据源依赖策略，不把启动命令中的 exclude 固化为长期配置。
 - `.env.local` 仅作为本机真实资源验证输入；公开文档只记录资源类型、验证阶段和脱敏结果。
 
+## 经验 49：IAM 本地启动要把配置源、Jackson 3 和第三方 starter 兼容性一起验证
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+`fist-iam` 主代码和 `test-compile` 通过后，真实 Web 启动仍暴露多类运行期问题：本地模块依赖需要先安装、Logbook 旧 starter 仍按 Jackson 2 自动配置、应用代码仍注入 Jackson 2 `ObjectMapper`，以及本地 H2 启动缺少最小业务表结构。单靠编译无法覆盖这些启动期装配风险。
+
+错误尝试或风险：
+
+- 单模块执行 `spring-boot:start` 时，如果本地 reactor 依赖未 install，Maven 会尝试从远程仓库解析内部模块。
+- `-pl ... -am spring-boot:start` 会把 start goal 执行到父 POM，失败于父 POM 没有 main class。
+- Logbook `3.9.0` 会触发 `LogbookAutoConfiguration` 对 Jackson 2 `ObjectMapper` 的依赖，Boot 4 / Jackson 3 默认上下文中没有该 bean。
+- 应用侧控制器、导入服务和同步客户端只要仍注入 Jackson 2 `ObjectMapper`，启动就会继续失败。
+- 只用命令行长参数禁用 Nacos，不利于反复调整配置；本地启动应收敛为可提交的 profile 或本地 file import。
+
+有效方案：
+
+- 启动前先安装 `fist-iam` 所需的本地 reactor 依赖，再执行单模块 `spring-boot:start spring-boot:stop`。
+- 将 Logbook 升级到 `4.0.4`。
+- 将 `fist-iam` 主代码和相关测试中的 Jackson 2 `ObjectMapper` / `TypeReference` / `JsonNode` / `JsonProcessingException` 迁移到 Jackson 3 `tools.jackson.*`。
+- 将 `JsonNode.fields()` 替换为 `JsonNode.properties()`。
+- 新增 `application-boot4-local.yml`，用 H2 和本地 profile 承载 Boot 4 启动隔离配置；新增 `schema-boot4-local.sql`，补齐最小启动表结构。
+- 对启动较慢的应用，给 `spring-boot:start` 增加 `-Dspring-boot.start.maxAttempts=180`，避免应用刚启动完成就被 Maven 插件等待超时误判失败。
+
+验证证据：
+
+- 真实内部项目提交 `e63d4a1d fix: migrate iam boot4 startup` 已落地 IAM 主代码迁移、Logbook 4.0.4 和 `boot4-local` profile。
+- 真实内部项目提交 `748f94d4 test: migrate iam jackson3 tests` 已迁移受影响测试。
+- `cmd /c mvn -pl fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`。
+- IAM 定向测试 35 个用例全部通过，失败 0，错误 0，跳过 0。
+- `cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动日志显示 Tomcat 11、H2 / Hikari、MyBatis Plus、FIST Jackson 3、idempotent guard schema check 和 Actuator 管理端口均完成装配。
+
+后续复用规则：
+
+- 内部应用有配置模板时，优先通过本地 profile 或 `spring.config.import=file:` 加载本地配置，便于频繁调整和排障。
+- Nacos Config 不作为首轮 Boot 4 启动验证依赖；Nacos Discovery 可以在服务发现专项阶段单独打开。
+- 对仍引用 Boot 3 自动配置包的第三方 starter，优先升级到支持 Boot 4 的版本；如果只能通过 exclude 启动，应把它记录为待解决依赖策略，而不是长期配置。
+- 本地 H2 启动 profile 只用于启动隔离，不替代真实数据库兼容性验证。
+
 ## 经验 49：第三方 starter 与应用代码的 Jackson 2 残留要分层处理
 
 记录日期：2026-05-18；记录者：Codex。

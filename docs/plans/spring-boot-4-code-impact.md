@@ -2272,6 +2272,12 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-auth-v3` 需要显式声明 `spring-boot-starter-security`，仅保留 `spring-security-config` 可能满足编译但不足以提供 Boot 4 Web 应用启动所需的安全自动配置基础。
 - `AuthorizationServerSettings` 应作为应用 bean 暴露并注入授权服务器过滤器链，避免后续组件需要该设置时找不到全局 bean。
 - Druid Boot 3 starter 当前仍会引用 Boot 3 自动配置包；`fist-auth-v3` 本轮启动命令通过排除 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure` 隔离该问题。后续需要明确替换为 Boot 4 可用依赖或回到 Boot 默认数据源路线，不能长期依赖命令行 exclude。
+- 内部项目提交 `e63d4a1d fix: migrate iam boot4 startup` 已将 `fist-iam` 主代码中的应用侧 JSON 处理迁移到 Jackson 3，并新增 `application-boot4-local.yml` / `schema-boot4-local.sql` 支持本地 H2 启动隔离。
+- 内部项目提交 `748f94d4 test: migrate iam jackson3 tests` 已将 IAM 相关测试中的 Jackson 2 `ObjectMapper` / `JsonProcessingException` 迁移到 Jackson 3。
+- `logbook.version` 已升级到 `4.0.4`。Logbook `3.9.0` 在 Boot 4 下仍会通过自动配置依赖 Jackson 2 `ObjectMapper`，导致 `fist-iam` Web 启动失败。
+- `fist-iam` 中 `PermissionClient` 的 Swagger / OpenAPI JSON 解析已从 `JsonNode.fields()` 改为 `JsonNode.properties()`，与 Jackson 3 API 保持一致。
+- `fist-iam` 本地 Boot 4 启动验证已通过：`boot4-local` profile 使用随机端口、H2、本地 schema、关闭 Nacos Config / Discovery / 服务注册，并临时排除 Druid Boot 3 自动配置。
+- 内部项目本地配置策略修正：优先通过本地 profile 或 `spring.config.import=file:` 加载配置模板，方便调整和测试；Nacos Config 不作为首轮启动依赖，Nacos Discovery 可作为后续服务发现专项验证。
 - 内部项目提交 `e63d4a1d fix: migrate iam boot4 startup` 已让 `fist-iam` 在 `boot4-local` profile 下完成 Boot 4 启动 / 停止、主代码编译和 `test-compile`。
 - Logbook `3.9.0` 在 Boot 4 / Jackson 3 组合下仍要求 Jackson 2 `ObjectMapper`；内部项目已升级到 Logbook `4.0.4`。
 - `fist-iam` 主代码中的 `SysDataController`、`TrusfortHttpSyncClient`、`PermissionClient`、`SysDataManagerImpl`、`DataImportServiceImpl` 和 `MenuItemStreamHandler` 已迁移到 Jackson 3 `tools.jackson.*`。
