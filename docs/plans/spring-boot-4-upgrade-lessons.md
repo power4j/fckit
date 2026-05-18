@@ -1733,3 +1733,31 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 网关的 Boot 4 验证先证明本地 Reactive Web 应用可以启动，再逐步打开本地配置模板、Redis、Nacos Discovery 和真实下游服务。
 - Nacos Config 不作为首轮启动验证依赖；Nacos Discovery 只在服务发现专项验证中打开。
 - 公开文档只记录资源类型、验证阶段和脱敏结果，不记录 `.env.local`、配置模板中的凭证或真实服务地址。
+
+## 经验 51：本地配置模板和 `.env.local` 要分层使用
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+内部项目既有服务配置模板，也有本机 `.env.local`。两者用途不同：配置模板适合反复调整应用配置，`.env.local` 适合提供本机真实资源环境变量。如果混用，容易把真实数据库、Redis、Nacos 等连接信息写入文档、日志或提交内容。
+
+有效方案：
+
+- 首轮 Boot 4 启动验证优先使用本地 profile 和本地配置文件导入。
+- 将需要验证的配置模板整理到本地 `config/` 目录，通过 `spring.config.import=file:` 或 `optional:file:` 加载。
+- `.env.local` 只作为本机真实资源验证输入，提供数据库、Redis、Nacos 等环境变量。
+- 本地 profile 负责关闭 Nacos Config、服务注册和首轮验证不需要的外部资源依赖。
+- Nacos Config 不作为首轮启动验证依赖；Nacos Discovery 在服务发现专项阶段单独打开。
+
+记录边界：
+
+- 不读取、不复制、不提交、不记录 `.env.local` 的具体内容。
+- 不在公开文档中记录数据库、Redis、Nacos、Maven settings、私服地址或凭据。
+- 只记录资源类型、验证阶段、是否使用外部资源、脱敏后的错误类别和解决方案。
+
+后续复用规则：
+
+- 遇到相同需求时，先判断是「配置输入验证」还是「真实资源验证」。
+- 配置输入验证走本地 `config/` 文件和 `spring.config.import=file:`。
+- 真实资源验证再启用 `.env.local`，并只保留脱敏结果。
