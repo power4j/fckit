@@ -2123,6 +2123,40 @@ cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" spring-boot:start sprin
 - FIST Kit 侧暂不把 Hibernate Validator 作为 `fist-support-web` 的强制传递依赖；`fist-support-web` 当前只需要编译期 API，provider 更适合作为应用侧运行时选择。
 - 如果后续发现多个内部 Web 服务都需要同样依赖，可在内部项目的公共应用 BOM 或服务父 POM 中统一声明，而不是逐个服务分散补充。
 
+## 真实内部项目 fist-monitor Boot 4 本地 profile 落地
+
+记录日期：2026-05-18；记录者：Codex。
+
+在真实内部项目 `pac-cloud-boot3-10.x` 的 `10.x` 分支中，已将 `fist-monitor` 的 Boot 4 本地启动隔离方案从长命令参数收敛为可提交的 profile 文件。
+
+落地变更：
+
+- 新增 `fist-cloud/fist-monitor/src/main/resources/application-boot4-local.yml`。
+- 使用随机业务端口和随机管理端口。
+- 关闭 Nacos Config、Nacos Discovery、服务自动注册和 Nacos health。
+- 排除 Alibaba Nacos config、discovery、registry、loadbalancer 相关 auto-configuration。
+
+验证命令：
+
+```powershell
+cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" spring-boot:start spring-boot:stop
+cmd /c mvn -pl fist-cloud/fist-monitor -am "-P!config-nacos" -DskipTests test-compile
+```
+
+验证结果：
+
+- 3 条命令均为 `BUILD SUCCESS`。
+- `spring-boot:start spring-boot:stop` 激活 `boot4-local` profile，Tomcat `11.0.21` 以随机端口启动并正常停止。
+- 日志显示 Hibernate Validator `9.0.1.Final` 初始化。
+- 未出现 Nacos 登录、注册或连接失败日志。
+
+注意事项：
+
+- 直接执行 `spring-boot:start` 不保证新增 resource 已进入 `target/classes`。新增或修改 profile 文件后，应先执行 `process-resources`、`compile` 或其他会刷新 resources 的生命周期阶段。
+- 本轮未加载 `.env.local`，未连接真实数据库、Redis 或 Nacos。真实资源信息仍只允许作为本机验证输入，不写入文档、测试源码或提交信息。
+- 真实内部项目提交：`e7b11c60 test: add monitor boot4 local profile`。
+
 ## 内部应用 Undertow starter 迁移验证
 
 记录日期：2026-05-14；记录者：Codex。

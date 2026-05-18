@@ -1551,3 +1551,38 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 如果应用侧 principal 扩展了 Spring Security `User`，需要同时验证「写出类型信息」和「读回实际子类」；Spring Security Jackson module 能恢复基础用户对象，不代表内部扩展字段仍在。
 - FIST Kit v4 的 `DefaultAuthorizationService` 负责标准授权服务 JSON 与 LOB 读写，应用侧自定义 principal 仍应通过应用自己的 Jackson 3 module、RowMapper 或授权服务扩展点补足。
 - Boot 4 上下文测试应从 Spring 容器获取 `tools.jackson.databind.ObjectMapper`；继续按 Jackson 2 `com.fasterxml.jackson.databind.ObjectMapper` 取 bean 会得到 `NoSuchBeanDefinitionException`。
+
+## 经验 47：本地 Boot 4 启动 profile 要先刷新 Maven resources
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+真实内部项目 `fist-monitor` 新增 `application-boot4-local.yml` 后，直接执行 `spring-boot:start` 曾继续报缺少 `nacos:` import，或仍初始化 Nacos discovery。该现象容易被误判为 profile 配置无效，实际根因是 Maven 直接执行 `spring-boot:start` 时没有先刷新 `target/classes`，新增 resource 尚未进入运行时 classpath。
+
+错误尝试或风险：
+
+- 只新增 profile 文件后立即执行 `spring-boot:start`，可能仍使用旧的 `target/classes`。
+- 用很长的 `spring-boot.run.arguments` 排除 Nacos 可以临时启动，但会把可复用配置留在命令行中，不利于后续服务复用。
+- 在公开文档或提交中记录 `.env.local`、Nacos namespace、group、连接串或账号密码，会扩大敏感信息暴露面。
+
+有效方案：
+
+- 为本地 Boot 4 启动验证新增独立 profile，例如 `boot4-local`。
+- 在 profile 文件中关闭 Nacos Config、Nacos Discovery、服务自动注册和 Nacos health，并排除 Alibaba Nacos 相关 auto-configuration。
+- 修改或新增 resource 后，先执行 `process-resources`、`compile` 或其他会刷新 Maven resources 的生命周期阶段，再执行 `spring-boot:start spring-boot:stop`。
+- 默认不加载 `.env.local`；需要真实资源验证时只从本机注入环境变量，并只记录资源类型和脱敏结果。
+
+验证证据：
+
+- 真实内部项目提交 `e7b11c60 test: add monitor boot4 local profile` 已新增 `fist-cloud/fist-monitor/src/main/resources/application-boot4-local.yml`。
+- `cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" -DskipTests process-resources` 为 `BUILD SUCCESS`，并确认 profile 文件进入 `target/classes`。
+- `cmd /c mvn -pl fist-cloud/fist-monitor "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动日志显示 `boot4-local` profile 激活、Hibernate Validator `9.0.1.Final` 初始化、Tomcat `11.0.21` 使用随机业务端口和随机管理端口启动，未出现 Nacos 登录、注册或连接失败日志。
+- `cmd /c mvn -pl fist-cloud/fist-monitor -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- 应用侧启动验证优先使用可提交的本地 profile 文件承载稳定配置；命令行参数只保留 profile、端口、临时诊断 jar 等会随验证变化的内容。
+- 新增或修改 resource 后，不直接把 `spring-boot:start` 失败判定为配置无效，先确认 `target/classes` 是否已刷新。
+- Nacos 回归验证应放在本地配置源启动稳定之后，且不得把 `.env.local` 内容写入文档、测试源码或提交信息。
