@@ -1787,3 +1787,31 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 后续服务如需本地配置输入，优先沿用 `fist-cloud/<service>/config/`。
 - 本地配置文件不提交；提交内容只保留 README、profile 和必要的 ignore 规则。
 - 如需真实资源，环境变量来自 `.env.local`，但不读取或记录其具体内容。
+
+## 经验 53：Gateway 多路由配置可先做启动级验证
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+网关配置通常同时包含多路由、CORS、默认过滤器、限流、OAuth 2.0 introspection、服务发现和真实下游地址。如果直接验证真实转发，失败点会混在一起，难以判断是 Boot 4 装配问题、配置绑定问题、限流 bean 问题，还是外部资源问题。
+
+有效方案：
+
+- 使用被 Git 忽略的本地 `config/fist-gateway.yml` 承载脱敏配置。
+- 先保留多路由、CORS 和 `RequestRateLimiter` 默认过滤器结构。
+- 所有下游 URI 使用本机占位地址，避免真实请求。
+- 保持 Nacos Discovery、Redis 和真实 OAuth 2.0 introspection 关闭，只验证 Gateway 配置合成和启动期 bean 装配。
+
+验证证据：
+
+- 本地多路由配置通过 `optional:file:./config/${spring.application.name}.yml` 导入。
+- `cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests process-resources` 为 `BUILD SUCCESS`。
+- `cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动 banner 显示本地多路由配置覆盖后的版本号，`RequestRateLimiter` 默认过滤器未触发启动期 bean 引用或配置绑定错误。
+
+后续复用规则：
+
+- Gateway 真实转发验证前，先完成启动级配置验证。
+- 请求级验证再逐步打开下游服务、OAuth 2.0 introspection、Redis、限流行为和 Nacos Discovery。
+- 每次只打开一类外部依赖，并记录脱敏结果。

@@ -2429,3 +2429,36 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests te
 
 - 本轮只验证本地配置输入和应用启动，不验证真实路由转发。
 - 本地配置文件不提交，后续真实资源验证仍通过 `.env.local` 提供本机环境变量并保持脱敏记录。
+
+## 真实内部项目 fist-gateway 本地多路由配置验证
+
+记录日期：2026-05-18；记录者：Codex。
+
+在本地配置文件导入通过后，继续使用被 Git 忽略的脱敏 `config/fist-gateway.yml`，验证更接近配置模板的网关配置形态。本轮不读取 `.env.local`，不连接真实数据库、Redis、Nacos、OAuth 2.0 introspection 服务或下游服务。
+
+验证输入：
+
+- 多路由配置，所有下游 URI 使用本机占位地址。
+- CORS 配置。
+- `RequestRateLimiter` 默认过滤器配置，继续引用 `bucket4jRateLimiter` 和 `remoteAddressKeyResolver`。
+- 占位 OAuth 2.0 opaque-token 配置。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+```
+
+验证结果：
+
+- `process-resources` 为 `BUILD SUCCESS`。
+- `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动 banner 显示本地多路由文件覆盖后的版本号，确认本地配置文件已生效。
+- Gateway route predicate factory、NoOp cache、FIST Jackson 3 和 Gateway auth filter 继续完成装配。
+- `RequestRateLimiter` 默认过滤器配置未在启动期产生 bean 引用或绑定错误。
+
+边界：
+
+- 本轮没有发起 HTTP 请求，不验证真实路由转发、限流运行效果、OAuth 2.0 introspection 响应、Redis 或 Nacos Discovery。
+- `RequestRateLimiter` 仅确认启动期配置装配通过，实际限流行为需要后续请求级验证。
