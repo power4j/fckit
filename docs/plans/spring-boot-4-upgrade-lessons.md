@@ -1586,3 +1586,38 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 应用侧启动验证优先使用可提交的本地 profile 文件承载稳定配置；命令行参数只保留 profile、端口、临时诊断 jar 等会随验证变化的内容。
 - 新增或修改 resource 后，不直接把 `spring-boot:start` 失败判定为配置无效，先确认 `target/classes` 是否已刷新。
 - Nacos 回归验证应放在本地配置源启动稳定之后，且不得把 `.env.local` 内容写入文档、测试源码或提交信息。
+
+## 经验 48：Boot 4 授权服务启动要同时补齐安全自动配置和 Jackson 3 应用侧客户端
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+`fist-auth-v3` 主代码编译通过后，真实应用启动仍可能失败。编译阶段已覆盖 Spring Authorization Server 7 包路径和自定义授权服务构造器变化，但运行期还需要完整的 Spring Security 自动配置基础，以及应用侧 OAuth 客户端代码使用的 Jackson 3 bean 类型。
+
+错误尝试或风险：
+
+- 只保留 `spring-security-config` 可以让部分配置类编译通过，但 Boot 4 Web 应用启动时仍可能缺少 `HttpSecurity` 等由安全自动配置提供的对象。
+- 只迁移授权服务持久化的 Jackson 3 代码，不迁移 `StandardOauthClientImpl` 这类应用侧 HTTP 客户端，会在启动时因为 `ObjectMapper` 类型不匹配而失败。
+- 通过命令行临时排除 Druid Boot 3 自动配置只能隔离问题，不能作为最终升级方案。
+
+有效方案：
+
+- `fist-auth-v3` 显式加入 `spring-boot-starter-security`，让 Boot 4 自动配置提供安全过滤器链装配所需基础。
+- `AuthorizationServerSettings` 显式声明为 bean，并注入授权服务器过滤器链，避免授权服务器配置只在局部 builder 中临时创建。
+- `StandardOauthClientImpl` 及其测试统一使用 `tools.jackson.databind.ObjectMapper` 和 `tools.jackson.core.type.TypeReference`。
+- 对本地启动验证，先使用 H2 测试资源、随机端口、禁用 Nacos，并临时排除 Druid Boot 3 自动配置，确认 auth 自身 Boot 4 启动路径。
+
+验证证据：
+
+- 真实内部项目提交 `10bfb34a fix: migrate auth oauth boot4 startup` 已落地上述改动。
+- `cmd /c mvn -pl fist-cloud/fist-auth-v3 "-P!config-nacos" -DskipTests ... spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`，`fist-auth-v3` 使用 `test,boot4-local` profile 启动并停止。
+- 启动日志显示 Tomcat `11.0.21`、Hikari / H2 和 Hibernate Validator `9.0.1.Final` 装配成功。
+- `cmd /c mvn -pl fist-cloud/fist-auth-v3 -am "-P!config-nacos" -DskipTests test-compile` 为 `BUILD SUCCESS`。
+- `StandardOauthClientImplTest`、`ExternalLoginExchangeDtoJacksonContextTest`、`ExternalLoginAccessTokenIssuerImplTest` 共 9 个定向测试全部通过。
+
+后续复用规则：
+
+- 授权服务模块的 Boot 4 迁移要同时做编译验证、`test-compile`、定向单测和本地启动探测。
+- 遇到 Druid Boot 3 自动配置引用旧 `org.springframework.boot.autoconfigure.jdbc` 包时，应单独制定数据源依赖策略，不把启动命令中的 exclude 固化为长期配置。
+- `.env.local` 仅作为本机真实资源验证输入；公开文档只记录资源类型、验证阶段和脱敏结果。

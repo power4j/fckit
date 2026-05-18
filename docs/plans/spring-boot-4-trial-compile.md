@@ -2239,3 +2239,38 @@ cmd /c mvn -pl fist-cloud/fist-monitor -am "-P!config-nacos" -DskipTests test-co
 
 - 本轮只证明 `fist-auth-v3` 与 `fist-iam` 主代码可以在临时版本矩阵下编译，不代表测试、应用启动、OAuth2 授权流程、数据库、Redis、Nacos 或真实业务接口已经通过。
 - 内部 OAuth2 授权数据持久化的 Jackson 2 自定义 RowMapper 覆盖被临时移除以适配 FIST Kit v4 API；正式迁移不能只按编译结果处理，需要单独验证授权数据 JSON 读写、`AuthUser` 反序列化和历史 token 数据兼容性。
+
+## 真实内部项目 fist-auth-v3 Boot 4 本地启动适配
+
+记录日期：2026-05-18；记录者：Codex。
+
+在真实内部项目 `pac-cloud-boot3-10.x` 的 `10.x` 分支中，继续迁移 `fist-auth-v3` 已验证的 Boot 4 适配。本轮聚焦应用启动链路，不加载 `.env.local`，不连接真实数据库、Redis 或 Nacos。
+
+落地变更：
+
+- `StandardOauthClientImpl` 与对应测试从 Jackson 2 `com.fasterxml.jackson.*` 迁移到 Jackson 3 `tools.jackson.*`。
+- 删除 Jackson 3 `ObjectMapper#writeValueAsString` 下不再需要的 checked `IOException` 捕获。
+- `AuthorizationServerConfiguration` 显式声明 `AuthorizationServerSettings` bean，并在授权服务器过滤器链中复用。
+- `fist-auth-v3` 显式加入 `spring-boot-starter-security`，让 Boot 4 安全自动配置提供 `HttpSecurity` 等装配基础。
+
+验证命令：
+
+```powershell
+cmd /c mvn -pl fist-cloud/fist-auth-v3 "-P!config-nacos" -DskipTests "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=test,boot4-local" "-Dspring-boot.run.arguments=--server.port=0 --management.server.port=0 --spring.cloud.nacos.config.enabled=false --spring.cloud.nacos.discovery.enabled=false --spring.cloud.nacos.config.import-check.enabled=false --spring.cloud.service-registry.auto-registration.enabled=false --management.health.nacos.enabled=false --spring.autoconfigure.exclude=com.alibaba.cloud.nacos.discovery.NacosDiscoveryAutoConfiguration,com.alibaba.cloud.nacos.endpoint.NacosDiscoveryEndpointAutoConfiguration,com.alibaba.cloud.nacos.registry.NacosServiceRegistryAutoConfiguration,com.alibaba.cloud.nacos.discovery.NacosDiscoveryClientConfiguration,com.alibaba.cloud.nacos.discovery.NacosDiscoveryHeartBeatConfiguration,com.alibaba.cloud.nacos.discovery.reactive.NacosReactiveDiscoveryClientConfiguration,com.alibaba.cloud.nacos.discovery.configclient.NacosConfigServerAutoConfiguration,com.alibaba.cloud.nacos.loadbalancer.LoadBalancerNacosAutoConfiguration,com.alibaba.cloud.nacos.NacosServiceAutoConfiguration,com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure" spring-boot:start spring-boot:stop
+cmd /c mvn -pl fist-cloud/fist-auth-v3 -am "-P!config-nacos" -DskipTests test-compile
+cmd /c mvn -pl fist-cloud/fist-auth-v3 -am "-P!config-nacos" -DskipTests=false "-Dtest=StandardOauthClientImplTest,ExternalLoginExchangeDtoJacksonContextTest,ExternalLoginAccessTokenIssuerImplTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
+```
+
+验证结果：
+
+- `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`，`fist-auth-v3` 使用 `test,boot4-local` profile 完成启动和停止。
+- 启动日志确认 Tomcat `11.0.21` 随机端口启动，Hikari 使用 H2 测试数据源，Hibernate Validator `9.0.1.Final` 初始化。
+- `test-compile` 为 `BUILD SUCCESS`。
+- 定向测试 9 个用例全部通过，失败 0，错误 0，跳过 0。
+- 真实内部项目提交：`10bfb34a fix: migrate auth oauth boot4 startup`。
+
+边界：
+
+- 启动命令仍临时排除 Nacos 与 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure`，用于隔离 auth 自身 Boot 4 启动问题。
+- Druid Boot 3 starter 仍引用 Boot 3 自动配置包，不能把当前命令行排除视为最终方案；后续需要明确 Druid Boot 4 策略或切换到 Boot 默认数据源路线。
+- 本轮没有验证真实 `.env.local`、真实数据库、Redis、Nacos、OAuth2 真实登录流程或历史授权数据。

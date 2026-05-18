@@ -2266,3 +2266,9 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 内部项目提交 `d01c71f8 fix: remove auth user jackson2 leftovers` 已删除无引用的 `AuthUserMixin` 与旧 `AuthUserDeserializer`，并将 `ExternalLoginExchangeDtoJacksonContextTest` 改为使用 Boot 4/Jackson 3 的 `tools.jackson.databind.ObjectMapper`。
 - 内部项目提交 `735754fe fix: add monitor validation provider` 已在 `fist-monitor` 显式加入 `spring-boot-starter-validation`。真实仓库中 `fist-monitor` Boot 4 Web 启动 / 停止验证为 `BUILD SUCCESS`，日志确认 Hibernate Validator `9.0.1.Final` 初始化、Tomcat `11.0.21` 随机端口启动并完成 graceful shutdown。
 - `fist-monitor` 本地启动仍会初始化 Nacos client 并尝试连接默认本机地址；该现象不阻塞当前启动 / 停止，但后续本地 profile 需要继续处理 Nacos 客户端完全隔离或改为明确的本地配置导入。
+- 内部项目提交 `e7b11c60 test: add monitor boot4 local profile` 已将 `fist-monitor` 的本地 Boot 4 profile 固化到 `application-boot4-local.yml`，后续验证中未再出现 Nacos 登录、注册或连接失败日志。新增或修改 profile 后应先运行 `process-resources`，再执行 `spring-boot:start spring-boot:stop`。
+- 内部项目提交 `10bfb34a fix: migrate auth oauth boot4 startup` 已让 `fist-auth-v3` 在 `test,boot4-local` profile 下完成 Boot 4 启动 / 停止、`test-compile` 和 9 个定向测试。
+- `fist-auth-v3` 真实启动验证确认，应用侧 OAuth 客户端也必须迁移到 Jackson 3 的 `tools.jackson.*` 类型；只迁移授权数据持久化代码不足以覆盖启动期 bean 注入。
+- `fist-auth-v3` 需要显式声明 `spring-boot-starter-security`，仅保留 `spring-security-config` 可能满足编译但不足以提供 Boot 4 Web 应用启动所需的安全自动配置基础。
+- `AuthorizationServerSettings` 应作为应用 bean 暴露并注入授权服务器过滤器链，避免后续组件需要该设置时找不到全局 bean。
+- Druid Boot 3 starter 当前仍会引用 Boot 3 自动配置包；`fist-auth-v3` 本轮启动命令通过排除 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure` 隔离该问题。后续需要明确替换为 Boot 4 可用依赖或回到 Boot 默认数据源路线，不能长期依赖命令行 exclude。
