@@ -2465,7 +2465,7 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspr
 
 ## 真实内部项目 fist-gateway 本机下游请求级转发验证
 
-记录日期：2026-05-18；记录者：Codex。
+记录日期：2026-05-19；记录者：Codex。
 
 在多路由启动级验证通过后，继续验证一次真实 HTTP 请求转发。本轮仍使用被 Git 忽略的脱敏 `config/fist-gateway.yml`，不读取 `.env.local`，不连接真实数据库、Redis、Nacos、OAuth 2.0 introspection 服务或真实下游服务。
 
@@ -2487,7 +2487,8 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspr
 
 - `spring-boot:start` 固定端口后 Maven goal 未及时返回，后续改用可控的 `spring-boot:run` 后台进程。
 - 清理脚本按命令行关键字匹配进程时误匹配当前 PowerShell 脚本自身，改为只按端口清理。
-- `spring-boot.run.arguments` 需要作为单个 Maven 参数传入，否则 `--management.server.port=19081` 会被 Maven 当作自身选项解析。
+- `spring-boot.run.arguments` 需要作为单个 Maven 参数传入，否则 `--management.server.port=19081` 会被 Maven 当作自身选项解析；也可以改为在本地运行时配置文件中固定端口，减少命令行参数拆分风险。
+- 沙箱网络限制会导致 Maven 访问 Central 失败；请求级验证需要使用本机 Maven 仓库和网络设置。
 
 边界：
 

@@ -1825,7 +1825,7 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 
 ## 经验 54：Gateway 请求级验证先使用本机 mock 下游
 
-记录日期：2026-05-18；记录者：Codex。
+记录日期：2026-05-19；记录者：Codex。
 
 问题：
 
@@ -1849,7 +1849,8 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 
 - `spring-boot:run` 适合请求级验证；`spring-boot:start` 在部分固定端口验证中可能未及时返回。
 - 清理本机验证进程时优先按端口清理，不按命令行关键字模糊匹配，避免误杀当前脚本。
-- `spring-boot.run.arguments` 含多个参数时必须作为单个 Maven 参数传入。
+- `spring-boot.run.arguments` 含多个参数时必须作为单个 Maven 参数传入；也可以改为在本地运行时配置文件中固定端口，减少命令行参数拆分风险。
+- 沙箱网络限制会导致 Maven 访问 Central 失败；请求级验证需要使用本机 Maven 仓库和网络设置。
 
 后续复用规则：
 
