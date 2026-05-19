@@ -2285,6 +2285,8 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-gateway` 已新增 Redis 专项本地 profile，使用 `REDIS_HOST`、`REDIS_PORT`、`REDIS_DB` 映射到 Boot 4 `spring.data.redis.*`，并通过 `RedisCacheManager` 启动验证。该验证不等同于 Redisson 或 Redis 分布式限流完成。
 - `redisson-spring-boot-starter 3.51.0` 仍引用 Boot 3 `org.springframework.boot.autoconfigure.data.redis.RedisProperties`；Boot 4 下不能直接打开 Redisson 自动配置。
 - 新增 Lettuce 后，Spring Cloud Gateway 会自动创建 `redisRateLimiter`，与现有 Bucket4j `bucket4jRateLimiter` 冲突。当前 Boot 4 本地 profile 继续排除 `GatewayRedisAutoConfiguration`，保持 Bucket4j 路线。
+- `fist-gateway` 已在真实内部项目中补齐 Bucket4j Lettuce 分布式限流后端。默认 profile 仍使用 Caffeine `AsyncProxyManager<String>`；`boot4-local-redis` profile 使用 `bucket4j_jdk17-redis-common`、`bucket4j_jdk17-lettuce` 和 `spring.data.redis.host` / `port` / `database` 创建 Redis 后端。`compile`、`test-compile`、基础启动、Redis profile 启动和请求级限流验证均通过；连续三次请求的状态码为 `200`、`429`、`429`，mock 下游只收到 1 次请求。
+- 当前 Gateway Redis 限流实现只覆盖 standalone Redis 的 host / port / database；密码、TLS、Sentinel 和 Cluster 需要后续扩展绑定并单独验证。`.env.local` 中 Redis 变量名与当前模板占位符一致，但公开文档不记录变量值。
 - `fist-gateway` OAuth 2.0 introspection 响应必须使用 FIST Kit v4 约定的 `userInfo` 顶层键名。使用 `user_info` 会导致 Gateway ACL 无法提取用户，日志表现为 `USER_IP_DENIED(51), details: No user info`。
 - Gateway ACL 的 active token 放行还依赖权限定义服务返回匹配路径。没有权限定义时，即使用户信息提取成功，也会进入 `AuthEndFilter` 默认拒绝，日志表现为 `AUTH_END_DENIED`。
 - 内部项目本机 mock 已验证：missing token 返回 `HTTP 403` 且不触发 introspection，inactive token 返回 `HTTP 403` 且触发 introspection，active token 在补齐本机权限定义后返回 `HTTP 200` 并转发到下游。

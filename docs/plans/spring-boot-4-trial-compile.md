@@ -2632,3 +2632,51 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests te
 
 - 本轮不代表真实授权服务、真实 IAM、Nacos Discovery 或真实下游服务已经通过。
 - Nacos Config 仍不作为首轮启动依赖；后续如需服务发现，应单独打开 Nacos Discovery 并使用真实或可控服务实例验证。
+
+## 真实内部项目 fist-gateway Bucket4j Redis/Lettuce 限流验证
+
+记录日期：2026-05-19；记录者：Codex。
+
+在 Redis cache 映射和 Gateway 本机限流行为验证通过后，继续补齐 Redis 分布式限流状态后端。本轮不启用 Redisson，也不启用 Spring Cloud Gateway 自带 `redisRateLimiter`，继续保留现有 `bucket4jRateLimiter` 配置。
+
+落地变更：
+
+- 父 POM dependency management 增加 `bucket4j_jdk17-redis-common` 和 `bucket4j_jdk17-lettuce`。
+- `fist-gateway` 模块增加上述两个 Bucket4j 扩展依赖。
+- `CommonConfig` 默认 profile 继续创建 Caffeine `AsyncProxyManager<String>`。
+- `boot4-local-redis` profile 创建 Bucket4j Lettuce `AsyncProxyManager<String>`，使用 `spring.data.redis.host`、`spring.data.redis.port` 和 `spring.data.redis.database` 绑定本地 Redis 参数。
+- 继续排除 `GatewayRedisAutoConfiguration`，避免 Spring Cloud Gateway 创建 `redisRateLimiter` 与现有 `bucket4jRateLimiter` 配置冲突。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu org.apache.maven.plugins:maven-dependency-plugin:3.9.0:get "-Dartifact=com.bucket4j:bucket4j_jdk17-lettuce:8.13.0" "-Dtransitive=false"
+cmd /c mvn -nsu org.apache.maven.plugins:maven-dependency-plugin:3.9.0:get "-Dartifact=com.bucket4j:bucket4j_jdk17-redis-common:8.13.0" "-Dtransitive=false"
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway spring-javaformat:apply
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests compile
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests test-compile
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.banner-mode=off" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local,boot4-local-redis" "-Dspring-boot.run.arguments=--spring.main.banner-mode=off" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+```
+
+验证结果：
+
+- Bucket4j Lettuce 和 Redis common 扩展 artifact 均可解析。
+- `spring-javaformat:apply`、`compile`、`test-compile` 均为 `BUILD SUCCESS`。
+- 基础 `boot4-local` 启动 / 停止为 `BUILD SUCCESS`，默认 Caffeine 限流后端未被破坏。
+- 加载 `.env.local` 到当前进程后，`boot4-local,boot4-local-redis` 启动 / 停止为 `BUILD SUCCESS`。
+- Redis profile 日志确认 active profiles 为 `boot4-local`、`boot4-local-redis`，缓存管理器为 `RedisCacheManager`。
+- 在本机 mock 下游验证中，将运行时限流参数临时调为 `capacity=1`、`refillTokens=1`、`refillPeriod=60s` 后，连续请求 `/fauth/oauth2/redis-rate-probe` 三次，状态码为 `200`、`429`、`429`。
+- mock 下游只记录 1 次 downstream 事件，说明后两次请求在 Gateway 限流阶段被拦截。
+
+结论：
+
+- Boot 4 下 `fist-gateway` 可以继续使用 Spring Cloud Gateway 5 内置 `Bucket4jRateLimiter`。
+- Redis 分布式限流状态后端可通过 Bucket4j Lettuce 扩展实现，不需要启用 Redisson starter。
+- 当前方案保留 `bucket4jRateLimiter`，避免切换到 Spring Cloud Gateway `RedisRateLimiter` 带来的 bean 名称和配置结构变化。
+
+边界：
+
+- 当前本地实现只覆盖 standalone Redis 的 host / port / database。
+- 若后续真实配置需要密码、TLS、Sentinel 或 Cluster，需要扩展本地 Redis 连接参数绑定。
+- 运行时限流参数修改只放在 `temp/config/fist-cloud/fist-gateway/` 下的临时配置，不回写配置模板。

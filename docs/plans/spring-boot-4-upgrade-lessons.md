@@ -1975,3 +1975,34 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 - 先验证本机单实例限流行为，再验证 Redis 分布式限流状态。
 - 每次只打开一类外部依赖。
 - 限流参数修改只放在本地运行时配置文件中，不直接修改配置模板。
+
+## 经验 59：Gateway Redis 限流优先切换 Bucket4j 后端
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+`fist-gateway` 现有路由配置使用 Spring Cloud Gateway 5 内置的 `Bucket4jRateLimiter`，应用侧只需要提供 `AsyncProxyManager<String>`。如果为了接入 Redis 直接切换到 Spring Cloud Gateway `RedisRateLimiter`，需要同步改 bean 名称和限流配置结构；如果直接启用 Redisson starter，当前 `redisson-spring-boot-starter 3.51.0` 仍会引用 Boot 3 的 `RedisProperties`，不能作为 Boot 4 本轮验证入口。
+
+有效方案：
+
+- 保留现有 `bucket4jRateLimiter` 配置和路由限流参数。
+- 默认 profile 继续使用 Caffeine `AsyncProxyManager<String>`，保证无 Redis 依赖的本地启动不受影响。
+- `boot4-local-redis` profile 增加 Bucket4j Lettuce 后端，使用 `bucket4j_jdk17-redis-common` 和 `bucket4j_jdk17-lettuce`。
+- Redis 连接参数继续复用 Boot 4 的 `spring.data.redis.host`、`spring.data.redis.port` 和 `spring.data.redis.database`。
+- 继续排除 `GatewayRedisAutoConfiguration`，避免 Gateway 自动创建 `redisRateLimiter` 后与当前 Bucket4j 限流器混用。
+
+验证证据：
+
+- Bucket4j Lettuce 和 Redis common artifact 均可解析。
+- `fist-gateway` 的 `spring-javaformat:apply`、`compile`、`test-compile` 均为 `BUILD SUCCESS`。
+- 基础 `boot4-local` 启动 / 停止为 `BUILD SUCCESS`，默认 Caffeine 后端未被破坏。
+- 加载 `.env.local` 到当前进程后，`boot4-local,boot4-local-redis` 启动 / 停止为 `BUILD SUCCESS`，日志确认缓存管理器为 `RedisCacheManager`。
+- 使用本机 mock 下游和临时限流参数连续请求同一路由三次，状态码为 `200`、`429`、`429`；mock 下游只收到 1 次请求。
+
+后续复用规则：
+
+- Gateway Redis 分布式限流应优先切换 Bucket4j 状态后端，而不是先切换到 `RedisRateLimiter`。
+- Redisson starter 需要等 Boot 4 兼容性明确后再单独验证；当前不作为 Gateway Redis 限流依赖。
+- 当前实现只覆盖 standalone Redis 的 host / port / database。若真实配置需要密码、TLS、Sentinel 或 Cluster，应先扩展连接参数绑定并单独验证。
+- 限流参数仍在 `temp/config/fist-cloud/fist-gateway/` 下按运行时配置调整，不直接回写配置模板。
