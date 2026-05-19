@@ -2274,6 +2274,7 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - Druid Boot 3 starter 当前仍会引用 Boot 3 自动配置包；`fist-auth-v3` 本轮启动命令通过排除 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure` 隔离该问题。后续需要明确替换为 Boot 4 可用依赖或回到 Boot 默认数据源路线，不能长期依赖命令行 exclude。
 - 真实内部项目已将 `fist-auth-v3` 与 `fist-iam` 的 Druid 依赖从 `druid-spring-boot-3-starter:1.2.24` 调整为 `druid-spring-boot-starter:1.2.27`。Context7 `/alibaba/druid` 文档显示 Druid 仓库已有 Boot 4 starter 文档，但 `druid-spring-boot-4-starter:1.2.24` 和 `1.2.27` 当前无法从公开 Maven 仓库解析，因此本轮采用已发布的通用 starter 坐标。
 - Druid 坐标调整后，`fist-auth-v3` 和 `fist-iam` 依赖树均解析到 `druid-spring-boot-starter:1.2.27` 与 `druid:1.2.27`，`test-compile` 通过；两个服务本地启动 / 停止均通过，日志显示本地 H2 验证路径使用 Hikari。`fist-iam` 的 `boot4-local` profile 已删除 Druid Boot 3 自动配置排除项。
+- `fist-auth-v3` 已新增主资源 `application-boot4-local.yml` 和 `schema-boot4-local.sql`，将随机端口、H2、本地 schema、Nacos Config / Discovery / 服务注册关闭和 Nacos 自动配置排除项固化到本地 profile。后续启动验证只需保留 `spring-boot.run.useTestClasspath=true`、`spring-boot.run.profiles=boot4-local` 和启动等待参数。
 - 内部项目提交 `e63d4a1d fix: migrate iam boot4 startup` 已将 `fist-iam` 主代码中的应用侧 JSON 处理迁移到 Jackson 3，并新增 `application-boot4-local.yml` / `schema-boot4-local.sql` 支持本地 H2 启动隔离。
 - 内部项目提交 `748f94d4 test: migrate iam jackson3 tests` 已将 IAM 相关测试中的 Jackson 2 `ObjectMapper` / `JsonProcessingException` 迁移到 Jackson 3。
 - `logbook.version` 已升级到 `4.0.4`。Logbook `3.9.0` 在 Boot 4 下仍会通过自动配置依赖 Jackson 2 `ObjectMapper`，导致 `fist-iam` Web 启动失败。

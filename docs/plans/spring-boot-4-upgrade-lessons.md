@@ -2036,3 +2036,31 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 - 临时 `spring.autoconfigure.exclude` 可用于隔离问题，但一旦确认新坐标可用，应删除旧自动配置类排除项。
 - Spring Boot Maven Plugin 启动验证不要并行运行多个应用，除非显式拆分 JMX 端口；默认 `9001` 端口会冲突。
 - 本地 H2 启动验证如依赖 `src/test/resources`，需要显式设置 `spring-boot.run.useTestClasspath=true`。
+
+## 经验 61：应用本地启动隔离项应固化到 `boot4-local`
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+`fist-auth-v3` 早期 Boot 4 启动验证依赖 `test` profile 和长命令行参数。命令行同时承载随机端口、Nacos 关闭、服务注册关闭、Nacos 自动配置排除和本地 H2 配置，后续复用成本高，也容易和真实资源验证混用。
+
+有效方案：
+
+- 新增主资源 `application-boot4-local.yml`，固化本地启动隔离项。
+- 使用随机业务端口和随机管理端口。
+- 使用 H2 内存库和本地 schema，保持 H2 由 test classpath 提供。
+- 在 profile 中关闭 Nacos Config、Nacos Discovery、服务注册和 Nacos health。
+- 在 profile 中排除 Nacos 相关自动配置；命令行不再维护长排除列表。
+
+验证证据：
+
+- `fist-auth-v3` 的 `process-resources` 和 `test-compile` 为 `BUILD SUCCESS`。
+- 使用 `boot4-local` profile、test classpath 和简化命令执行启动 / 停止为 `BUILD SUCCESS`。
+- 启动日志确认 active profile 为 `boot4-local`，Hikari 连接 H2 `jdbc:h2:mem:fist-auth-boot4-local`。
+
+后续复用规则：
+
+- 本地 profile 负责稳定的启动隔离；命令行只保留 profile、test classpath 和启动等待参数。
+- `schema-boot4-local.sql` 只覆盖本地启动最小表结构，不代表生产 schema。
+- 真实数据库、真实 IAM、真实 OAuth2 客户端配置和 Nacos Discovery 应作为独立批次打开。

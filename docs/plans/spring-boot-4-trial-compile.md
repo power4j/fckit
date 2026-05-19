@@ -2724,3 +2724,37 @@ cmd /c mvn -nsu -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-
 - 本轮只验证本地 H2 启动路径和依赖坐标，不代表真实数据库连接池参数已经完成生产式验证。
 - `druid-spring-boot-4-starter` 文档存在但 artifact 当前未解析成功，后续如果发布到可用仓库，可再评估是否切换。
 - Spring Boot Maven Plugin 启动验证应串行执行，避免默认 JMX 端口 `9001` 冲突。
+
+## 真实内部项目 fist-auth-v3 boot4-local profile 固化
+
+记录日期：2026-05-19；记录者：Codex。
+
+`fist-auth-v3` 早期 Boot 4 启动验证使用 `test` profile 和较长命令行参数关闭 Nacos、随机端口和本地 H2。为降低后续验证成本，本轮将稳定的本地启动隔离项固化到主资源 `boot4-local` profile。
+
+落地变更：
+
+- 新增 `fist-cloud/fist-auth-v3/src/main/resources/application-boot4-local.yml`。
+- `boot4-local` 使用随机业务端口、随机管理端口、H2 内存库、关闭 Nacos Config / Discovery / 服务注册 / Nacos health。
+- `boot4-local` 排除 Nacos 相关自动配置，不再通过命令行排除 Druid。
+- 新增 `schema-boot4-local.sql`，覆盖当前本地启动需要的 `oauth_pwd_mfa_ticket` 表。
+- H2 仍通过 `spring-boot.run.useTestClasspath=true` 提供，不改为生产依赖。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu -pl fist-cloud/fist-auth-v3 "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -nsu -pl fist-cloud/fist-auth-v3 -am "-P!config-nacos" -DskipTests test-compile
+cmd /c mvn -nsu -pl fist-cloud/fist-auth-v3 "-P!config-nacos" -DskipTests "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.banner-mode=off" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+```
+
+验证结果：
+
+- `process-resources` 和 `test-compile` 均为 `BUILD SUCCESS`。
+- `boot4-local` 启动 / 停止为 `BUILD SUCCESS`。
+- 启动日志确认 active profile 为 `boot4-local`，Hikari 连接 H2 `jdbc:h2:mem:fist-auth-boot4-local`。
+- Tomcat 随机业务端口和随机管理端口启动，随后完成 graceful shutdown。
+
+边界：
+
+- 本轮只覆盖本地 H2 启动，不代表真实数据库、真实 OAuth2 客户端配置、真实 IAM 或 Nacos Discovery 已通过。
+- `schema-boot4-local.sql` 只覆盖本地启动所需表，不代表完整生产 schema。
