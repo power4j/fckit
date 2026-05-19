@@ -2494,3 +2494,32 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspr
 
 - 本轮只验证本机下游转发和路径改写。
 - 真实 OAuth 2.0 introspection、Redis 限流状态、Nacos Discovery 和真实下游服务仍需后续单独验证。
+
+## 真实内部项目 fist-gateway 本机限流运行效果验证
+
+记录日期：2026-05-19；记录者：Codex。
+
+在请求级转发验证通过后，继续验证 `RequestRateLimiter` 默认过滤器的运行效果。本轮仍使用被 Git 忽略的脱敏 `config/fist-gateway.yml`，不读取 `.env.local`，不连接真实 Redis、Nacos、OAuth 2.0 introspection 或内部下游服务。
+
+验证输入：
+
+- `RequestRateLimiter` 本地运行时配置调整为 `capacity=1`、`refillTokens=1`、`refillPeriod=60s`。
+- `/fauth/**` 路由指向本机 mock 下游 `127.0.0.1:19091`。
+- 请求路径为 `/fauth/oauth2/rate-limit-probe`。
+
+验证结果：
+
+- 第 1 次请求返回 `HTTP 200`，响应体来自本机 mock 下游，mock 收到路径 `/oauth2/rate-limit-probe`。
+- 第 2 次请求返回 `HTTP 429`。
+- 第 3 次请求返回 `HTTP 429`。
+- mock 下游日志只记录 1 次请求，说明后两次请求在 gateway 限流阶段被拦截。
+
+结论：
+
+- `RequestRateLimiter` 默认过滤器在 Boot 4 / WebFlux Gateway 下可实际执行。
+- 当前本地验证使用 Bucket4j + Caffeine，不依赖 Redis。
+
+边界：
+
+- 本轮只验证本机单实例限流行为。
+- Redis 分布式限流状态、真实 OAuth 2.0 introspection、Nacos Discovery 和真实下游服务仍需后续单独验证。

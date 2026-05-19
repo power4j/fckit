@@ -1857,3 +1857,30 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 每次请求级验证只打开一类外部依赖。
 - 本机 mock 下游验证通过后，再验证真实下游、OAuth 2.0 introspection、Redis 限流状态和 Nacos Discovery。
 - 真实资源仍通过 `.env.local` 或本地运行时配置输入，不记录具体值。
+
+## 经验 55：Gateway 限流先验证本机单实例行为
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+限流验证如果直接接入 Redis 或真实下游，会同时引入存储、网络和服务可用性问题。应先证明 `RequestRateLimiter` 过滤器在 Boot 4 / WebFlux Gateway 下能够执行，再验证分布式状态。
+
+有效方案：
+
+- 使用本机 mock 下游服务。
+- 将本地运行时限流配置临时调小，例如 `capacity=1`、`refillTokens=1`、`refillPeriod=60s`。
+- 连续请求同一路由，观察首个请求和后续请求的状态码。
+- 通过 mock 日志确认被限流的请求没有到达下游。
+
+验证证据：
+
+- 第 1 次请求返回 `HTTP 200`，mock 下游收到路径 `/oauth2/rate-limit-probe`。
+- 第 2 次和第 3 次请求返回 `HTTP 429`。
+- mock 下游日志只记录 1 次请求。
+
+后续复用规则：
+
+- 先验证本机单实例限流行为，再验证 Redis 分布式限流状态。
+- 每次只打开一类外部依赖。
+- 限流参数修改只放在本地运行时配置文件中，不直接修改配置模板。
