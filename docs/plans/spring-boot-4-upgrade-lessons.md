@@ -2064,3 +2064,28 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 - 本地 profile 负责稳定的启动隔离；命令行只保留 profile、test classpath 和启动等待参数。
 - `schema-boot4-local.sql` 只覆盖本地启动最小表结构，不代表生产 schema。
 - 真实数据库、真实 IAM、真实 OAuth2 客户端配置和 Nacos Discovery 应作为独立批次打开。
+
+## 经验 62：无数据库模块不要为本地启动引入 H2
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+`demo-order` 需要 Boot 4 本地启动 profile，但它当前订单仓储为内存实现，启动路径不依赖真实数据库。如果照搬 auth / iam 的 H2 profile，会引入无用的数据源配置和 schema，扩大验证面。
+
+有效方案：
+
+- 先阅读模块代码，确认 `OrderRepositoryImpl` 使用内存 `Map`，`OrderMapper` 当前没有实际数据库调用。
+- `boot4-local` 只固化随机端口、Nacos Config / Discovery / 服务注册关闭和 Nacos 自动配置排除。
+- 不新增 H2、schema 或 datasource 配置。
+
+验证证据：
+
+- `demo-order` 的 `process-resources` 和 `test-compile` 为 `BUILD SUCCESS`。
+- 使用 `boot4-local` profile 启动 / 停止为 `BUILD SUCCESS`。
+- 启动日志确认 Tomcat 随机业务端口和管理端口启动并完成 graceful shutdown。
+
+后续复用规则：
+
+- 本地 profile 按模块真实依赖裁剪；只有启动路径需要数据库时才加入 H2。
+- Feign、服务发现、真实下游调用应在请求级或服务发现专项中验证，不和基础启动验证混在一起。

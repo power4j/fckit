@@ -2758,3 +2758,36 @@ cmd /c mvn -nsu -pl fist-cloud/fist-auth-v3 "-P!config-nacos" -DskipTests "-Dspr
 
 - 本轮只覆盖本地 H2 启动，不代表真实数据库、真实 OAuth2 客户端配置、真实 IAM 或 Nacos Discovery 已通过。
 - `schema-boot4-local.sql` 只覆盖本地启动所需表，不代表完整生产 schema。
+
+## 真实内部项目 demo-order boot4-local profile 验证
+
+记录日期：2026-05-19；记录者：Codex。
+
+`demo-order` 是当前内部项目中剩余未固化本地 Boot 4 启动 profile 的 Servlet Web 模块。该模块订单仓储为内存实现，不依赖真实数据库；本轮只隔离 Nacos 并验证本地 Web 启动。
+
+落地变更：
+
+- 新增 `pac-cloud/demo-order/src/main/resources/application-boot4-local.yml`。
+- `boot4-local` 使用随机业务端口和随机管理端口。
+- 关闭 Nacos Config、Nacos Discovery、服务注册和 Nacos health。
+- 排除 Nacos 相关自动配置。
+- 不新增 H2 或 schema。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu -pl pac-cloud/demo-order "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -nsu -pl pac-cloud/demo-order -am "-P!config-nacos" -DskipTests test-compile
+cmd /c mvn -nsu -pl pac-cloud/demo-order "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.banner-mode=off" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+```
+
+验证结果：
+
+- `process-resources` 和 `test-compile` 均为 `BUILD SUCCESS`。
+- `boot4-local` 启动 / 停止为 `BUILD SUCCESS`。
+- 启动日志确认 active profile 为 `boot4-local`，Tomcat 随机业务端口和随机管理端口启动并完成 graceful shutdown。
+
+边界：
+
+- 本轮只验证本地 Servlet Web 启动，不代表真实 IAM Feign 调用、Nacos Discovery 或真实网关路径已经通过。
+- `PermissionClient` 仍依赖运行期 IAM；请求级验证需要本机 mock、simple discovery 或服务发现专项。
