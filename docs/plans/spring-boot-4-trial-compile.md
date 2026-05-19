@@ -2462,3 +2462,34 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspr
 
 - 本轮没有发起 HTTP 请求，不验证真实路由转发、限流运行效果、OAuth 2.0 introspection 响应、Redis 或 Nacos Discovery。
 - `RequestRateLimiter` 仅确认启动期配置装配通过，实际限流行为需要后续请求级验证。
+
+## 真实内部项目 fist-gateway 本机下游请求级转发验证
+
+记录日期：2026-05-18；记录者：Codex。
+
+在多路由启动级验证通过后，继续验证一次真实 HTTP 请求转发。本轮仍使用被 Git 忽略的脱敏 `config/fist-gateway.yml`，不读取 `.env.local`，不连接真实数据库、Redis、Nacos、OAuth 2.0 introspection 服务或真实下游服务。
+
+验证输入：
+
+- 本机 mock 下游服务监听 `127.0.0.1:19091`。
+- `fist-gateway` 使用 `spring-boot:run` 启动，业务端口为 `19080`，管理端口为 `19081`。
+- 本地 auth 路由下游 URI 指向本机 mock 服务。
+- 请求路径为 `/fauth/oauth2/probe`，命中本地授权跳过规则 `/fauth/oauth2/**`。
+
+验证结果：
+
+- 本机 mock 下游服务直接访问返回 200。
+- 网关请求 `http://127.0.0.1:19080/fauth/oauth2/probe` 返回 200。
+- 响应体来自本机 mock 下游，路径为 `/oauth2/probe`，确认 `/fauth/**` 路由匹配并执行 `StripPrefix=1`。
+- 验证结束后，`19080`、`19081` 和 `19091` 无监听进程残留。
+
+排障记录：
+
+- `spring-boot:start` 固定端口后 Maven goal 未及时返回，后续改用可控的 `spring-boot:run` 后台进程。
+- 清理脚本按命令行关键字匹配进程时误匹配当前 PowerShell 脚本自身，改为只按端口清理。
+- `spring-boot.run.arguments` 需要作为单个 Maven 参数传入，否则 `--management.server.port=19081` 会被 Maven 当作自身选项解析。
+
+边界：
+
+- 本轮只验证本机下游转发和路径改写。
+- 真实 OAuth 2.0 introspection、Redis 限流状态、Nacos Discovery 和真实下游服务仍需后续单独验证。

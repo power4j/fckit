@@ -1822,3 +1822,37 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - Gateway 真实转发验证前，先完成启动级配置验证。
 - 请求级验证再逐步打开下游服务、OAuth 2.0 introspection、Redis、限流行为和 Nacos Discovery。
 - 每次只打开一类外部依赖，并记录脱敏结果。
+
+## 经验 54：Gateway 请求级验证先使用本机 mock 下游
+
+记录日期：2026-05-18；记录者：Codex。
+
+问题：
+
+启动级验证只能证明网关配置可以装配，不能证明路由匹配、过滤器和路径改写能在请求阶段生效。直接连接真实下游会同时引入服务可用性、认证、网络和配置问题，不适合作为请求级首轮验证。
+
+有效方案：
+
+- 先启动本机 mock 下游服务。
+- 本地 `config/fist-gateway.yml` 只把待验证路由指向本机 mock 端口。
+- 选择已在本地 profile 放行的路径发请求，避免提前引入真实 OAuth 2.0 introspection。
+- 固定 gateway 业务端口和管理端口，验证完成后按端口清理进程。
+
+验证证据：
+
+- 本机 mock 下游服务监听 `127.0.0.1:19091`。
+- `fist-gateway` 使用 `spring-boot:run` 固定业务端口 `19080`。
+- 请求 `http://127.0.0.1:19080/fauth/oauth2/probe` 返回 200。
+- mock 下游收到路径 `/oauth2/probe`，确认 `/fauth/**` 路由匹配和 `StripPrefix=1` 生效。
+
+排障规则：
+
+- `spring-boot:run` 适合请求级验证；`spring-boot:start` 在部分固定端口验证中可能未及时返回。
+- 清理本机验证进程时优先按端口清理，不按命令行关键字模糊匹配，避免误杀当前脚本。
+- `spring-boot.run.arguments` 含多个参数时必须作为单个 Maven 参数传入。
+
+后续复用规则：
+
+- 每次请求级验证只打开一类外部依赖。
+- 本机 mock 下游验证通过后，再验证真实下游、OAuth 2.0 introspection、Redis 限流状态和 Nacos Discovery。
+- 真实资源仍通过 `.env.local` 或本地运行时配置输入，不记录具体值。
