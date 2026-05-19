@@ -2282,6 +2282,9 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - 内部项目提交 `9c9dcf09 test: add gateway boot4 local profile` 已为 `fist-gateway` 增加 `boot4-local` profile。该 profile 关闭 Nacos Config、Nacos Discovery、服务注册、Redis 和 Redisson。后续本地文件配置输入已调整为仓库根目录 `temp/config/fist-cloud/fist-gateway/`，通过 `optional:file:` 导入运行时配置。
 - `fist-gateway` 是 WebFlux 应用，Boot 4 本地启动使用 Reactor Netty。Tomcat / Jetty 的 Servlet 容器策略只适用于 Servlet Web 模块，不适用于该网关模块。
 - `fist-gateway` 当前 Boot 4 本地启动 / 停止验证为 `BUILD SUCCESS`，`fist-gateway -am test-compile` 也为 `BUILD SUCCESS`。本轮未验证真实 Redis、Nacos Discovery、Nacos Config、真实 OAuth 2.0 introspection 或下游服务转发。
+- `fist-gateway` 已新增 Redis 专项本地 profile，使用 `REDIS_HOST`、`REDIS_PORT`、`REDIS_DB` 映射到 Boot 4 `spring.data.redis.*`，并通过 `RedisCacheManager` 启动验证。该验证不等同于 Redisson 或 Redis 分布式限流完成。
+- `redisson-spring-boot-starter 3.51.0` 仍引用 Boot 3 `org.springframework.boot.autoconfigure.data.redis.RedisProperties`；Boot 4 下不能直接打开 Redisson 自动配置。
+- 新增 Lettuce 后，Spring Cloud Gateway 会自动创建 `redisRateLimiter`，与现有 Bucket4j `bucket4jRateLimiter` 冲突。当前 Boot 4 本地 profile 继续排除 `GatewayRedisAutoConfiguration`，保持 Bucket4j 路线。
 - Logbook `3.9.0` 在 Boot 4 / Jackson 3 组合下仍要求 Jackson 2 `ObjectMapper`；内部项目已升级到 Logbook `4.0.4`。
 - `fist-iam` 主代码中的 `SysDataController`、`TrusfortHttpSyncClient`、`PermissionClient`、`SysDataManagerImpl`、`DataImportServiceImpl` 和 `MenuItemStreamHandler` 已迁移到 Jackson 3 `tools.jackson.*`。
 - Jackson 3 `JsonNode.properties()` 返回 Set；替换 Jackson 2 `JsonNode.fields()` 时需要同步调整迭代方式。

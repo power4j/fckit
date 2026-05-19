@@ -1827,6 +1827,36 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 配置模板只作为模板；复制到 `temp/config/<domain>/<service>/` 后修改和测试。
 - 只有确认模板本身需要变化时，才回写模板。
 
+## 经验 57：Redis 变量映射和 Redisson 适配要分开验证
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+`.env.local` 可以提供 Redis 连接信息，但 Redis 变量映射、Spring Boot Redis cache、Redisson starter 和 Gateway RedisRateLimiter 是不同层级。直接一次性打开容易把问题混在一起。
+
+有效方案：
+
+- 先只检查 `.env.local` 的变量名，不记录变量值。
+- Redis 连接配置使用 Boot 4 的 `spring.data.redis.host`、`spring.data.redis.port`、`spring.data.redis.database`。
+- `fist-gateway` 使用独立 `boot4-local-redis` profile 打开 Redis cache，基础 `boot4-local` 继续保持无外部资源启动。
+- Boot 4 Redis auto-config 需要 Lettuce 或 Jedis 客户端；当前项目显式加入 `lettuce-core`。
+- `redisson-spring-boot-starter 3.51.0` 仍引用 Boot 3 `RedisProperties`，不能作为本轮 Redis cache 验证入口。
+- Gateway 自动创建的 `redisRateLimiter` 会与当前 Bucket4j `bucket4jRateLimiter` 冲突；在保持 Bucket4j 路线时，需要排除 `GatewayRedisAutoConfiguration`。
+
+验证证据：
+
+- `.env.local` 中 Redis 相关变量名为 `REDIS_HOST`、`REDIS_PORT`、`REDIS_DB`。
+- 基础 `boot4-local` 启动 / 停止为 `BUILD SUCCESS`，缓存管理器为 `NoOpCacheManager`。
+- `boot4-local,boot4-local-redis` 启动 / 停止为 `BUILD SUCCESS`，缓存管理器为 `RedisCacheManager`。
+- `fist-gateway -am test-compile` 为 `BUILD SUCCESS`。
+
+后续复用规则：
+
+- Redis cache 验证和 Redis 分布式限流验证分开执行。
+- Redisson starter 需要单独确认 Boot 4 兼容版本或替代配置方式。
+- 如果后续使用 Spring Cloud Gateway `RedisRateLimiter`，需要移除或隔离当前 Bucket4j 限流器，避免同类型 Bean 冲突。
+
 ## 经验 53：Gateway 多路由配置可先做启动级验证
 
 记录日期：2026-05-18；记录者：Codex。

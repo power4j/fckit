@@ -2557,3 +2557,39 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspr
 - `temp/` 的第一级目录按用途分类，例如 `temp/config/...`。
 - 配置类运行时文件使用 `temp/config/<domain>/<service>/`；`fist-gateway` 使用 `temp/config/fist-cloud/fist-gateway/`。
 - 配置模板只作为模板使用。复制到 `temp/config/<domain>/<service>/` 后修改和测试；只有确认模板本身需要变化时，才回写模板。
+
+## 真实内部项目 fist-gateway Redis 环境变量映射验证
+
+记录日期：2026-05-19；记录者：Codex。
+
+在 `temp/config/fist-cloud/fist-gateway/` 运行时配置落点确认后，继续验证 `.env.local` 中 Redis 变量名是否能和 Boot 4 配置占位符匹配。本轮不记录 `.env.local` 的具体值。
+
+落地变更：
+
+- 新增 `application-boot4-local-redis.yml`，作为 Redis 专项 profile。
+- Redis profile 使用 `spring.data.redis.host=${REDIS_HOST:127.0.0.1}`、`spring.data.redis.port=${REDIS_PORT:6379}` 和 `spring.data.redis.database=${REDIS_DB:0}`。
+- `fist-gateway` 显式加入 `spring-boot-starter-data-redis` 和 `lettuce-core`，满足 Boot 4 Redis auto-config 的客户端依赖。
+- 基础 `boot4-local` 与 Redis profile 均排除 `GatewayRedisAutoConfiguration`，避免 Gateway 自动创建 `redisRateLimiter`，与当前 Bucket4j `bucket4jRateLimiter` 冲突。
+- Redis profile 继续排除 `RedissonAutoConfigurationV2`。当前 `redisson-spring-boot-starter 3.51.0` 仍引用 Boot 3 的 `org.springframework.boot.autoconfigure.data.redis.RedisProperties`。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.banner-mode=off" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local,boot4-local-redis" "-Dspring-boot.run.arguments=--spring.main.banner-mode=off" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests test-compile
+```
+
+验证结果：
+
+- `process-resources` 为 `BUILD SUCCESS`。
+- 基础 `boot4-local` 启动 / 停止为 `BUILD SUCCESS`，缓存管理器仍为 `NoOpCacheManager`。
+- 加载 `.env.local` 到当前进程后，`boot4-local,boot4-local-redis` 启动 / 停止为 `BUILD SUCCESS`，缓存管理器为 `RedisCacheManager`。
+- `fist-gateway -am test-compile` 为 `BUILD SUCCESS`。
+
+边界：
+
+- 本轮只验证 `.env.local` Redis 变量名到 `spring.data.redis.*` 的映射、Redis cache 自动配置和启动。
+- Redisson 在 Boot 4 下仍未启用。
+- Redis 分布式限流仍未验证；当前请求限流继续使用 Bucket4j + Caffeine。
