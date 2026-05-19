@@ -2089,3 +2089,41 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 
 - 本地 profile 按模块真实依赖裁剪；只有启动路径需要数据库时才加入 H2。
 - Feign、服务发现、真实下游调用应在请求级或服务发现专项中验证，不和基础启动验证混在一起。
+
+## 经验 63：统一 `boot4-local` 的 `temp/config/...` 运行时配置入口
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+`fist-gateway` 已经完成 `temp/config/fist-cloud/fist-gateway/` 运行时配置导入验证，但 `fist-auth-v3`、`fist-iam`、`demo-order` 的 `boot4-local` 仍只有内建默认值。这样会导致各服务的本地验证路径不一致，后续复制模板、修改运行时配置和做专项验证时需要重复改 profile 文件。
+
+有效方案：
+
+- 将 `spring.config.import=optional:file:...` 统一加到各服务的 `application-boot4-local.yml`。
+- 继续使用仓库根目录 `temp/config/<domain>/<service>/` 作为运行时配置落点。
+- `boot4-local` 只负责随机端口、关闭 Nacos Config / Discovery / 服务注册、H2 等稳定隔离项；易变配置由 `temp/config/...` 覆盖。
+- 使用 `optional:file:`，保证运行时配置文件缺失时仍可直接走最小本地启动链路。
+
+落地结果：
+
+- `fist-auth-v3` 补齐 `../../temp/config/fist-cloud/fist-auth-v3/application.yml` 和 `${spring.application.name}.yml` 导入入口。
+- `fist-iam` 补齐 `../../temp/config/fist-cloud/fist-iam/application.yml` 和 `${spring.application.name}.yml` 导入入口。
+- `demo-order` 补齐 `../../temp/config/pac-cloud/demo-order/application.yml` 和 `${spring.application.name}.yml` 导入入口。
+
+验证证据：
+
+- 三个模块的 `process-resources` 均为 `BUILD SUCCESS`。
+- `fist-auth-v3`、`fist-iam`、`demo-order` 使用既有 `boot4-local` 启动命令均完成启动 / 停止。
+- 本轮没有创建真实运行时配置文件，也没有读取 `.env.local`；只验证了导入入口和默认本地启动能力未被破坏。
+
+补充观察：
+
+- 首次把多个 `spring-boot:start spring-boot:stop` 命令并行执行时，`fist-auth-v3` 与 `fist-iam` 再次出现默认 JMX `9001` 端口冲突。
+- 该问题和 `spring.config.import` 无关，而是 Spring Boot Maven Plugin 的默认行为；启动级验证必须串行执行，或显式拆分 JMX 端口。
+
+后续复用规则：
+
+- 配置模板只作为模板；先复制到 `temp/config/<domain>/<service>/`，修改运行时配置并完成验证，必要时再回写模板。
+- 各服务本地启动 profile 应保持一致的运行时配置入口，避免每个模块重复维护单独的临时导入策略。
+- 启动级验证优先串行执行；只有确实需要并发时，才单独拆分 JMX 端口。

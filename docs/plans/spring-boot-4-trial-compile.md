@@ -2791,3 +2791,37 @@ cmd /c mvn -nsu -pl pac-cloud/demo-order "-P!config-nacos" -DskipTests "-Dspring
 
 - 本轮只验证本地 Servlet Web 启动，不代表真实 IAM Feign 调用、Nacos Discovery 或真实网关路径已经通过。
 - `PermissionClient` 仍依赖运行期 IAM；请求级验证需要本机 mock、simple discovery 或服务发现专项。
+
+## 真实内部项目 boot4-local 运行时配置导入入口统一
+
+记录日期：2026-05-19；记录者：Codex。
+
+在 `fist-gateway` 已验证仓库根目录 `temp/config/<domain>/<service>/` 运行时配置落点后，继续把同一策略补齐到 `fist-auth-v3`、`fist-iam` 和 `demo-order`。目标是保持 Boot 4 本地启动 profile 只固化稳定隔离项，而把易变的运行时输入留在 Git 忽略的 `temp/config/` 目录中按需覆盖。
+
+落地变更：
+
+- `fist-auth-v3` 的 `application-boot4-local.yml` 增加：
+  - `optional:file:../../temp/config/fist-cloud/fist-auth-v3/application.yml`
+  - `optional:file:../../temp/config/fist-cloud/fist-auth-v3/${spring.application.name}.yml`
+- `fist-iam` 的 `application-boot4-local.yml` 增加：
+  - `optional:file:../../temp/config/fist-cloud/fist-iam/application.yml`
+  - `optional:file:../../temp/config/fist-cloud/fist-iam/${spring.application.name}.yml`
+- `demo-order` 的 `application-boot4-local.yml` 增加：
+  - `optional:file:../../temp/config/pac-cloud/demo-order/application.yml`
+  - `optional:file:../../temp/config/pac-cloud/demo-order/${spring.application.name}.yml`
+
+验证结果：
+
+- 三个模块的 `process-resources` 均为 `BUILD SUCCESS`。
+- `fist-auth-v3`、`fist-iam`、`demo-order` 的 `boot4-local` 启动 / 停止均为 `BUILD SUCCESS`。
+- 本轮没有创建或提交真实运行时配置文件；`optional:file:` 缺失时仍保持默认本地启动能力。
+
+过程观察：
+
+- 首次将多个 `spring-boot:start spring-boot:stop` 命令并行执行时，`fist-auth-v3` 与 `fist-iam` 因默认 JMX 端口 `9001` 冲突而失败。
+- 改为串行重跑后，两个模块均启动成功。该现象再次确认：Spring Boot Maven Plugin 启动验证不能并行执行，除非显式拆分 JMX 端口。
+
+结论：
+
+- `boot4-local` profile 负责稳定隔离项，`temp/config/<domain>/<service>/` 负责易变运行时输入，二者职责已在当前几个核心服务间对齐。
+- 配置模板继续只作为模板使用；标准流程仍是复制到 `temp/config/...`、按需修改、执行验证、必要时再回写模板。

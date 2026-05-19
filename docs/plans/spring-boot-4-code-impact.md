@@ -2294,6 +2294,8 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
 - `fist-gateway` OAuth 2.0 introspection 响应必须使用 FIST Kit v4 约定的 `userInfo` 顶层键名。使用 `user_info` 会导致 Gateway ACL 无法提取用户，日志表现为 `USER_IP_DENIED(51), details: No user info`。
 - Gateway ACL 的 active token 放行还依赖权限定义服务返回匹配路径。没有权限定义时，即使用户信息提取成功，也会进入 `AuthEndFilter` 默认拒绝，日志表现为 `AUTH_END_DENIED`。
 - 内部项目本机 mock 已验证：missing token 返回 `HTTP 403` 且不触发 introspection，inactive token 返回 `HTTP 403` 且触发 introspection，active token 在补齐本机权限定义后返回 `HTTP 200` 并转发到下游。
+- `fist-auth-v3`、`fist-iam`、`demo-order` 的 `boot4-local` 已补齐 `spring.config.import=optional:file:../../temp/config/<domain>/<service>/...` 运行时配置入口，并与 `fist-gateway` 保持一致。后续本地 Boot 4 验证可直接通过仓库根目录 `temp/config/...` 复制并覆盖运行时配置，不再临时改写主资源 profile。
+- 本轮再次确认 Spring Boot Maven Plugin 的 `spring-boot:start spring-boot:stop` 默认使用 JMX `9001`；多个应用并行执行会冲突。启动级验证应串行执行，或显式拆分 JMX 端口。
 - Logbook `3.9.0` 在 Boot 4 / Jackson 3 组合下仍要求 Jackson 2 `ObjectMapper`；内部项目已升级到 Logbook `4.0.4`。
 - `fist-iam` 主代码中的 `SysDataController`、`TrusfortHttpSyncClient`、`PermissionClient`、`SysDataManagerImpl`、`DataImportServiceImpl` 和 `MenuItemStreamHandler` 已迁移到 Jackson 3 `tools.jackson.*`。
 - Jackson 3 `JsonNode.properties()` 返回 Set；替换 Jackson 2 `JsonNode.fields()` 时需要同步调整迭代方式。
