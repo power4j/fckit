@@ -2368,7 +2368,7 @@ cmd /c mvn -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-boot.
 - 本地 profile 使用随机业务端口和随机管理端口。
 - 关闭 Nacos Config、Nacos Discovery、服务注册和 Nacos health。
 - 排除 Nacos 自动配置、Redisson 自动配置和 Redis 自动配置，避免首轮启动依赖真实外部资源。
-- 增加 `optional:file:./config/application.yml` 与 `optional:file:./config/${spring.application.name}.yml`，便于后续把配置模板整理成本地文件后加载。
+- 增加本地 `optional:file:` 配置导入入口，便于后续把配置模板复制到仓库根目录 `temp/config/fist-cloud/fist-gateway/` 后加载。
 - 提供最小 gateway route 和本地授权配置，避免依赖配置中心即可完成应用装配。
 
 验证命令：
@@ -2523,3 +2523,37 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspr
 
 - 本轮只验证本机单实例限流行为。
 - Redis 分布式限流状态、真实 OAuth 2.0 introspection、Nacos Discovery 和真实下游服务仍需后续单独验证。
+
+## 真实内部项目 fist-gateway 本地配置目录策略调整
+
+记录日期：2026-05-19；记录者：Codex。
+
+在本地配置导入、转发和限流验证通过后，调整运行时配置文件落点。历史验证曾使用服务目录下的 `config/fist-gateway.yml`；后续统一改为仓库根目录 `temp/config/fist-cloud/fist-gateway/`，利用既有 `temp/` 忽略规则。
+
+落地变更：
+
+- `application-boot4-local.yml` 的 `spring.config.import` 改为导入 `../../temp/config/fist-cloud/fist-gateway/application.yml` 和 `../../temp/config/fist-cloud/fist-gateway/${spring.application.name}.yml`。
+- `fist-cloud/fist-gateway/config/README.md` 改为说明服务目录不存放运行时配置，只指向 `temp/config/fist-cloud/fist-gateway/`。
+- 内部项目 `.gitignore` 删除 `fist-cloud/*/config/*.yml`、`*.yaml`、`*.properties` 规则，继续依赖既有 `temp/` 忽略规则。
+- 脱敏本地运行配置移动到 `temp/config/fist-cloud/fist-gateway/fist-gateway.yml`，该文件不提交。
+
+验证命令：
+
+```powershell
+git check-ignore -v temp/config/fist-cloud/fist-gateway/fist-gateway.yml
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests process-resources
+cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+```
+
+验证结果：
+
+- 本地运行配置命中 `temp/` 忽略规则。
+- `process-resources` 为 `BUILD SUCCESS`。
+- `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`。
+- 启动日志显示工作目录为 `fist-cloud/fist-gateway`，启动 banner 继续显示本地运行配置覆盖后的版本号，确认 `../../temp/config/fist-cloud/fist-gateway/fist-gateway.yml` 已参与配置合成。
+
+后续规则：
+
+- `temp/` 的第一级目录按用途分类，例如 `temp/config/...`。
+- 配置类运行时文件使用 `temp/config/<domain>/<service>/`；`fist-gateway` 使用 `temp/config/fist-cloud/fist-gateway/`。
+- 配置模板只作为模板使用。复制到 `temp/config/<domain>/<service>/` 后修改和测试；只有确认模板本身需要变化时，才回写模板。

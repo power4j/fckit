@@ -1717,7 +1717,7 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - 新增 `application-boot4-local.yml`，使用随机业务端口和随机管理端口。
 - 在本地 profile 中关闭 Nacos Config、Nacos Discovery、服务注册和 Nacos health。
 - 排除 Nacos、Redis 和 Redisson 自动配置，先验证 Gateway / WebFlux / FIST route guard 的应用装配。
-- 使用 `optional:file:./config/application.yml` 与 `optional:file:./config/${spring.application.name}.yml` 作为本地配置输入入口，后续可把配置模板整理到本地 `config/` 目录逐项验证。
+- 使用 `optional:file:` 作为本地配置输入入口，后续可把配置模板复制到仓库根目录 `temp/config/<domain>/<service>/` 逐项验证。
 - 提供最小本地 route、授权跳过规则和占位 OAuth 2.0 opaque-token 配置，避免依赖配置中心即可完成启动。
 
 验证证据：
@@ -1784,16 +1784,48 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 
 后续复用规则：
 
-- 后续服务如需本地配置输入，优先沿用 `fist-cloud/<service>/config/`。
+- 后续服务如需本地配置输入，优先使用仓库根目录 `temp/config/<domain>/<service>/`。
 - 本地配置文件不提交；提交内容只保留 README、profile 和必要的 ignore 规则。
 - 如需真实资源，环境变量来自 `.env.local`，但不读取或记录其具体内容。
 
 补充规则：
 
 - 配置模板只作为模板使用，不作为运行时配置文件直接修改。
-- 标准流程是先把配置模板复制到临时位置或本地 `config/` 目录，再修改本地运行时配置。
+- 标准流程是先把配置模板复制到 `temp/config/<domain>/<service>/`，再修改本地运行时配置。
 - 启动和测试都使用本地运行时配置。
 - 只有确认模板本身需要变化时，才回写配置模板。
+
+修正记录：
+
+- 2026-05-19 起，本地运行时配置不再放在服务源码目录下的 `config/`。仓库根目录 `temp/` 已被忽略，配置文件统一放在 `temp/config/<domain>/<service>/`。
+- `temp/` 的第一级目录按用途分类；网关示例为 `temp/config/fist-cloud/fist-gateway/`，不使用 `temp/fist-cloud/.../config`。
+
+## 经验 56：`temp/` 第一级目录按用途分类
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+本地运行时配置如果散落在服务源码目录或 `temp/<service>/.../config`，后续会难以区分配置、日志、探测脚本和其他临时产物，也容易让源码目录承担运行时状态职责。
+
+有效方案：
+
+- 仓库根目录 `temp/` 作为本地临时产物总入口。
+- `temp/` 第一级目录按用途分类，例如 `temp/config/`。
+- 配置文件再按领域和服务分层，例如 `temp/config/fist-cloud/fist-gateway/`。
+- `boot4-local` profile 使用相对模块工作目录的 `optional:file:../../temp/config/fist-cloud/fist-gateway/${spring.application.name}.yml` 导入运行时配置。
+
+验证证据：
+
+- `git check-ignore -v temp/config/fist-cloud/fist-gateway/fist-gateway.yml` 命中 `temp/` 忽略规则。
+- `fist-gateway` 的 `process-resources` 为 `BUILD SUCCESS`。
+- `fist-gateway` 的 `spring-boot:start spring-boot:stop` 为 `BUILD SUCCESS`，启动 banner 显示 `temp/config/fist-cloud/fist-gateway/fist-gateway.yml` 中的脱敏版本标识。
+
+后续复用规则：
+
+- 运行时配置文件放在 `temp/config/<domain>/<service>/`，不放在服务源码目录。
+- 配置模板只作为模板；复制到 `temp/config/<domain>/<service>/` 后修改和测试。
+- 只有确认模板本身需要变化时，才回写模板。
 
 ## 经验 53：Gateway 多路由配置可先做启动级验证
 
