@@ -1857,6 +1857,35 @@ Boot 4 使用 Jackson 3，包名从 `com.fasterxml.jackson` 迁移到 `tools.jac
 - Redisson starter 需要单独确认 Boot 4 兼容版本或替代配置方式。
 - 如果后续使用 Spring Cloud Gateway `RedisRateLimiter`，需要移除或隔离当前 Bucket4j 限流器，避免同类型 Bean 冲突。
 
+## 经验 58：Gateway introspection 验证要同时覆盖用户信息键名和权限定义
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过滤器会先从 introspection 响应中提取用户信息，再读取权限定义，最后由登录访问、租户、权限或最终过滤器决定是否放行。如果只 mock active token，不 mock 权限定义，很容易把 `AUTH_END_DENIED` 误判为 introspection 失败。
+
+有效方案：
+
+- 本机 mock 同时提供 OAuth 2.0 introspection、IAM 权限定义查询和下游业务响应。
+- introspection 响应中的用户信息顶层键名必须是 `userInfo`，与 `SecurityConstant.Auth2.INFO_KEY_USER_INFO` 一致。
+- 用户扩展字段使用 `SecurityConstant.UserProp` 约定的键名，例如 `userId`、`nickName`、`roles`、`permissions`。
+- 本地 simple discovery 可把 `fist-iam` 指向本机 mock，只用于首轮可控验证。
+- 权限定义返回匹配路径后，再验证 active token 是否能进入下游。
+
+验证证据：
+
+- 使用 `user_info` 时，active token 已触发 introspection，但 Gateway 日志为 `USER_IP_DENIED(51), details: No user info`。
+- 改为 `userInfo` 后，active token 的拒绝原因变为 `AUTH_END_DENIED`，说明用户信息已经提取成功。
+- 补充本机权限定义查询后，missing token 返回 `HTTP 403` 且不触发 introspection，inactive token 返回 `HTTP 403` 且触发 introspection，active token 返回 `HTTP 200` 并完成权限定义查询、introspection 调用和下游转发。
+
+后续复用规则：
+
+- Gateway introspection 验证至少区分三类请求：无 token、inactive token、active token。
+- active token 验证需要同时观察 mock 事件和 Gateway 拒绝原因，避免只看状态码。
+- 本机 mock 验证通过后，再单独验证真实 OAuth 2.0 授权服务、真实 IAM 权限定义和 Nacos Discovery。
+- Nacos Config 不作为首轮依赖；服务发现验证应作为独立批次打开。
+
 ## 经验 53：Gateway 多路由配置可先做启动级验证
 
 记录日期：2026-05-18；记录者：Codex。

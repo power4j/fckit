@@ -2593,3 +2593,42 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway -am "-P!config-nacos" -DskipTests te
 - 本轮只验证 `.env.local` Redis 变量名到 `spring.data.redis.*` 的映射、Redis cache 自动配置和启动。
 - Redisson 在 Boot 4 下仍未启用。
 - Redis 分布式限流仍未验证；当前请求限流继续使用 Bucket4j + Caffeine。
+
+## 真实内部项目 fist-gateway OAuth 2.0 introspection 本机 mock 验证
+
+记录日期：2026-05-19；记录者：Codex。
+
+在 Gateway 本地启动、请求转发、限流和 Redis cache 映射验证通过后，继续验证 Gateway ACL 的 OAuth 2.0 introspection 请求级行为。本轮只使用 `temp/config/fist-cloud/fist-gateway/` 下的本地运行时配置和本机 mock 服务，不连接真实 OAuth 2.0 授权服务、真实 IAM、Nacos、数据库或 Redis。
+
+验证输入：
+
+- `fist-gateway` 使用 `spring-boot:run` 启动，profile 为 `boot4-local`，业务端口为 `19080`，管理端口为 `19081`。
+- 本机 mock 服务监听 `127.0.0.1:19091`。
+- mock 同时提供 OAuth 2.0 introspection、IAM 权限定义查询和下游业务响应。
+- 本地 simple discovery 将 `fist-iam` 指向本机 mock，用于权限定义查询。
+- 请求路径为 `/fiamc/boot4-introspection-check`。
+
+排障记录：
+
+- 首轮 active token 已触发 introspection，但返回 `HTTP 403`。
+- Gateway 日志显示 `USER_IP_DENIED(51), details: No user info`。
+- 根因是 mock 使用了 `user_info`，而 FIST Kit v4 `SecurityConstant.Auth2.INFO_KEY_USER_INFO` 要求字段名为 `userInfo`。
+- 用户扩展字段也需要使用 FIST `SecurityConstant.UserProp` 约定的键名，例如 `userId`、`nickName`、`roles`、`permissions`。
+- 修正用户信息键名后，active token 的拒绝原因变为 `AUTH_END_DENIED`，说明用户信息已提取成功，但没有匹配的权限定义时仍会被 `AuthEndFilter` 默认拒绝。
+
+验证结果：
+
+- missing token 请求返回 `HTTP 403`，mock 未记录 introspection 调用。
+- inactive token 请求返回 `HTTP 403`，mock 记录 introspection 调用。
+- active token 请求返回 `HTTP 200`，mock 记录权限定义查询、introspection 调用和下游转发。
+- active token 响应体来自本机 mock 下游，路径为 `/fiamc/boot4-introspection-check`。
+
+结论：
+
+- Boot 4 下 `fist-gateway` 可以完成 Gateway ACL introspection 调用、`userInfo` 用户信息提取、登录可访问权限定义匹配和下游转发。
+- Gateway ACL 放行不仅依赖 active token，还依赖权限定义服务返回匹配路径。缺少权限定义时，即使用户信息提取成功，也会被最终过滤器拒绝。
+
+边界：
+
+- 本轮不代表真实授权服务、真实 IAM、Nacos Discovery 或真实下游服务已经通过。
+- Nacos Config 仍不作为首轮启动依赖；后续如需服务发现，应单独打开 Nacos Discovery 并使用真实或可控服务实例验证。
