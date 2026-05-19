@@ -2680,3 +2680,47 @@ cmd /c mvn -nsu -pl fist-cloud/fist-gateway "-P!config-nacos" -DskipTests "-Dspr
 - 当前本地实现只覆盖 standalone Redis 的 host / port / database。
 - 若后续真实配置需要密码、TLS、Sentinel 或 Cluster，需要扩展本地 Redis 连接参数绑定。
 - 运行时限流参数修改只放在 `temp/config/fist-cloud/fist-gateway/` 下的临时配置，不回写配置模板。
+
+## 真实内部项目 Druid Boot 4 依赖策略验证
+
+记录日期：2026-05-19；记录者：Codex。
+
+`fist-auth-v3` 与 `fist-iam` 早期 Boot 4 启动验证通过命令行或本地 profile 临时排除了 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure`。本轮将该临时隔离收敛为明确依赖策略。
+
+证据：
+
+- 两个应用 POM 直接声明 `com.alibaba:druid-spring-boot-3-starter`。
+- Druid Context7 文档 `/alibaba/druid` 显示仓库已有 Boot 4 starter 文档，但 `druid-spring-boot-4-starter:1.2.24` 和 `1.2.27` 当前无法从公开 Maven 仓库解析。
+- `com.alibaba:druid-spring-boot-starter:1.2.27` 可解析。
+
+落地变更：
+
+- 父 POM `druid.version` 从 `1.2.24` 升级到 `1.2.27`。
+- 父 POM dependency management 将 Druid starter 坐标改为 `druid-spring-boot-starter`。
+- `fist-auth-v3` 和 `fist-iam` 直接依赖同步改为 `druid-spring-boot-starter`。
+- `fist-iam` 的 `application-boot4-local.yml` 删除 Druid Boot 3 自动配置排除项。
+
+验证命令：
+
+```powershell
+cmd /c mvn -nsu org.apache.maven.plugins:maven-dependency-plugin:3.9.0:get "-Dartifact=com.alibaba:druid-spring-boot-starter:1.2.27" "-Dtransitive=false"
+cmd /c mvn -nsu -pl fist-cloud/fist-auth-v3,fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests dependency:tree "-Dincludes=com.alibaba:druid*"
+cmd /c mvn -nsu -pl fist-cloud/fist-auth-v3,fist-cloud/fist-iam -am "-P!config-nacos" -DskipTests test-compile
+cmd /c mvn -nsu -pl fist-cloud/fist-iam "-P!config-nacos" -DskipTests "-Dspring-boot.run.useTestClasspath=true" "-Dspring-boot.run.profiles=boot4-local" "-Dspring-boot.run.arguments=--spring.main.banner-mode=off" "-Dspring-boot.start.maxAttempts=180" spring-boot:start spring-boot:stop
+```
+
+`fist-auth-v3` 启动验证使用 `test` profile、test classpath、随机端口、关闭 Nacos 相关自动配置和服务注册；命令行只保留 Nacos 排除项，不再排除 Druid Boot 3 自动配置类。
+
+验证结果：
+
+- `druid-spring-boot-starter:1.2.27` artifact 可解析。
+- 依赖树确认 `fist-auth-v3` 和 `fist-iam` 均解析到 `druid-spring-boot-starter:1.2.27` 与 `druid:1.2.27`，不再解析 `druid-spring-boot-3-starter`。
+- `fist-auth-v3,fist-iam -am test-compile` 为 `BUILD SUCCESS`。
+- `fist-iam` 在 `boot4-local` profile 下启动 / 停止为 `BUILD SUCCESS`，本地 H2 路径使用 Hikari。
+- `fist-auth-v3` 在 `test` profile 下启动 / 停止为 `BUILD SUCCESS`，本地 H2 路径使用 Hikari。
+
+边界：
+
+- 本轮只验证本地 H2 启动路径和依赖坐标，不代表真实数据库连接池参数已经完成生产式验证。
+- `druid-spring-boot-4-starter` 文档存在但 artifact 当前未解析成功，后续如果发布到可用仓库，可再评估是否切换。
+- Spring Boot Maven Plugin 启动验证应串行执行，避免默认 JMX 端口 `9001` 冲突。

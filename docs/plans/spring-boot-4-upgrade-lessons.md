@@ -2006,3 +2006,33 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 - Redisson starter 需要等 Boot 4 兼容性明确后再单独验证；当前不作为 Gateway Redis 限流依赖。
 - 当前实现只覆盖 standalone Redis 的 host / port / database。若真实配置需要密码、TLS、Sentinel 或 Cluster，应先扩展连接参数绑定并单独验证。
 - 限流参数仍在 `temp/config/fist-cloud/fist-gateway/` 下按运行时配置调整，不直接回写配置模板。
+
+## 经验 60：Druid Boot 4 迁移要以可解析坐标为准
+
+记录日期：2026-05-19；记录者：Codex。
+
+问题：
+
+内部项目 `fist-auth-v3` 与 `fist-iam` 直接依赖 `druid-spring-boot-3-starter:1.2.24`。早期 Boot 4 启动验证通过排除 `com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure` 隔离旧自动配置类，但这种排除只能作为诊断手段，不能长期保留。
+
+有效方案：
+
+- 先用依赖树确认 Druid starter 是应用直接依赖，而不是传递依赖。
+- 使用 Context7 `/alibaba/druid` 查询当前 Druid 文档，再用 Maven artifact 解析验证可用坐标。
+- 文档中虽然存在 `druid-spring-boot-4-starter` 说明，但 `1.2.24` 和 `1.2.27` 当前无法从公开 Maven 仓库解析；本轮不采用未解析成功的坐标。
+- 将应用依赖切换到已发布的 `druid-spring-boot-starter:1.2.27`，并删除 `boot4-local` profile 中对 Boot 3 Druid 自动配置类的排除。
+
+验证证据：
+
+- `druid-spring-boot-starter:1.2.27` 可解析。
+- `fist-auth-v3` 和 `fist-iam` 依赖树均解析到 `druid-spring-boot-starter:1.2.27` 与 `druid:1.2.27`。
+- 两个模块组合 `test-compile` 为 `BUILD SUCCESS`。
+- `fist-iam` 使用 `boot4-local`、H2 和 Hikari 完成启动 / 停止。
+- `fist-auth-v3` 使用 `test` profile、H2 和 Hikari 完成启动 / 停止。
+
+后续复用规则：
+
+- 依赖迁移不能只按文档目录或源码仓库模块名判断，必须用当前 Maven 仓库可解析 artifact 复核。
+- 临时 `spring.autoconfigure.exclude` 可用于隔离问题，但一旦确认新坐标可用，应删除旧自动配置类排除项。
+- Spring Boot Maven Plugin 启动验证不要并行运行多个应用，除非显式拆分 JMX 端口；默认 `9001` 端口会冲突。
+- 本地 H2 启动验证如依赖 `src/test/resources`，需要显式设置 `spring-boot.run.useTestClasspath=true`。
