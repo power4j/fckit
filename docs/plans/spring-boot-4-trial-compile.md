@@ -2825,3 +2825,31 @@ cmd /c mvn -nsu -pl pac-cloud/demo-order "-P!config-nacos" -DskipTests "-Dspring
 
 - `boot4-local` profile 负责稳定隔离项，`temp/config/<domain>/<service>/` 负责易变运行时输入，二者职责已在当前几个核心服务间对齐。
 - 配置模板继续只作为模板使用；标准流程仍是复制到 `temp/config/...`、按需修改、执行验证、必要时再回写模板。
+
+## 真实内部项目 gateway -> demo-order -> mock fist-iam 组合链路验证
+
+记录日期：2026-05-20；记录者：Codex。
+
+在 `demo-order -> mock fist-iam` 单服务请求链路验证通过后，继续验证真实内部项目中的组合链路：`gateway -> demo-order -> mock fist-iam`。本轮仍只使用本机临时配置和本机 mock，不连接真实 IAM、真实 Redis、真实 Nacos 或真实下游服务。
+
+本地运行时配置：
+
+- `temp/config/fist-cloud/fist-gateway/fist-gateway.yml` 增加 `/demo/v1/** -> http://127.0.0.1:50013` 路由。
+- `temp/config/fist-cloud/fist-gateway/fist-gateway.yml` 将 `/demo/v1/**` 加入本地授权跳过列表。
+- `temp/config/pac-cloud/demo-order/application.yml` 使用 simple discovery 将 `fist-iam` 指向 `http://127.0.0.1:19091`。
+
+验证结果：
+
+- 组合验证结果文件 `temp/combo-result.txt` 记录：
+  - `READY=TRUE`
+  - `STATUS=200`
+  - 返回体：`{"code":"00000","data":[{"serviceName":"fist-iam","method":"GET","path":"/demo/v1/test/m1"}],"message":"success","metaInfo":null}`
+- 该结果说明请求已经按以下链路执行：
+  - `gateway /demo/v1/test/m1`
+  - 转发到 `demo-order /demo/v1/test/m1`
+  - `demo-order` 再通过 Feign + simple discovery 调用本机 mock `fist-iam`
+
+调试结论：
+
+- 首次组合验证并不是应用未启动，而是把 `gateway` 的 `/actuator/health` 是否返回 200 当成就绪条件。由于本地 Redis 未启动，gateway 的 Redis health 会返回非 200，导致脚本误判 gateway 未就绪。
+- 改为基于 TCP 端口 `19080/19081/50013/50014` 的就绪判定后，组合链路验证通过。

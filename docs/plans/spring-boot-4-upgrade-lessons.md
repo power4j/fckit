@@ -2127,3 +2127,36 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 - 配置模板只作为模板；先复制到 `temp/config/<domain>/<service>/`，修改运行时配置并完成验证，必要时再回写模板。
 - 各服务本地启动 profile 应保持一致的运行时配置入口，避免每个模块重复维护单独的临时导入策略。
 - 启动级验证优先串行执行；只有确实需要并发时，才单独拆分 JMX 端口。
+
+## 经验 64：组合链路验证的就绪探针不要直接绑死在 `/actuator/health` 200
+
+记录日期：2026-05-20；记录者：Codex。
+
+问题：
+
+在 `gateway -> demo-order -> mock fist-iam` 的本地组合验证中，gateway 实际已经启动，但脚本仍误判为“未就绪”。如果直接把 `/actuator/health` 返回 200 当成唯一条件，会把不相关的 health contributor 失败误判成应用未启动。
+
+根因：
+
+- 本地组合验证没有启动 Redis。
+- gateway 的 Redis health contributor 仍然运行。
+- 因此 `/actuator/health` 返回非 200，脚本错误地把 gateway 判为未就绪。
+
+有效方案：
+
+- 组合验证优先使用 TCP 端口就绪判定，例如 `19080/19081/50013/50014`。
+- 如果必须用 actuator health，应先确认本轮不需要的 health contributor 已关闭。
+- 将“应用是否监听端口”和“依赖是否全部健康”分开判断，不混为一个条件。
+
+验证证据：
+
+- 修正为 TCP 端口就绪判定后，`gateway -> demo-order -> mock fist-iam` 组合链路验证通过。
+- 结果文件 `temp/combo-result.txt` 记录：
+  - `READY=TRUE`
+  - `STATUS=200`
+  - 返回体包含 `serviceName=fist-iam`、`method=GET`、`path=/demo/v1/test/m1`
+
+后续复用规则：
+
+- 本地组合验证的第一层条件是端口就绪，不是 health 全绿。
+- health 用于分析依赖状态，不用于替代最基本的进程可达性判断。
