@@ -2160,3 +2160,33 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 
 - 本地组合验证的第一层条件是端口就绪，不是 health 全绿。
 - health 用于分析依赖状态，不用于替代最基本的进程可达性判断。
+
+## 经验 65：真实服务链路先用 public path 接通，再逐层引入鉴权变量
+
+记录日期：2026-05-20；记录者：Codex。
+
+问题：
+
+如果一开始就用 gateway 去打真实 `fist-auth-v3` / `fist-iam` 的 OAuth2、introspection、权限定义或 Redis 限流路径，变量会同时叠加，难以判断究竟是路由、服务启动、权限过滤还是下游依赖出的问题。
+
+有效方案：
+
+- 先选择真实服务中对数据依赖最小、鉴权最少的 public path。
+- 对 auth 选择 `/fauth/v1/ext/providers`。
+- 对 iam 选择 `/fiamc/v1/cli/test/pub-access`。
+- 在 gateway 的本地临时配置中只补最小路由和最小跳过列表，先确认真实服务已经接通。
+
+验证证据：
+
+- `/fauth/v1/ext/providers` 经 gateway 转发后返回 `HTTP 200`，返回体为 `{"code":"00000","data":[],"message":null,"metaInfo":null}`。
+- `/fiamc/v1/cli/test/pub-access` 经 gateway 转发后，单独重跑验证返回 `HTTP 200`。
+
+后续复用规则：
+
+- gateway 对真实 auth/iam 的本地验证顺序应为：
+  1. public path 可达
+  2. 业务 public path 或 simple discovery
+  3. token / introspection
+  4. 权限定义
+  5. Redis / 其他外部依赖
+- 不要在第一步就把所有变量同时打开。

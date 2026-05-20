@@ -2853,3 +2853,32 @@ cmd /c mvn -nsu -pl pac-cloud/demo-order "-P!config-nacos" -DskipTests "-Dspring
 
 - 首次组合验证并不是应用未启动，而是把 `gateway` 的 `/actuator/health` 是否返回 200 当成就绪条件。由于本地 Redis 未启动，gateway 的 Redis health 会返回非 200，导致脚本误判 gateway 未就绪。
 - 改为基于 TCP 端口 `19080/19081/50013/50014` 的就绪判定后，组合链路验证通过。
+
+## 真实内部项目 gateway -> real fist-auth-v3 / real fist-iam public path 验证
+
+记录日期：2026-05-20；记录者：Codex。
+
+在 mock 级最小链路验证通过后，继续将 gateway 接到真实的 `fist-auth-v3` 和 `fist-iam` 本地 `boot4-local` 实例。当前目标不是 OAuth2 全链路，而是先确认 gateway 能稳定转发到真实 auth/iam 的 public path。
+
+本地运行时配置：
+
+- `temp/config/fist-cloud/fist-gateway/fist-gateway.yml`
+  - `/fauth/** -> http://127.0.0.1:28043`
+  - `/fiamc/** -> http://127.0.0.1:28093`
+  - 本地跳过列表增加：
+    - `/fauth/v1/ext/providers`
+    - `/fiamc/v1/cli/test/pub-access`
+- 为避免本地验证被历史限流配置干扰，本轮从 `temp/config/fist-cloud/fist-gateway/fist-gateway.yml` 移除 `RequestRateLimiter` 默认过滤器。
+
+验证结果：
+
+- `gateway -> real fist-auth-v3 /fauth/v1/ext/providers`
+  - 返回 `HTTP 200`
+  - 返回体：`{"code":"00000","data":[],"message":null,"metaInfo":null}`
+- `gateway -> real fist-iam /fiamc/v1/cli/test/pub-access`
+  - 单独重跑后返回 `HTTP 200`
+
+调试结论：
+
+- 真实服务组合验证前，需要先清理 `19080/19081/28043/28044/28093/28094` 的残留监听进程。
+- 如果直接串联多条请求，本地临时过滤器或残留状态可能干扰结果；按路径逐条隔离验证更容易快速确认真实服务是否已接通。
