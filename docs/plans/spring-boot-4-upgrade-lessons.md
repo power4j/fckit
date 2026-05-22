@@ -2225,3 +2225,34 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 - 修复前：`fist-iam /v1/sys/client/detail/fist-ipc` 返回 `authorizedGrantTypes = null`
 - 修复后：同一路径返回 `authorizedGrantTypes` / `scope` / `autoApprovalScopes` / `resources` 的非空集合
 - `fist-auth-v3 /oauth2/introspect` 对 fake token 探针返回 `HTTP 200` 和 `{\"active\":false}`
+
+## 经验 67：先用 inactive token 验证 gateway 是否已接入真实 introspection
+
+记录日期：2026-05-22；记录者：Codex。
+
+问题：
+
+在把 gateway 切到真实 `fist-auth-v3 /oauth2/introspect` 时，若直接追 active token + 权限定义链路，变量仍然过多，不容易判断 gateway 到底有没有真正命中真实 auth。
+
+有效方案：
+
+- 先用 fake bearer token 请求一个不在 skip 列表里的受保护路径。
+- 只要 gateway 日志中出现真实 auth 返回的：
+  - `Provided token isn't active`
+- 同时最终响应为 `HTTP 403`，就足以证明 gateway 已经进入真实 introspection 链路。
+
+验证证据：
+
+- 请求：
+  - `GET /fiamc/v1/sys/client/detail/fist-ipc`
+  - Header: `Authorization: Bearer fake-token`
+- 响应：
+  - `HTTP 403`
+- gateway 日志：
+  - `Token introspect error ... Provided token isn't active`
+  - `[Denied] -> GET /fiamc/v1/sys/client/detail/fist-ipc, reason = USER_IP_DENIED(51), details: No user info`
+
+后续复用规则：
+
+- 验证 gateway 是否已接到真实 auth 时，先用 inactive token 做最小探针。
+- inactive token 过关后，再引入 active token、permission-definition 和下游业务路径。

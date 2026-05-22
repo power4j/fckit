@@ -2914,3 +2914,34 @@ cmd /c mvn -nsu -pl pac-cloud/demo-order "-P!config-nacos" -DskipTests "-Dspring
 - `fist-auth-v3 /oauth2/introspect` 使用 `fist-ipc` 对 fake token 探针返回：
   - `HTTP 200`
   - `{\"active\":false}`
+
+## 真实内部项目 gateway -> real auth introspection 最小探针
+
+记录日期：2026-05-22；记录者：Codex。
+
+在真实数据库路线上，继续把 gateway 接到真实 `fist-auth-v3 /oauth2/introspect`。本轮不要求 active token，只验证：
+
+- gateway 的 introspection client 指向真实 auth 本地实例
+- fake bearer token 会被真实 auth 判定为 inactive
+- gateway 最终返回受控拒绝，而不是因为网络、路由或 client detail 失败
+
+本地运行时配置：
+
+- `temp/config/fist-cloud/fist-gateway/fist-gateway.yml`
+  - `/fauth/** -> http://127.0.0.1:28041`
+  - `/fiamc/** -> http://127.0.0.1:28091`
+  - introspection client 使用真实可用的 `fist-ipc`
+
+验证结果：
+
+- 使用 fake bearer token 请求：
+  - `GET /fiamc/v1/sys/client/detail/fist-ipc`
+- gateway 返回 `HTTP 403`
+- gateway 日志明确记录：
+  - `Provided token isn't active`
+  - `reason = USER_IP_DENIED(51), details: No user info`
+
+结论：
+
+- gateway 已经走到真实 `fist-auth-v3 /oauth2/introspect`
+- fake token 被真实 auth 判定为 inactive，最小 real auth introspection 组合链路成立
