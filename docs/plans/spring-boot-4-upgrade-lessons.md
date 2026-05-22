@@ -2357,3 +2357,54 @@ FIST Kit 的 Jackson 增强支持通过 `JacksonCustomizeProperties` 提供开�
 - 真实 gateway 鉴权链路验证时，必须把 introspection 和 permission-definition 当作两条独立链路排查。
 - 本地 `temp/config` 里的静态路由、simple discovery 实例名和 IAM 权限定义中的 `serviceName` 必须保持一致。
 - 看到 `AUTH_END_DENIED` 时，先查 gateway 是否先报过 `Load permission definition error`，不要直接判断为 token 权限不足。
+
+## 经验 71：用户信息 JSON 契约要按消费方对照 Boot3 / Boot4 响应，不要只看导出实现
+
+记录日期：2026-05-23；记录者：Codex。
+
+问题：
+
+`fist-auth-v3` 的 `UserInfoExporter` 同时影响 Web 登录响应、OAuth2 introspection 响应和 gateway 用户信息提取。如果只盯 `props.put(...)` 的实现细节，很容易把“字段新增”“字段覆盖”“值类型变化”和“消费方真实依赖”混在一起，无法判断哪些改动是必要的。
+
+错误尝试或风险：
+
+- 只根据 `UserInfoExporter` 代码字面判断字段是否“新增”，容易忽略 `user.expose()` 已经写入的键。
+- 只根据 Jackson 类型问题推导结果，容易跳过真正的消费方代码，误把契约问题归因为纯序列化问题。
+- 不对照 Boot3 旧响应和 Boot4 当前响应，容易在运行时来回试错。
+
+有效方案：
+
+- 先识别已知消费方，再按消费方需要的字段做 Boot3 / Boot4 响应对照。
+- 当前已确认的消费方至少包括：
+  - Web 端登录 / introspection 响应消费
+  - gateway 通过 `Oauth2UserInfoExtractor` / `DefaultUserInfoExtractor` 提取 `userInfo`
+- gateway 真正依赖的是 `userInfo` 内部字段，而不是顶层 `user_id`：
+  - `userInfo.userId`
+  - `userInfo.username`
+  - `userInfo.permissions`
+  - `userInfo.roles`
+- 对 `full` 模式，先看 `userInfo` 的最终 JSON，而不是只看 `UserInfoExporter` 是否显式 `put` 某个键。
+
+验证证据：
+
+- Boot3 旧 Postman 响应显示：
+  - 顶层存在 `user_id`
+  - `userInfo` 中存在 `userId`
+  - `userInfo.permissions`、`userInfo.roles` 存在
+- Boot4 当前实测 password grant 响应显示：
+  - 顶层存在 `userInfo`
+  - `userInfo.user_id = "1"`
+  - `userInfo.userId = "1"`
+  - `userInfo.permissions`、`userInfo.roles` 存在
+- gateway 用户信息提取链路代码显示：
+  - `Oauth2UserInfoExtractor` 先读取顶层 `userInfo`
+  - `DefaultUserInfoExtractor` 再按 `SecurityConstant.UserProp.KEY_USER_ID` 读取 `userInfo.userId`
+- 对照验证显示：
+  - 只保留 `user_id` 字符串而不显式覆盖 `userInfo.userId` 时，token 可以签发，但 gateway 真实链路退化为 `No user info`
+  - 恢复对 `userInfo.userId` 的显式字符串覆盖后，gateway 真实链路恢复为 `HTTP 200`
+
+后续复用规则：
+
+- 讨论用户信息兼容性时，先列“消费方需要什么字段”，再看导出代码，不要反过来。
+- 对已上线历史系统，至少保留一份 Boot3 旧响应样本，作为 Boot4 契约对照基线。
+- 每次修改 `UserInfoExporter`、token customizer 或 introspection 解析逻辑后，都要复测一条真实 `password grant -> introspection -> gateway -> 业务接口` 链路。
