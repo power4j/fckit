@@ -2302,6 +2302,9 @@ Redisson `4.3.1` 中，`RBlockingQueue.subscribeOnElements(Consumer<V>)` 已废�
   - `/fauth/v1/ext/providers` 经 gateway 转发到 `fist-auth-v3` 返回 `HTTP 200`
   - `/fiamc/v1/cli/test/pub-access` 经 gateway 转发到 `fist-iam` 单独重跑后返回 `HTTP 200`
 - 对真实 auth/iam 的本地 gateway 验证，不需要一开始就引入 OAuth2 token、introspection、权限定义和 Redis 限流；先用 public path 确认真实服务可达，再逐层打开更复杂的鉴权变量，更符合 Boot 4 升级排障顺序。
+- `common/fist-iam-data` 中 `OauthClient` 的结果映射需要显式开启 `autoResultMap = true`。否则 `StringSetHandler` 不会在查询结果上生效，真实数据库中的 `authorized_grant_types`、`scope`、`auto_approval_scopes`、`resources` 会在 `fist-iam /v1/sys/client/detail/{clientId}` 响应中变成 `null`，并进一步导致 `fist-auth-v3 /oauth2/introspect` 在构造 `RegisteredClient` 时抛出 `authorizationGrantTypes cannot be empty`。
+- `fist-iam` 的 `boot4-local` 还需要显式本地 `CacheManager` 承载 `fist::oauth-client` 与 `fist::auth-perm-username`，否则 `OauthClientRepositoryImpl` 的 `@Cacheable` 会在首个 client detail 请求时报 `Cannot find cache named 'fist::oauth-client'`。
+- 修复上述两个问题后，真实数据库路线上 `fist-auth-v3 /oauth2/introspect` 对 fake token 探针已返回 `HTTP 200` 和 `{\"active\":false}`。
 - Logbook `3.9.0` 在 Boot 4 / Jackson 3 组合下仍要求 Jackson 2 `ObjectMapper`；内部项目已升级到 Logbook `4.0.4`。
 - `fist-iam` 主代码中的 `SysDataController`、`TrusfortHttpSyncClient`、`PermissionClient`、`SysDataManagerImpl`、`DataImportServiceImpl` 和 `MenuItemStreamHandler` 已迁移到 Jackson 3 `tools.jackson.*`。
 - Jackson 3 `JsonNode.properties()` 返回 Set；替换 Jackson 2 `JsonNode.fields()` 时需要同步调整迭代方式。

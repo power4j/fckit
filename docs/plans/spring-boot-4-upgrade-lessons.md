@@ -2190,3 +2190,38 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
   4. 权限定义
   5. Redis / 其他外部依赖
 - 不要在第一步就把所有变量同时打开。
+
+## 经验 66：真实数据库里有值，不代表 MyBatis Plus 查询结果 typeHandler 一定生效
+
+记录日期：2026-05-22；记录者：Codex。
+
+问题：
+
+真实数据库中 `fist-ipc.authorized_grant_types` 已有完整值，但 `fist-iam /v1/sys/client/detail/fist-ipc` 返回给 `fist-auth-v3` 的 JSON 仍然出现：
+
+- `authorizedGrantTypes = null`
+- `scope = null`
+- `autoApprovalScopes = null`
+- `resources = null`
+
+随后 `fist-auth-v3 /oauth2/introspect` 在构造 `RegisteredClient` 时抛出：
+
+- `authorizationGrantTypes cannot be empty`
+
+根因：
+
+- `OauthClient` 的集合字段使用了 `@TableField(typeHandler = StringSetHandler.class)`。
+- 但结果映射阶段没有启用 `@TableName(..., autoResultMap = true)`。
+- 结果是数据库列值真实存在，HTTP DTO 里仍然丢失。
+
+有效方案：
+
+- 在 `OauthClient` 上显式开启：
+  - `@TableName(value = "fiamc_oauth_client", autoResultMap = true)`
+- 保持原有 `StringSetHandler` 不变，无需额外改动真实数据库数据格式。
+
+验证证据：
+
+- 修复前：`fist-iam /v1/sys/client/detail/fist-ipc` 返回 `authorizedGrantTypes = null`
+- 修复后：同一路径返回 `authorizedGrantTypes` / `scope` / `autoApprovalScopes` / `resources` 的非空集合
+- `fist-auth-v3 /oauth2/introspect` 对 fake token 探针返回 `HTTP 200` 和 `{\"active\":false}`

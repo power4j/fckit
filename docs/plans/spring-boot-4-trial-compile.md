@@ -2882,3 +2882,35 @@ cmd /c mvn -nsu -pl pac-cloud/demo-order "-P!config-nacos" -DskipTests "-Dspring
 
 - 真实服务组合验证前，需要先清理 `19080/19081/28043/28044/28093/28094` 的残留监听进程。
 - 如果直接串联多条请求，本地临时过滤器或残留状态可能干扰结果；按路径逐条隔离验证更容易快速确认真实服务是否已接通。
+
+## 真实内部项目 real introspection 根因修复与最小探针通过
+
+记录日期：2026-05-22；记录者：Codex。
+
+在真实数据库路线上继续推进 `fist-auth-v3 /oauth2/introspect`。本轮不依赖真实用户 token，只要求：
+
+- `fist-iam` 能返回真实 `fist-ipc` 客户端详情
+- `fist-auth-v3` 能据此构造 `RegisteredClient`
+- 对 fake token 返回标准 introspection 结果
+
+问题定位：
+
+- 真实数据库中的 `fist-ipc.authorized_grant_types` 原始值存在，且非空。
+- 但 `fist-iam /fiamc/v1/sys/client/detail/fist-ipc` 返回 JSON 中，`authorizedGrantTypes`、`scope`、`autoApprovalScopes`、`resources` 全为 `null`。
+- `fist-auth-v3 /oauth2/introspect` 因此抛出：
+  - `authorizationGrantTypes cannot be empty`
+
+根因与修复：
+
+- `OauthClient` 实体依赖 `StringSetHandler` 映射集合字段。
+- 查询结果映射阶段需要显式开启 `autoResultMap = true`。
+- 将 `common/fist-iam-data` 中 `OauthClient` 改为：
+  - `@TableName(value = "fiamc_oauth_client", autoResultMap = true)`
+- 重新 install 本地 `fist-iam-data` artifact 后，`fist-iam` 返回的 client detail 中集合字段恢复正常。
+
+验证结果：
+
+- `fist-iam /fiamc/v1/sys/client/detail/fist-ipc` 返回 `HTTP 200`，且 `authorizedGrantTypes` / `scope` / `autoApprovalScopes` / `resources` 已恢复为非空集合。
+- `fist-auth-v3 /oauth2/introspect` 使用 `fist-ipc` 对 fake token 探针返回：
+  - `HTTP 200`
+  - `{\"active\":false}`
