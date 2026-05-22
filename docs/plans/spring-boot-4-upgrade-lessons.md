@@ -2256,3 +2256,104 @@ Gateway ACL 的 OAuth 2.0 introspection 不是只看 token 是否 active。过�
 
 - 验证 gateway 是否已接到真实 auth 时，先用 inactive token 做最小探针。
 - inactive token 过关后，再引入 active token、permission-definition 和下游业务路径。
+
+## 经验 68：JSON 与 MyBatis 的全局能力失效要先对照新旧版本，再判断是框架适配还是局部补丁断裂
+
+记录日期：2026-05-22；记录者：Codex。
+
+问题：
+
+升级 Boot 4 时，部分 JSON / MyBatis 行为看起来像“框架能力失效”，但实际可能是应用里存在序列化、反序列化或 typeHandler 的局部补丁路径；这些补丁在旧版本中形成了闭环，升级后因注册入口、自动配置顺序或手工创建对象的方式变化而断裂。
+
+错误尝试或风险：
+
+- 看到字段值异常后直接改表面症状，容易把应用侧历史补丁当成框架缺陷。
+- 只看新版本行为，不对照旧版本实现和旧闭环，容易误判责任边界。
+- 把临时探测性修改直接留在生产代码里，会让后续复盘失真。
+
+有效方案：
+
+- 先对照旧版本与新版本的配置入口、自动配置和对象创建路径，再判断问题归属。
+- 对 Jackson、MyBatis 这类全局能力，先确认“Spring 管理的链路”是否真的生效，再判断是否需要应用侧适配补齐。
+- 所有临时补丁、探测性改动、一次性兼容处理都必须记录到过程日志或经验文档，不能只留代码不留痕。
+
+验证证据：
+
+- Boot 4 下 `CommonConfiguration` 仍通过 `JacksonConfig` 组织全局 Jackson 定制。
+- 应用侧部分代码自行创建 `ObjectMapper` / `JsonMapper`，说明闭环断裂可能来自局部补丁路径，而非全局入口不存在。
+- `OauthClient` 的集合字段问题在真实数据库有值但查询结果仍为空时，最终通过 `autoResultMap = true` 还原映射闭环。
+
+后续复用规则：
+
+- 遇到同类问题时，先做新旧版本对照，再判断是否是全局能力失效。
+- 临时补丁必须记录来源、范围、目的和回收条件。
+- 未经确认的试探性修改不得长期停留在生产代码中。
+
+## 经验 69：FIST Jackson 全局 module 只适合作为默认约定，不能直接当跨服务协议
+
+记录日期：2026-05-22；记录者：Codex。
+
+问题：
+
+FIST Kit 的 Jackson 增强支持通过 `JacksonCustomizeProperties` 提供开关和可选模块，例如 `NumberToStr`、日期格式、时区与混淆支持。这类全局能力适合统一单服务内的默认 JSON 行为，但如果不同服务配置不同，跨服务 DTO、持久化 JSON 或缓存 JSON 就可能出现读写不一致。
+
+错误尝试或风险：
+
+- 默认假设所有服务都会启用完全相同的 Jackson 全局配置，容易在联调时遗漏协议差异。
+- 只依赖全局 module 约定而不固定边界字段行为，遇到 `excludeModules`、`simpleDateFormat`、`timeZoneId` 不一致时容易出现兼容问题。
+- 把“服务内默认 JSON 风格”与“跨服务协议字段约束”混为一类，会让问题定位扩大化。
+
+有效方案：
+
+- 将 FIST Jackson 全局 module 视为服务内默认约定，而不是跨服务协议本身。
+- 对跨服务 DTO、授权持久化 JSON、缓存值对象等边界数据，优先在字段或类型上显式固定序列化与反序列化行为。
+- 排查联调问题时，除检查代码外，还要对照相关服务的 Jackson 自定义配置是否一致。
+
+验证证据：
+
+- `JacksonCustomizeProperties` 支持 `enabled`、`excludeModules`、`simpleDateFormat`、`timeZoneId` 和 `obfuscatedSupport`。
+- `JacksonConfig` 会根据上述属性动态安装 `NumberStrModule`、`DateTimeModule` 与额外注解内省器，说明服务间 JSON 形态本身具备可配置差异。
+
+后续复用规则：
+
+- 跨服务协议字段不能只依赖全局 module 默认值。
+- 遇到跨服务 JSON 不一致时，先核对双方 Jackson 配置，再看代码实现。
+- 本轮升级优先记录并识别这类风险；非阻塞场景不扩展为全面 Jackson 技术债治理。
+
+## 经验 70：Gateway 真实鉴权链路中，introspection 直连成功不代表权限定义链路也已接通
+
+记录日期：2026-05-22；记录者：Codex。
+
+问题：
+
+本地 Boot 4 验证中，gateway 已能通过真实 `fist-auth-v3 /oauth2/introspect` 拿到 active user token 的用户信息，但访问需要用户权限的 IAM 路径时仍返回 `AUTH_END_DENIED`。表面看像 token 权限不足，实际还可能是 gateway 到 IAM 的权限定义加载链路没有接通。
+
+错误尝试或风险：
+
+- 只看到 introspection 返回 `active=true` 就认定整条鉴权链路已经打通，容易误判后续 `AUTH_END_DENIED` 都是权限数据问题。
+- 本地 gateway 路由 `id` 与 IAM 中登记的 `serviceName` 不一致时，gateway 传给权限定义服务的目标服务名会错。
+- 本地没有 Nacos Discovery 时，如果只给 gateway 配静态路由而不给 `spring.cloud.discovery.client.simple.instances`，基于服务名的权限定义查询仍会返回 `503`。
+
+有效方案：
+
+- 把真实鉴权链路拆成两段分别验证：
+  - introspection：确认 active token 可以拿回用户信息
+  - permission-definition：确认 gateway 能按目标服务名从 IAM 加载接口权限定义
+- 本地无服务发现时，为 gateway 显式配置 `spring.cloud.discovery.client.simple.instances.<service>`。
+- gateway 本地路由 `id` 需要与 IAM 权限定义中的 `serviceName` 保持一致；本轮将 IAM 路由 id 固定为 `fist-iam`。
+
+验证证据：
+
+- 修正前，gateway 日志出现：
+  - `No servers available for service: fist-iam`
+  - `503 SERVICE_UNAVAILABLE from GET http://fist-iam/fiamc/v1/sys/api-info/service/boot4-local-iam`
+  - 后续请求落为 `AUTH_END_DENIED`
+- 在本地运行时配置补齐 `simple discovery` 的 `fist-iam -> http://127.0.0.1:28091`，并将 IAM route id 改为 `fist-iam` 后：
+  - `GET /fiamc/v1/user/basic-info` 经 gateway + active user token 返回 `HTTP 200`
+  - `GET /fiamc/v1/sys/api-info/page` 经 gateway + active user token 返回 `HTTP 200`
+
+后续复用规则：
+
+- 真实 gateway 鉴权链路验证时，必须把 introspection 和 permission-definition 当作两条独立链路排查。
+- 本地 `temp/config` 里的静态路由、simple discovery 实例名和 IAM 权限定义中的 `serviceName` 必须保持一致。
+- 看到 `AUTH_END_DENIED` 时，先查 gateway 是否先报过 `Load permission definition error`，不要直接判断为 token 权限不足。
