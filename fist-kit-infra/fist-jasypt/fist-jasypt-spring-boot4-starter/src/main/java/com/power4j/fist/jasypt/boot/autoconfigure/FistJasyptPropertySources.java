@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import com.power4j.fist.jasypt.core.GmConfigCryptoException;
 import com.power4j.fist.jasypt.core.GmEncryptedValue;
 import org.jasypt.encryption.StringEncryptor;
 import org.jspecify.annotations.Nullable;
@@ -76,6 +77,10 @@ final class FistJasyptPropertySources {
 			}
 			try {
 				return this.environment.resolvePlaceholders(payload);
+			}
+			catch (RuntimeException ex) {
+				// 解析异常的消息和原因链可能包含配置值。
+				throw new GmConfigCryptoException("Failed to resolve GMENC payload placeholders");
 			}
 			finally {
 				active.remove(name);
