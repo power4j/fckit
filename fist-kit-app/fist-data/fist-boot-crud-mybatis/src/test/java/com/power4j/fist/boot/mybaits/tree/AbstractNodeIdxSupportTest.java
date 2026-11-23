@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,6 +45,9 @@ class AbstractNodeIdxSupportTest {
 
 	@Autowired
 	private OrgTreeService orgTreeService;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	void makeSingleRoot() {
 		// @formatter:off
@@ -162,6 +167,25 @@ class AbstractNodeIdxSupportTest {
 		Assertions.assertThrows(IllegalArgumentException.class, () -> orgTreeService.moveSubtree(20L, 2011L));
 
 		Assertions.assertEquals(before, paths(orgTreeService.getAll(null, null)));
+	}
+
+	@Test
+	void moveSubtreeRestoresOldPathsWhenDatabaseRejectsNewPath() {
+		makeSingleRoot();
+		List<String> before = paths(orgTreeService.getAll(null, null));
+
+		jdbcTemplate
+			.execute("ALTER TABLE org_idx ADD CONSTRAINT reject_moved_path CHECK (ancestor <> 10 OR descendant <> 20)");
+		try {
+			DataIntegrityViolationException exception = Assertions.assertThrows(DataIntegrityViolationException.class,
+					() -> orgTreeService.moveSubtree(20L, 10L));
+
+			Assertions.assertTrue(exception.getMostSpecificCause().getMessage().contains("REJECT_MOVED_PATH"));
+			Assertions.assertEquals(before, paths(orgTreeService.getAll(null, null)));
+		}
+		finally {
+			jdbcTemplate.execute("ALTER TABLE org_idx DROP CONSTRAINT reject_moved_path");
+		}
 	}
 
 	private void assertPaths(List<OrgIdx> indexes, String... expected) {
