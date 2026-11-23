@@ -45,9 +45,9 @@ class InnerSecurityConfigurationImportsTest {
 			assertThat(context).hasSingleBean(PasswordEncoder.class);
 			assertThat(context).hasSingleBean(UserDecoder.class);
 			assertThat(context).hasSingleBean(UserInfoSupplier.class);
-			assertThat(context).getBeans(TraceInfoResolver.class).hasSize(1);
+			assertThat(context).doesNotHaveBean(TraceInfoResolver.class);
 			assertThat(context).hasBean("tenantContextFilter");
-			assertThat(context).hasBean("headerMdcFilter");
+			assertThat(context).doesNotHaveBean("headerMdcFilter");
 			assertThat(context).hasBean("trustedUserFilter");
 		});
 	}

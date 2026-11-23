@@ -65,9 +65,9 @@ class WebDataSecurityExampleApplicationTest {
 		assertThat(this.applicationContext.getBeansOfType(PasswordEncoder.class)).hasSize(1);
 		assertThat(this.applicationContext.getBeansOfType(UserDecoder.class)).hasSize(1);
 		assertThat(this.applicationContext.getBeansOfType(UserInfoSupplier.class)).hasSize(1);
-		assertThat(this.applicationContext.getBeansOfType(TraceInfoResolver.class)).hasSize(1);
+		assertThat(this.applicationContext.getBeansOfType(TraceInfoResolver.class)).isEmpty();
 		assertThat(this.applicationContext.containsBean("tenantContextFilter")).isTrue();
-		assertThat(this.applicationContext.containsBean("headerMdcFilter")).isTrue();
+		assertThat(this.applicationContext.containsBean("headerMdcFilter")).isFalse();
 		assertThat(this.applicationContext.containsBean("trustedUserFilter")).isTrue();
 	}
 
