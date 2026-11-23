@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Objects;
@@ -46,11 +45,12 @@ public class Oauth2Configuration {
 		final Oauth2ResourceServerProperties.OpaqueTokenConfig config = resourceServerProperties.getOpaqueToken();
 		Objects.requireNonNull(config);
 
-		URI uri = URI.create(config.getIntrospectionUri());
+		String uri = config.getIntrospectionUri();
+		String scheme = URI.create(uri).getScheme();
 		WebClient client;
-		if (LB_SCHEME.equalsIgnoreCase(uri.getScheme())) {
+		if (LB_SCHEME.equalsIgnoreCase(scheme)) {
 			log.info("Use load-balanced client for: {}", uri);
-			uri = UriComponentsBuilder.fromUri(uri).scheme("http").build(true).toUri();
+			uri = "http" + uri.substring(scheme.length());
 			client = lbWebClientBuilder()
 				.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret()))
 				.build();
@@ -60,8 +60,8 @@ public class Oauth2Configuration {
 				.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret()))
 				.build();
 		}
-		ReactiveOpaqueTokenIntrospector opaqueTokenIntrospector = new DefaultReactiveOpaqueTokenIntrospector(
-				uri.toString(), client);
+		ReactiveOpaqueTokenIntrospector opaqueTokenIntrospector = new DefaultReactiveOpaqueTokenIntrospector(uri,
+				client);
 		return new UserIntrospectClient(opaqueTokenIntrospector);
 	}
 

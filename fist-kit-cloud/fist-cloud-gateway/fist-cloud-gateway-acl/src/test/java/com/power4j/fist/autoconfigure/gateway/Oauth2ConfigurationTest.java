@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class Oauth2ConfigurationTest {
 
+	private static final String ENCODED_TARGET = "/oauth2/%69ntrospect?scope=a%2Fb%20c&part=%252F";
+
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(Oauth2Configuration.class));
 
@@ -49,15 +51,20 @@ class Oauth2ConfigurationTest {
 
 	@Test
 	void shouldSendLoadBalancedIntrospectionToDiscoveredInstanceWithOriginalEncoding() throws IOException {
-		assertIntrospectionRequest(true);
+		assertIntrospectionRequest(true, ENCODED_TARGET);
+	}
+
+	@Test
+	void shouldSendLoadBalancedIntrospectionWithEqualsInQueryValue() throws IOException {
+		assertIntrospectionRequest(true, "/oauth2/introspect?x=a=b");
 	}
 
 	@Test
 	void shouldSendDirectIntrospectionWithOriginalEncoding() throws IOException {
-		assertIntrospectionRequest(false);
+		assertIntrospectionRequest(false, ENCODED_TARGET);
 	}
 
-	private void assertIntrospectionRequest(boolean loadBalanced) throws IOException {
+	private void assertIntrospectionRequest(boolean loadBalanced, String target) throws IOException {
 		AtomicReference<IntrospectionRequest> received = new AtomicReference<>();
 		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 		server.createContext("/", (exchange) -> {
@@ -74,7 +81,6 @@ class Oauth2ConfigurationTest {
 		server.start();
 		try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
 			String instance = "http://127.0.0.1:" + server.getAddress().getPort();
-			String target = "/oauth2/%69ntrospect?scope=a%2Fb%20c&part=%252F";
 			String endpoint = (loadBalanced ? "lb://introspection-service" : instance) + target;
 			TestPropertyValues
 				.of("spring.cloud.discovery.client.simple.instances.introspection-service[0].uri=" + instance,
