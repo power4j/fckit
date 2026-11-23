@@ -39,6 +39,7 @@
     <module>fist-support-test</module>
     <module>fist-support-spring</module>
     <module>fist-sde</module>
+    <module>fist-jasypt</module>
     <module>fist-trace</module>
   </modules>
 </project>

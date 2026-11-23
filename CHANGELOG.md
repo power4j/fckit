@@ -8,6 +8,8 @@
 
 ### Added
 
+- 新增 `fist-jasypt-core` 和独立 Jasypt CLI，支持读取已有 `GMENC(...)` 配置密文。
+
 - 新增 `fist-trace-context-spring-boot4-starter`，支持 Servlet、WebFlux、Gateway 和 Feign 的请求追踪，并沿用 `fist.trace-context` 配置。
 
 - 新增 `examples/fist-web-data-security/example-servlet`，提供 Web、Data、Security、API Doc starter 在 Spring Boot 4 Servlet 应用中的组合启动示例。
