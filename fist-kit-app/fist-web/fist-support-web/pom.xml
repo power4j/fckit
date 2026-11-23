@@ -73,7 +73,7 @@
     <!-- optional -->
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-core-jakarta</artifactId>
+      <artifactId>swagger-core</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>

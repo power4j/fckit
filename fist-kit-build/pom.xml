@@ -148,11 +148,6 @@
         <version>${ez-captcha.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.swagger.core.v3</groupId>
-        <artifactId>swagger-core-jakarta</artifactId>
-        <version>${swagger3-api.version}</version>
-      </dependency>
-      <dependency>
         <groupId>io.springfox</groupId>
         <artifactId>springfox-oas</artifactId>
         <version>${springfox.version}</version>
@@ -241,11 +236,6 @@
         <groupId>org.junit-pioneer</groupId>
         <artifactId>junit-pioneer</artifactId>
         <version>${junit-pioneer.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.security</groupId>
-        <artifactId>spring-security-oauth2-authorization-server</artifactId>
-        <version>${spring.oauth2-authorization-server.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

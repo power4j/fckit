@@ -14,6 +14,7 @@
 ### Changed
 
 - 将 Spring Boot 和 Spring Cloud 构建矩阵升级到 `4.2.0` 和 `2026.0.0`。
+- OAuth2 Authorization Server 版本由 Spring Boot BOM 管理。API 文档升级到 Springdoc `3.2.1`，使用 Swagger Core 3 和 Jackson 3。
 - Spring Boot 4 升级中为 SDE RestClient/WebClient 适配 Spring HTTP Service Clients，支持通过 HTTP service 接口方法上的 `@SecureExchange` 传递请求级策略上下文。
 - Spring Boot 4 升级中适配 SDE boot starter 的 RestClient、WebClient、MockMvc 测试和 SDE 示例工程，Feign 示例迁移到 Spring Cloud OpenFeign 5 的 `FeignHttpMessageConverters`。
 - Spring Boot 4 升级中将 `fist-boot-crud-mybatis` 的 MyBatis Plus starter 切换为 `mybatis-plus-spring-boot4-starter`，测试依赖切换为 `mybatis-plus-spring-boot4-starter-test`。

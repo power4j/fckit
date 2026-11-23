@@ -88,10 +88,8 @@
     <mybatis-plus.version>3.5.16</mybatis-plus.version>
     <mapstruct.version>1.6.3</mapstruct.version>
     <springfox.version>3.0.0</springfox.version>
-    <swagger3-api.version>2.2.49</swagger3-api.version>
-    <springdoc-openapi.version>3.0.3</springdoc-openapi.version>
+    <springdoc-openapi.version>3.2.1</springdoc-openapi.version>
     <spring-boot-admin.version>4.0.4</spring-boot-admin.version>
-    <spring.oauth2-authorization-server.version>7.0.5</spring.oauth2-authorization-server.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <oauth2-oidc-sdk.version>11.37</oauth2-oidc-sdk.version>
     <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
