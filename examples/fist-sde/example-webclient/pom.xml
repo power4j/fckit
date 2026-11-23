@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.power4j.fist3</groupId>
+    <groupId>com.power4j.fist4</groupId>
     <artifactId>fist-sde-examples</artifactId>
     <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
@@ -15,15 +15,15 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
-      <artifactId>fist-sde-boot-starter</artifactId>
+      <groupId>com.power4j.fist4</groupId>
+      <artifactId>fist-sde-spring-boot4-starter</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-sde-client</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-sde-extra</artifactId>
     </dependency>
     <dependency>

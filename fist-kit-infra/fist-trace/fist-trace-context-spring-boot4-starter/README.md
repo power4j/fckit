@@ -8,7 +8,7 @@
 
 ```xml
 <dependency>
-  <groupId>com.power4j.fist3</groupId>
+  <groupId>com.power4j.fist4</groupId>
   <artifactId>fist-trace-context-spring-boot4-starter</artifactId>
 </dependency>
 ```

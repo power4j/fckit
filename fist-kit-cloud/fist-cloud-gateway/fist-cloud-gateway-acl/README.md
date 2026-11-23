@@ -15,7 +15,7 @@
       <artifactId>spring-cloud-starter-loadbalancer</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-kit-cloud-gateway-resource-server</artifactId>
     </dependency>
   </dependencies>

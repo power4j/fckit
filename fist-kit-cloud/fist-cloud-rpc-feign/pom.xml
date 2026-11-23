@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.power4j.fist3</groupId>
+    <groupId>com.power4j.fist4</groupId>
     <artifactId>fist-kit-cloud</artifactId>
     <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
@@ -31,15 +31,15 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-boot-web-app</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-cloud-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-trace-context</artifactId>
     </dependency>
     <dependency>
@@ -64,13 +64,13 @@
       <artifactId>spring-cloud-starter-loadbalancer</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-sde-core</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-sde-extra</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>

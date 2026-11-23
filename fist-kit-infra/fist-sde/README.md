@@ -9,7 +9,7 @@
 | `fist-sde-core` | 协议模型、策略模型、签名规范化、密钥、nonce、重放校验和异常契约 |
 | `fist-sde-extra` | AES-GCM、SM4-GCM、HMAC-SHA256、SM3、HMAC-SM3、随机 nonce、测试级内存重放校验和静态密钥解析 |
 | `fist-sde-web` | Spring MVC `RequestBodyAdvice` 和 `ResponseBodyAdvice` 集成 |
-| `fist-sde-boot-starter` | Spring Boot 3 自动配置入口 |
+| `fist-sde-spring-boot4-starter` | Spring Boot 4 自动配置入口 |
 
 ### 依赖引入
 
@@ -17,8 +17,8 @@
 
 ```xml
 <dependency>
-  <groupId>com.power4j.fist3</groupId>
-  <artifactId>fist-sde-boot-starter</artifactId>
+  <groupId>com.power4j.fist4</groupId>
+  <artifactId>fist-sde-spring-boot4-starter</artifactId>
 </dependency>
 ```
 
@@ -26,7 +26,7 @@ starter 不依赖 `fist-sde-extra`。如使用内置算法和测试级实现，�
 
 ```xml
 <dependency>
-  <groupId>com.power4j.fist3</groupId>
+  <groupId>com.power4j.fist4</groupId>
   <artifactId>fist-sde-extra</artifactId>
 </dependency>
 ```

@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.power4j.fist3</groupId>
+    <groupId>com.power4j.fist4</groupId>
     <artifactId>fist-security</artifactId>
     <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
@@ -36,7 +36,7 @@
       <artifactId>commons-codec</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-support-data</artifactId>
     </dependency>
     <dependency>
@@ -44,7 +44,7 @@
       <artifactId>jspecify</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-boot-web-app</artifactId>
       <scope>provided</scope>
     </dependency>

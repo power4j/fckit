@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.power4j.fist3</groupId>
+    <groupId>com.power4j.fist4</groupId>
     <artifactId>fist-oauth2-server-examples</artifactId>
     <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
@@ -15,11 +15,11 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-boot-security</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.power4j.fist3</groupId>
+      <groupId>com.power4j.fist4</groupId>
       <artifactId>fist-boot-security-oauth2-server</artifactId>
     </dependency>
     <dependency>

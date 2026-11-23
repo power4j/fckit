@@ -6,7 +6,7 @@
 
 1. Feign 接口方法使用 `@SecureExchange("body-strict-v1")` 标注策略。
 2. `SecureFeignEncoder` 读取 Feign 方法元数据，将原始 JSON Body 加密签名为 SDE request envelope。
-3. 服务端仍通过 `fist-sde-boot-starter` 的 Spring MVC `RequestBodyAdvice` 解密并交给 Controller POJO。
+3. 服务端仍通过 `fist-sde-spring-boot4-starter` 的 Spring MVC `RequestBodyAdvice` 解密并交给 Controller POJO。
 4. 服务端响应由 `ResponseBodyAdvice` 封装成 SDE response envelope。
 5. `SecureFeignDecoder` 验签、重放校验并解密响应，再交给调用方业务对象。
 

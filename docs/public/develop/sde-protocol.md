@@ -184,5 +184,5 @@ body = jsonDeserialize(plain)
 
 - 不支持 Query 加密和 Query 签名。
 - 不交付正式 Feign 生产代码；Feign 当前仅完成技术验证。
-- `fist-sde-boot-starter` 不自动引入 `fist-sde-extra` 的算法实现、测试级 `ReplayGuard` 或静态密钥解析器。
+- `fist-sde-spring-boot4-starter` 不自动引入 `fist-sde-extra` 的算法实现、测试级 `ReplayGuard` 或静态密钥解析器。
 - 生产应用必须显式提供 `CryptoHandler`、`SignatureHandler`、`SecureKeyResolver`、`NonceGenerator` 和适合生产环境的 `ReplayGuard`。

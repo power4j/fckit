@@ -1,6 +1,6 @@
-# fist-sde-boot-starter
+# fist-sde-spring-boot4-starter
 
-`fist-sde-boot-starter` 提供 SDE 服务端和客户端的 Spring Boot 3 自动配置。服务端基于 Spring MVC `RequestBodyAdvice` / `ResponseBodyAdvice`，客户端覆盖 Feign、RestClient 和 WebClient。
+`fist-sde-spring-boot4-starter` 提供 SDE 服务端和客户端的 Spring Boot 4 自动配置。服务端基于 Spring MVC `RequestBodyAdvice` / `ResponseBodyAdvice`，客户端覆盖 Feign、RestClient 和 WebClient。
 
 starter 只注册编排类和适配类，不隐式注册生产算法、静态密钥或测试级 replay guard。算法、密钥解析和重放校验需要由应用显式提供。
 
@@ -10,8 +10,8 @@ starter 只注册编排类和适配类，不隐式注册生产算法、静态密
 
 ```xml
 <dependency>
-  <groupId>com.power4j.fist3</groupId>
-  <artifactId>fist-sde-boot-starter</artifactId>
+  <groupId>com.power4j.fist4</groupId>
+  <artifactId>fist-sde-spring-boot4-starter</artifactId>
 </dependency>
 ```
 
@@ -19,7 +19,7 @@ starter 只注册编排类和适配类，不隐式注册生产算法、静态密
 
 ```xml
 <dependency>
-  <groupId>com.power4j.fist3</groupId>
+  <groupId>com.power4j.fist4</groupId>
   <artifactId>fist-sde-extra</artifactId>
 </dependency>
 ```

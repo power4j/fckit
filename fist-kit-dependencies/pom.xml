@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.power4j.fist3</groupId>
+    <groupId>com.power4j.fist4</groupId>
     <artifactId>fist-kit-parent</artifactId>
     <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
@@ -38,154 +38,154 @@
     <dependencies>
       <!-- fist kit -->
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-kit-api</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-support-spring</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-support-test</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-redisson</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-jackson</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-logback</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-mybatis-plus</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-sde-core</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-sde-extra</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-sde-client</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-sde-web</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
-        <artifactId>fist-sde-boot-starter</artifactId>
+        <groupId>com.power4j.fist4</groupId>
+        <artifactId>fist-sde-spring-boot4-starter</artifactId>
         <version>${revision}</version>
       </dependency>
       <!-- fist kits app -->
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-boot-apidoc</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-jasypt-core</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-jasypt-spring-boot4-starter</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-trace-context</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-trace-context-spring-boot4-starter</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-support-security</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-boot-security</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-boot-security-oauth2-server</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-support-web</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-boot-web-app</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-support-data</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-boot-data</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-boot-crud-mybatis</artifactId>
         <version>${revision}</version>
       </dependency>
       <!-- fist kits cloud -->
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-cloud-core</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-cloud-rpc-feign</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-gateway-auth-core</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-cloud-gateway-security-reactive</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
-        <groupId>com.power4j.fist3</groupId>
+        <groupId>com.power4j.fist4</groupId>
         <artifactId>fist-cloud-gateway-acl</artifactId>
         <version>${revision}</version>
       </dependency>

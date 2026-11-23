@@ -1,8 +1,8 @@
 # example-sde-server
 
-本示例演示 Spring MVC 服务端接入 `fist-sde-boot-starter` 后，如何使用原始 SDE envelope 请求验证服务端处理流程。该示例适合在开发自研 HTTP 客户端、网关适配器或其他非 SDK 客户端时作为本地测试服务端。
+本示例演示 Spring MVC 服务端接入 `fist-sde-spring-boot4-starter` 后，如何使用原始 SDE envelope 请求验证服务端处理流程。该示例适合在开发自研 HTTP 客户端、网关适配器或其他非 SDK 客户端时作为本地测试服务端。
 
-1. 显式引入 `fist-sde-boot-starter` 和 `fist-sde-client`。
+1. 显式引入 `fist-sde-spring-boot4-starter` 和 `fist-sde-client`。
 2. 如需使用内置演示算法，显式引入 `fist-sde-extra`。
 3. 在 `application.yml` 中开启 `fist.sde.enabled` 和 `fist.sde.web.enabled`。
 4. 配置 `body-strict-v1` 策略。

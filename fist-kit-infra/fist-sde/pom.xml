@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.power4j.fist3</groupId>
+    <groupId>com.power4j.fist4</groupId>
     <artifactId>fist-kit-infra</artifactId>
     <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
@@ -19,6 +19,6 @@
     <module>fist-sde-extra</module>
     <module>fist-sde-client</module>
     <module>fist-sde-web</module>
-    <module>fist-sde-boot-starter</module>
+    <module>fist-sde-spring-boot4-starter</module>
   </modules>
 </project>

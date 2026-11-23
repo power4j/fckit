@@ -4,7 +4,7 @@
 主密钥用于解密 `GMENC(...)` 配置，密文可以保存 HMAC 业务密钥。
 
 Spring Boot 4.2 应用通过 Kit BOM 管理 starter 版本。当前 reactor 使用
-`com.power4j.fist3:fist-jasypt-spring-boot4-starter`。应用初始化时，starter 解密 Spring
+`com.power4j.fist4:fist-jasypt-spring-boot4-starter`。应用初始化时，starter 解密 Spring
 属性源中的密文，支持 `Environment`、`@Value` 和 `@ConfigurationProperties` 读取。
 可以通过名为 `jasyptStringEncryptor` 的 `org.jasypt.encryption.StringEncryptor` bean
 定制加密器，也可用 `jasypt.encryptor.bean` 指定 bean 名称。
