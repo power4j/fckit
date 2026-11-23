@@ -210,6 +210,8 @@
               <updatePomFile>true</updatePomFile>
               <flattenMode>bom</flattenMode>
               <pomElements>
+                <parent>expand</parent>
+                <build>remove</build>
                 <properties>remove</properties>
                 <distributionManagement>remove</distributionManagement>
                 <dependencyManagement>resolve</dependencyManagement>

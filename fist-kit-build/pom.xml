@@ -264,6 +264,8 @@
               <flattenMode>oss</flattenMode>
               <embedBuildProfileDependencies>true</embedBuildProfileDependencies>
               <pomElements>
+                <build>remove</build>
+                <properties>remove</properties>
                 <parent>expand</parent>
                 <distributionManagement>remove</distributionManagement>
                 <repositories>remove</repositories>

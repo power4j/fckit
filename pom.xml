@@ -64,6 +64,7 @@
     <mapstruct.version>1.6.0</mapstruct.version>
     <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     <spring-javaformat.plugin.version>0.0.47</spring-javaformat.plugin.version>
+    <maven-enforcer-plugin.version>3.7.0</maven-enforcer-plugin.version>
     <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
@@ -112,6 +113,30 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>ban-fist-kit-v3</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <message>Fist Kit v4 cannot use com.power4j.fist3 dependencies.</message>
+                  <excludes>
+                    <exclude>com.power4j.fist3</exclude>
+                  </excludes>
+                  <searchTransitive>true</searchTransitive>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-maven-plugin</artifactId>
@@ -184,6 +209,9 @@
           <flattenMode>oss</flattenMode>
           <embedBuildProfileDependencies>true</embedBuildProfileDependencies>
           <pomElements>
+            <!-- The installed parent must retain its build rules. -->
+            <build>keep</build>
+            <properties>keep</properties>
             <distributionManagement>remove</distributionManagement>
             <repositories>remove</repositories>
           </pomElements>
@@ -209,6 +237,11 @@
 
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin.version}</version>
+        </plugin>
         <plugin>
           <groupId>io.spring.javaformat</groupId>
           <artifactId>spring-javaformat-maven-plugin</artifactId>
