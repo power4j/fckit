@@ -116,6 +116,66 @@ class AbstractNodeIdxSupportTest {
 	}
 
 	@Test
+	void moveSubtreeReplacesExternalPathsAndPreservesInternalPaths() {
+		makeSingleRoot();
+		List<String> internalPaths = paths(orgTreeService.findAllDescendant(20L, null, null));
+
+		orgTreeService.moveSubtree(20L, 10L);
+
+		assertPaths(orgTreeService.findAllDescendant(10L, null, null), "10>10:0", "10>101:1", "10>20:1", "10>201:2",
+				"10>2011:3", "10>2012:3");
+		assertPaths(orgTreeService.findAllAncestor(2011L, null, null), "0>2011:4", "10>2011:3", "20>2011:2",
+				"201>2011:1", "2011>2011:0");
+		Assertions.assertEquals(internalPaths, paths(orgTreeService.findAllDescendant(20L, null, null)));
+	}
+
+	@Test
+	void movingSubtreeToAnAncestorUpdatesPathsForLaterInserts() {
+		makeSingleRoot();
+
+		orgTreeService.moveSubtree(201L, 0L);
+		orgTreeService.generatePath(2013L, 201L);
+
+		assertPaths(orgTreeService.findAllAncestor(2013L, null, null), "0>2013:2", "201>2013:1", "2013>2013:0");
+		assertPaths(orgTreeService.findAllDescendant(20L, null, null), "20>20:0");
+		assertPaths(orgTreeService.findAllAncestor(2011L, null, null), "0>2011:2", "201>2011:1", "2011>2011:0");
+	}
+
+	@Test
+	void moveSubtreeToTopLevelRemovesExternalPaths() {
+		makeSingleRoot();
+
+		orgTreeService.moveSubtree(201L, null);
+
+		assertPaths(orgTreeService.findAllAncestor(2011L, null, null), "201>2011:1", "2011>2011:0");
+		assertPaths(orgTreeService.findAllDescendant(0L, null, null), "0>0:0", "0>10:1", "0>101:2", "0>20:1");
+	}
+
+	@Test
+	void moveSubtreeRejectsMissingNodesAndCyclesWithoutChangingPaths() {
+		makeSingleRoot();
+		List<String> before = paths(orgTreeService.getAll(null, null));
+
+		Assertions.assertThrows(IllegalArgumentException.class, () -> orgTreeService.moveSubtree(99L, 10L));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> orgTreeService.moveSubtree(20L, 99L));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> orgTreeService.moveSubtree(20L, 20L));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> orgTreeService.moveSubtree(20L, 2011L));
+
+		Assertions.assertEquals(before, paths(orgTreeService.getAll(null, null)));
+	}
+
+	private void assertPaths(List<OrgIdx> indexes, String... expected) {
+		Assertions.assertEquals(Arrays.stream(expected).sorted().toList(), paths(indexes));
+	}
+
+	private List<String> paths(List<OrgIdx> indexes) {
+		return indexes.stream()
+			.map(index -> index.getAncestor() + ">" + index.getDescendant() + ":" + index.getDistance())
+			.sorted()
+			.toList();
+	}
+
+	@Test
 	void findSharedRoot() {
 		makeMultiRoot();
 		List<Long> idList1 = Arrays.asList(101L, 2011L);

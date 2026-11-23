@@ -8,6 +8,7 @@
 
 ### Added
 
+- 恢复 `AbstractNodeIdxSupport.moveSubtree`，支持移动子树并维护闭包索引。
 - 新增 `fist-jasypt-core` 和独立 Jasypt CLI，支持读取已有 `GMENC(...)` 配置密文。
 - 新增 `fist-jasypt-spring-boot4-starter`，支持文件、显式原值及旧属性来源加载主密钥。
 

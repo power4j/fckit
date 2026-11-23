@@ -184,6 +184,55 @@ public abstract class AbstractNodeIdxSupport<T extends NodeIdx<ID, T>, ID extend
 		getRepository().saveOne(createObject(newNode));
 	}
 
+	/**
+	 * 移动节点及其子树，更新闭包索引，保留子树内部路径。
+	 * <p>
+	 * 调用前闭包索引须与节点主表的父子关系一致。调用方负责在同一事务中更新主表。
+	 * @param nodeId 待移动节点
+	 * @param newParentId 新父节点，为空时移动到顶层
+	 * @throws IllegalArgumentException 待移动节点或新父节点不存在，或新父节点属于待移动子树
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public void moveSubtree(ID nodeId, @Nullable ID newParentId) {
+		Assert.notNull(nodeId, "node id can not null");
+
+		List<T> subtreePaths = findAllDescendant(nodeId, null, null);
+		Assert.isTrue(containsSelfPath(subtreePaths, nodeId), "node path not found");
+		Set<ID> subtreeNodeIds = subtreePaths.stream().map(NodeIdx::getDescendant).collect(Collectors.toSet());
+
+		List<T> newParentPaths = Collections.emptyList();
+		if (newParentId != null) {
+			Assert.isTrue(!subtreeNodeIds.contains(newParentId), "new parent can not be a descendant of node");
+			newParentPaths = findAllAncestor(newParentId, null, null);
+			Assert.isTrue(containsSelfPath(newParentPaths, newParentId), "new parent path not found");
+		}
+
+		Set<ID> oldAncestorIds = findAllAncestor(nodeId, 1, null).stream()
+			.map(NodeIdx::getAncestor)
+			.collect(Collectors.toSet());
+		if (!oldAncestorIds.isEmpty()) {
+			LambdaQueryWrapper<T> wrapper = getRepository().lambdaWrapper()
+				.in(T::getAncestor, oldAncestorIds)
+				.in(T::getDescendant, subtreeNodeIds);
+			getRepository().deleteAllBy(wrapper);
+		}
+
+		if (!newParentPaths.isEmpty()) {
+			List<T> newPaths = newParentPaths.stream()
+				.flatMap(ancestor -> subtreePaths.stream()
+					.map(descendant -> createObject(ancestor.getAncestor(), descendant.getDescendant(),
+							ancestor.getDistance() + 1 + descendant.getDistance())))
+				.collect(Collectors.toList());
+			getRepository().saveAll(newPaths);
+		}
+	}
+
+	private boolean containsSelfPath(List<T> paths, ID nodeId) {
+		return paths.stream()
+			.anyMatch(path -> Objects.equals(path.getAncestor(), nodeId) && Objects.equals(path.getDescendant(), nodeId)
+					&& Objects.equals(path.getDistance(), 0));
+	}
+
 	@Override
 	public Set<ID> subTreeNodes(Collection<ID> ids) {
 		if (ObjectUtils.isEmpty(ids)) {
