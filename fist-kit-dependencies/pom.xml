@@ -105,6 +105,16 @@
       </dependency>
       <dependency>
         <groupId>com.power4j.fist3</groupId>
+        <artifactId>fist-trace-context</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist3</groupId>
+        <artifactId>fist-trace-context-spring-boot4-starter</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist3</groupId>
         <artifactId>fist-support-security</artifactId>
         <version>${revision}</version>
       </dependency>

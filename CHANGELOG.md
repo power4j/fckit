@@ -8,10 +8,14 @@
 
 ### Added
 
+- 新增 `fist-trace-context-spring-boot4-starter`，支持 Servlet、WebFlux、Gateway 和 Feign 的请求追踪，并沿用 `fist.trace-context` 配置。
+
 - 新增 `examples/fist-web-data-security/example-servlet`，提供 Web、Data、Security、API Doc starter 在 Spring Boot 4 Servlet 应用中的组合启动示例。
 - 新增 `examples/fist-oauth2-server/example-authorization-server`，提供 OAuth2 Authorization Server 在 Spring Boot 4 中的 metadata 和 client credentials token 请求示例。
 
 ### Changed
+
+- Web 自动配置不再注册旧的 Servlet 请求头 MDC filter。通过 `fist.trace-context.enabled=true` 启用追踪上下文。
 
 - 将 Spring Boot 和 Spring Cloud 构建矩阵升级到 `4.2.0` 和 `2026.0.0`。
 - OAuth2 Authorization Server 版本由 Spring Boot BOM 管理。API 文档升级到 Springdoc `3.2.1`，使用 Swagger Core 3 和 Jackson 3。

@@ -27,7 +27,8 @@ import org.springframework.context.annotation.Import;
  * @date 2021/6/16
  * @since 1.0
  */
-@AutoConfiguration
+@AutoConfiguration(afterName = "com.power4j.fist.trace.boot.autoconfigure.TraceContextAutoConfiguration",
+		beforeName = "org.springframework.boot.webflux.autoconfigure.error.ErrorWebFluxAutoConfiguration")
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @Import({ GlobalErrorConfigure.class, MdcContextLifterConfiguration.class })
 public class FistReactiveWebAutoConfiguration {
