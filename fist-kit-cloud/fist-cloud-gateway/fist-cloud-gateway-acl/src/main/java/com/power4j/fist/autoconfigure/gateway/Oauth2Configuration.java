@@ -5,7 +5,6 @@ import com.power4j.fist.boot.security.oauth2.server.resource.introspection.React
 import com.power4j.fist.cloud.security.oauth2.client.UserIntrospectClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Strings;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -14,7 +13,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.Objects;
 
 /**
@@ -27,7 +28,7 @@ import java.util.Objects;
 @EnableConfigurationProperties(Oauth2ResourceServerProperties.class)
 public class Oauth2Configuration {
 
-	private final static String LB_SCHEMA = "lb";
+	private final static String LB_SCHEME = "lb";
 
 	private final Oauth2ResourceServerProperties resourceServerProperties;
 
@@ -45,10 +46,11 @@ public class Oauth2Configuration {
 		final Oauth2ResourceServerProperties.OpaqueTokenConfig config = resourceServerProperties.getOpaqueToken();
 		Objects.requireNonNull(config);
 
-		final String uri = config.getIntrospectionUri();
+		URI uri = URI.create(config.getIntrospectionUri());
 		WebClient client;
-		if (Strings.CS.startsWith(uri, LB_SCHEMA)) {
+		if (LB_SCHEME.equalsIgnoreCase(uri.getScheme())) {
 			log.info("Use load-balanced client for: {}", uri);
+			uri = UriComponentsBuilder.fromUri(uri).scheme("http").build(true).toUri();
 			client = lbWebClientBuilder()
 				.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret()))
 				.build();
@@ -58,8 +60,8 @@ public class Oauth2Configuration {
 				.defaultHeaders((h) -> h.setBasicAuth(config.getClientId(), config.getClientSecret()))
 				.build();
 		}
-		ReactiveOpaqueTokenIntrospector opaqueTokenIntrospector = new DefaultReactiveOpaqueTokenIntrospector(uri,
-				client);
+		ReactiveOpaqueTokenIntrospector opaqueTokenIntrospector = new DefaultReactiveOpaqueTokenIntrospector(
+				uri.toString(), client);
 		return new UserIntrospectClient(opaqueTokenIntrospector);
 	}
 

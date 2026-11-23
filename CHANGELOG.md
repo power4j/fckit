@@ -28,6 +28,10 @@
 - Spring Boot 4 升级中将 `fist-boot-crud-mybatis` 的 MyBatis Plus starter 切换为 `mybatis-plus-spring-boot4-starter`，测试依赖切换为 `mybatis-plus-spring-boot4-starter-test`。
 - 将 5 个 Groovy/Spock 测试迁移到 Java/JUnit 5。
 
+### Fixed
+
+- 修复网关使用 `lb://` 内省地址时的请求协议转换，保留服务发现和 URI 编码。
+
 ### Removed
 
 - Spring Boot 4 升级中移除 `fist-boot-apidoc` 的 Springfox 支持，API 文档扩展统一保留 SpringDoc 3 路径。
