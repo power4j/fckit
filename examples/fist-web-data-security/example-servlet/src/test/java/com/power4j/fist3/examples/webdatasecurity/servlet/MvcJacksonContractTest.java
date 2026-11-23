@@ -100,8 +100,8 @@ class MvcJacksonContractTest {
 				.orElseThrow();
 			String mapper = selectedMapper(converter).getClass().getName();
 			System.out.printf("MVC Jackson Boot=%s override=%s reader=%s writer=%s mapper=%s GET=%d %s POST=%d %s%n",
-					SpringBootVersion.getVersion(), override, reader, writer, mapper,
-					get.statusCode(), get.body(), post.statusCode(), post.body());
+					SpringBootVersion.getVersion(), override, reader, writer, mapper, get.statusCode(), get.body(),
+					post.statusCode(), post.body());
 
 			assertThat(get.statusCode()).isEqualTo(200);
 			assertThat(post.statusCode()).isEqualTo(200);
@@ -111,9 +111,8 @@ class MvcJacksonContractTest {
 			for (HttpResponse<String> response : List.of(get, post)) {
 				assertThat(response.body()).containsPattern("\"id\":" + Pattern.quote(expectedId) + "[,}]")
 					.containsPattern("\"amount\":" + Pattern.quote(expectedAmount) + "[,}]")
-					.contains(
-						"\"localDateTime\":\"2026-01-02 03:04:05\"", "\"legacyDate\":\"" + expectedDate + "\"",
-						"\"masked\":\"OBF.XOR_V1$c3hsd2xgcm5r\"", "\"code\":\"ready\"");
+					.contains("\"localDateTime\":\"2026-01-02 03:04:05\"", "\"legacyDate\":\"" + expectedDate + "\"",
+							"\"masked\":\"OBF.XOR_V1$c3hsd2xgcm5r\"", "\"code\":\"ready\"");
 			}
 		}
 	}
@@ -135,6 +134,7 @@ class MvcJacksonContractTest {
 	@Configuration(proxyBeanMethods = false)
 	@Import({ ContractController.class, ContractAdvice.class })
 	static class ContractConfiguration {
+
 	}
 
 	@RestController
@@ -159,7 +159,8 @@ class MvcJacksonContractTest {
 	static class ContractAdvice extends RequestBodyAdviceAdapter implements ResponseBodyAdvice<Contract> {
 
 		@Override
-		public boolean supports(MethodParameter parameter, Type type, Class<? extends HttpMessageConverter<?>> converter) {
+		public boolean supports(MethodParameter parameter, Type type,
+				Class<? extends HttpMessageConverter<?>> converter) {
 			return true;
 		}
 
