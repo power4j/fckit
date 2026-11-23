@@ -7,3 +7,9 @@
 - spring-boot: `3.5`
 - spring-cloud: `2025`
 - spring-cloud-alibaba: `2023`
+
+## 配置加密
+
+- [Spring Boot 4.2 Jasypt 主密钥配置](docs/public/develop/jasypt-master-key.md)
+- [Jasypt CLI](fist-kit-infra/fist-jasypt/fist-jasypt-cli/README.md)
+- [Jasypt 基础示例](examples/fist-jasypt/README.md)

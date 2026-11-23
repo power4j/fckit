@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+com.power4j.fist.jasypt.boot.autoconfigure.FistJasyptEnvironmentPostProcessor

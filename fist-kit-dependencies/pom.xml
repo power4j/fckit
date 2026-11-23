@@ -110,6 +110,11 @@
       </dependency>
       <dependency>
         <groupId>com.power4j.fist3</groupId>
+        <artifactId>fist-jasypt-spring-boot4-starter</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.power4j.fist3</groupId>
         <artifactId>fist-trace-context</artifactId>
         <version>${revision}</version>
       </dependency>

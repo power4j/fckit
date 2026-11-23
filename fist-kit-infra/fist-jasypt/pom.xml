@@ -16,6 +16,7 @@
 
   <modules>
     <module>fist-jasypt-core</module>
+    <module>fist-jasypt-spring-boot4-starter</module>
     <module>fist-jasypt-cli</module>
   </modules>
 </project>

@@ -97,6 +97,7 @@
     <seancfoley.ipaddress.version>5.6.2</seancfoley.ipaddress.version>
     <bucket4j.version>8.18.0</bucket4j.version>
     <jspecify.version>1.0.0</jspecify.version>
+    <jasypt.version>1.9.3</jasypt.version>
 
     <junit-pioneer.version>2.3.0</junit-pioneer.version>
   </properties>

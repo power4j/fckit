@@ -9,6 +9,7 @@
 ### Added
 
 - 新增 `fist-jasypt-core` 和独立 Jasypt CLI，支持读取已有 `GMENC(...)` 配置密文。
+- 新增 `fist-jasypt-spring-boot4-starter`，支持文件、显式原值及旧属性来源加载主密钥。
 
 - 新增 `fist-trace-context-spring-boot4-starter`，支持 Servlet、WebFlux、Gateway 和 Feign 的请求追踪，并沿用 `fist.trace-context` 配置。
 
