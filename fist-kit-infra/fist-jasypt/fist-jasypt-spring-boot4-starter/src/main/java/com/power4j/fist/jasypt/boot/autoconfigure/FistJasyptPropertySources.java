@@ -1,7 +1,10 @@
 package com.power4j.fist.jasypt.boot.autoconfigure;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Supplier;
 
+import com.power4j.fist.jasypt.core.GmConfigCryptoException;
 import com.power4j.fist.jasypt.core.GmEncryptedValue;
 import org.jasypt.encryption.StringEncryptor;
 import org.jspecify.annotations.Nullable;
@@ -25,7 +28,8 @@ final class FistJasyptPropertySources {
 		String suffix = environment.getProperty(FistJasyptEnvironmentPostProcessor.JASYPT_SUFFIX,
 				environment.getProperty("fist.jasypt.cipher-suffix", GmEncryptedValue.SUFFIX));
 		String masterKeyName = environment.getProperty("fist.jasypt.master-key-env", "FIST_JASYPT_MASTER_KEY");
-		Decryptor decryptor = new Decryptor(prefix, suffix, masterKeyName, encryptor);
+		Decryptor decryptor = new Decryptor(prefix, suffix, masterKeyName, encryptor, environment,
+				ThreadLocal.withInitial(HashSet::new));
 		MutablePropertySources sources = environment.getPropertySources();
 		for (PropertySource<?> source : sources) {
 			if (ConfigurationPropertySources.isAttachedConfigurationPropertySource(source)
@@ -44,7 +48,8 @@ final class FistJasyptPropertySources {
 		}
 	}
 
-	private record Decryptor(String prefix, String suffix, String masterKeyName, Supplier<StringEncryptor> encryptor) {
+	private record Decryptor(String prefix, String suffix, String masterKeyName, Supplier<StringEncryptor> encryptor,
+			ConfigurableEnvironment environment, ThreadLocal<Set<String>> resolving) {
 
 		@Nullable Object read(PropertySource<?> source, String name) {
 			Object value = source.getProperty(name);
@@ -54,11 +59,35 @@ final class FistJasyptPropertySources {
 				String cipher = text.trim();
 				if (cipher.length() >= this.prefix.length() + this.suffix.length() && cipher.startsWith(this.prefix)
 						&& cipher.endsWith(this.suffix)) {
-					return this.encryptor.get()
-						.decrypt(cipher.substring(this.prefix.length(), cipher.length() - this.suffix.length()));
+					String payload = cipher.substring(this.prefix.length(), cipher.length() - this.suffix.length());
+					return this.encryptor.get().decrypt(resolvePayload(name, payload));
 				}
 			}
 			return value;
+		}
+
+		private String resolvePayload(String name, String payload) {
+			if (!payload.contains("${")) {
+				return payload;
+			}
+			// 占位符可能再次读取加密属性，跨嵌套解析检测循环引用。
+			Set<String> active = this.resolving.get();
+			if (!active.add(name)) {
+				throw new IllegalArgumentException("Circular GMENC payload reference for property '" + name + "'");
+			}
+			try {
+				return this.environment.resolvePlaceholders(payload);
+			}
+			catch (RuntimeException ex) {
+				// 解析异常的消息和原因链可能包含配置值。
+				throw new GmConfigCryptoException("Failed to resolve GMENC payload placeholders");
+			}
+			finally {
+				active.remove(name);
+				if (active.isEmpty()) {
+					this.resolving.remove();
+				}
+			}
 		}
 
 	}
