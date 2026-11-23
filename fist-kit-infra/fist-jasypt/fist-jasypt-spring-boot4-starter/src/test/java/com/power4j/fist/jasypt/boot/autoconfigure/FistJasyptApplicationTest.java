@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class FistJasyptApplicationTest {
 
@@ -37,6 +38,38 @@ class FistJasyptApplicationTest {
 				"--fist.jasypt.master-key-file=missing.key", "--demo.hmac-key=" + cipher)) {
 			assertThat(context.getBean("decryptedKey", String.class)).isEqualTo("hmac-secret");
 			assertThat(context.getBean(DemoProperties.class).hmacKey()).isEqualTo("hmac-secret");
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(booleans = { false, true })
+	void shouldDecryptGmencFromConfigData(boolean usePayloadPlaceholder) throws Exception {
+		String cipher = new GmTextEncryptor().encrypt("synthetic-value", "test-master");
+		Path config = Files.writeString(this.tempDir.resolve("application.properties"), """
+				fist.jasypt.enabled=true
+				fist.jasypt.master-key-source=raw
+				fist.jasypt.master-key-value=test-master
+				demo.hmac-key=%s
+				""".formatted(usePayloadPlaceholder ? "GMENC(${cipher.payload})" : cipher));
+		SpringApplication application = new SpringApplication(TestApplication.class);
+		application.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext context = application.run("--spring.config.location=" + config.toUri(),
+				"--cipher.payload=" + cipher.substring("GMENC(".length(), cipher.length() - 1))) {
+			assertThat(context.getEnvironment().getProperty("demo.hmac-key")).isEqualTo("synthetic-value");
+			assertThat(context.getBean("decryptedKey", String.class)).isEqualTo("synthetic-value");
+			assertThat(context.getBean(DemoProperties.class).hmacKey()).isEqualTo("synthetic-value");
+		}
+	}
+
+	@Test
+	void shouldRejectCircularGmencPayloadReference() {
+		SpringApplication application = new SpringApplication(TestApplication.class, CustomEncryptor.class);
+		application.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext context = application.run("--fist.jasypt.enabled=true",
+				"--spring.main.lazy-initialization=true", "--demo.hmac-key=GMENC(${cipher.payload})",
+				"--cipher.payload=GMENC(${demo.hmac-key})")) {
+			assertThatIllegalArgumentException().isThrownBy(() -> context.getEnvironment().getProperty("demo.hmac-key"))
+				.withMessage("Circular GMENC payload reference for property 'demo.hmac-key'");
 		}
 	}
 
