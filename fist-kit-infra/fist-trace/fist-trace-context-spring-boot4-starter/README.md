@@ -145,4 +145,4 @@ fist:
           mdc-name: tenantId
 ```
 
-完整示例见 `examples/fist-trace-context`。
+完整示例见 [Trace Context 示例](../../../examples/fist-trace-context/README.md)。

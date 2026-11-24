@@ -23,6 +23,7 @@
     <module>fist-logback</module>
     <module>fist-oauth2-server</module>
     <module>fist-sde</module>
+    <module>fist-trace-context</module>
     <module>fist-web-data-security</module>
   </modules>
 
