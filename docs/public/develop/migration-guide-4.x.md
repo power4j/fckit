@@ -151,6 +151,27 @@ mvn -o "-Dmaven.repo.local=/path/to/prepared-maven-cache" validate org.apache.ma
 | OpenAPI | 使用与 Web 栈对应的 Springdoc 3 starter。Kit 管理 Springdoc `3.2.1`，使用 `io.swagger.core.v3:swagger-core`。检查显式锁定的旧 Swagger 依赖及实际 OpenAPI 文档输出。已有 Springfox 配置应迁移到 Springdoc。 |
 | OAuth2 Authorization Server | Authorization Server 版本由 Spring Boot BOM 管理。复查应用的显式版本和自定义认证、转换器及 JDBC 授权服务，按实际启用的授权流程验证。 |
 
+### 调整 `fist-support-test` 依赖
+
+Kit v4 的 `fist-support-test` 继续传递 MockWebServer 和 JUnit Pioneer。
+该制品已移除 `org.spockframework:spock-spring` 与 `org.tools4j:groovy-tables`，
+随之取消传递引入 Spock Core 和 Groovy。按测试源码使用情况选择迁移路径。
+
+- 只使用 MockWebServer 或 JUnit Pioneer 的应用可继续以 `test` scope
+  声明 v4 `fist-support-test`，并用测试依赖树核对解析版本。
+- 继续使用 Groovy/Spock 时，由应用以 `test` scope 显式声明所用依赖。
+  普通 Spock 用例使用 `spock-core`，Spring 集成用例使用 `spock-spring`。
+  使用 Groovy Tables 时另加 `groovy-tables`。核对 Spock 制品对应的 Groovy
+  主版本和实际解析的 Groovy 版本。由应用配置 Groovy 测试编译并验证用例发现和执行。
+- 迁移到 Java/JUnit 时，用 Java 集合或参数化测试替代 Groovy Tables 数据表，
+  将 Spock 用例改为 JUnit 测试。迁移完成后检查测试发现数量和执行结果。
+
+最小消费者用 JDK 17 完成三组对照，共 9/9。v3 默认组确认 Spock
+`2.4-groovy-5.0` 会拒绝 Groovy `4.0.32`，测试将该拒绝作为预期结果。
+v3 对照组将 Groovy 对齐至 `5.0.3` 后，Spock 样例编译通过并生成两行表数据。
+v4 组确认旧类无法加载，MockWebServer 回环 HTTP 与 JUnit Pioneer locale 恢复通过。
+保留旧测试栈的 v4 应用需用自己的显式依赖和构建配置验证 `test-compile`、测试发现及执行。
+
 ## 按应用使用的契约验收
 
 先用升级前版本保存脱敏的请求、响应和持久化样本。升级后运行 `mvn clean verify` 并启动交付制品。按实际使用的能力执行下列检查。
