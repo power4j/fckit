@@ -8,8 +8,11 @@ import com.power4j.fist.trace.context.TraceContextRuntime;
 import com.power4j.fist.trace.context.TraceContexts;
 import com.power4j.fist.boot.web.constant.HttpConstant;
 import com.power4j.fist.boot.web.reactive.trace.ReactiveTraceContext;
+import com.power4j.fist.boot.web.reactive.trace.TraceContextWebFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -18,7 +21,9 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -78,13 +83,52 @@ class RequestIdGlobalFilterTraceContextTest {
 	}
 
 	private static TraceContextRuntime runtime() {
+		return runtime(HttpConstant.Header.KEY_REQUEST_ID, HttpConstant.Header.KEY_REQUEST_ID, () -> "REQ-GEN");
+	}
+
+	@ParameterizedTest
+	@CsvSource(value = { "REQ-CLIENT, , REQ-CLIENT, 0", ", , REQ-GEN-1, 1", "REQ-CLIENT, REQ-UNTRUSTED, REQ-CLIENT, 0",
+			", REQ-UNTRUSTED, REQ-GEN-1, 1" })
+	void shouldUseOneRequestIdAcrossWebAndGatewayFilters(String suppliedId, String suppliedOutboundId,
+			String expectedId, int expectedGenerations) {
+		String inbound = "X-TRACE-IN";
+		String outbound = "X-TRACE-OUT";
+		AtomicInteger generations = new AtomicInteger();
+		TraceContextRuntime traceRuntime = runtime(inbound, outbound, () -> "REQ-GEN-" + generations.incrementAndGet());
+		TraceContextWebFilter webFilter = new TraceContextWebFilter(traceRuntime);
+		RequestIdGlobalFilter gatewayFilter = new RequestIdGlobalFilter(HttpConstant.Header.KEY_REQUEST_ID,
+				traceRuntime);
+		var request = MockServerHttpRequest.get("/test");
+		if (suppliedId != null) {
+			request.header(inbound, suppliedId);
+		}
+		if (suppliedOutboundId != null) {
+			request.header(outbound, suppliedOutboundId);
+		}
+		MockServerWebExchange exchange = MockServerWebExchange.from(request.build());
+
+		StepVerifier.create(webFilter.filter(exchange, webExchange -> Mono.defer(() -> {
+			assertThat(webExchange.getRequest().getHeaders().get(outbound)).containsExactly(expectedId);
+			var snapshot = ReactiveTraceContext.getSnapshot(webExchange).orElseThrow();
+			return gatewayFilter.filter(webExchange, routeExchange -> Mono.deferContextual(context -> {
+				assertThat(routeExchange.getRequest().getHeaders().get(outbound)).containsExactly(expectedId);
+				assertThat(ReactiveTraceContext.getSnapshot(routeExchange)).hasValue(snapshot);
+				assertThat(ReactiveTraceContext.getSnapshot(context)).hasValue(snapshot);
+				return Mono.empty();
+			}));
+		}))).verifyComplete();
+
+		assertThat(generations).hasValue(expectedGenerations);
+		assertThat(TraceContexts.current()).isEmpty();
+	}
+
+	private static TraceContextRuntime runtime(String inbound, String outbound, Supplier<String> generator) {
 		return new DefaultTraceContextRuntime(
 				new DefaultTraceContextRegistry(List.of(new AbstractSingleValueTraceContextItem("test", "requestId",
-						Optional.of(HttpConstant.Header.KEY_REQUEST_ID),
-						Optional.of(HttpConstant.Header.KEY_REQUEST_ID), Optional.of("requestId")) {
+						Optional.of(inbound), Optional.of(outbound), Optional.of("requestId")) {
 					@Override
 					protected Optional<String> generateValue(InboundTraceContext context) {
-						return Optional.of("REQ-GEN");
+						return Optional.of(generator.get());
 					}
 				})));
 	}
