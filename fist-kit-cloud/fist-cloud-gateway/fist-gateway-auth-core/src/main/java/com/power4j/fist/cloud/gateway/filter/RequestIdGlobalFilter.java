@@ -21,6 +21,7 @@ import com.power4j.fist.trace.context.TraceContext;
 import com.power4j.fist.trace.context.TraceContextRuntime;
 import com.power4j.fist.trace.context.TraceContexts;
 import com.power4j.fist.trace.context.TraceContextSnapshot;
+import com.power4j.fist.trace.context.TraceScope;
 import com.power4j.fist.boot.common.utils.Snowflake;
 import com.power4j.fist.boot.web.reactive.constant.ContextConstant;
 import com.power4j.fist.boot.web.reactive.log.MdcContextLifter;
@@ -33,6 +34,8 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.jspecify.annotations.Nullable;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 /**
  * @author CJ (power4j@outlook.com)
@@ -71,22 +74,33 @@ public class RequestIdGlobalFilter implements GlobalFilter {
 	}
 
 	private Mono<Void> filterWithTraceRuntime(ServerWebExchange exchange, GatewayFilterChain chain) {
+		Optional<TraceContextSnapshot> existing = ReactiveTraceContext.getSnapshot(exchange);
+		if (existing.isPresent()) {
+			TraceContextSnapshot snapshot = existing.get();
+			try (TraceScope ignored = this.runtime.restore(snapshot)) {
+				return forwardWithTraceSnapshot(exchange, chain, snapshot);
+			}
+		}
 		try {
 			// 同步段完成上下文构建、header 透传和 snapshot 捕获。
 			// finally 只清理当前网关线程，不影响后续 Reactor Context。
 			TraceContext traceContext = this.runtime
 				.inbound(new ServerHttpRequestInboundTraceContext(exchange.getRequest()));
-			MapOutboundTraceContext outbound = new MapOutboundTraceContext();
-			this.runtime.outbound(outbound);
-			ServerWebExchange tracedExchange = mutateHeaders(exchange, outbound);
-			TraceContextSnapshot snapshot = traceContext.snapshot();
-			ReactiveTraceContext.putSnapshot(tracedExchange, snapshot);
-			return chain.filter(tracedExchange)
-				.contextWrite(ctx -> ctx.put(ReactiveTraceContext.KEY_TRACE_CONTEXT, snapshot));
+			return forwardWithTraceSnapshot(exchange, chain, traceContext.snapshot());
 		}
 		finally {
 			TraceContexts.clear();
 		}
+	}
+
+	private Mono<Void> forwardWithTraceSnapshot(ServerWebExchange exchange, GatewayFilterChain chain,
+			TraceContextSnapshot snapshot) {
+		MapOutboundTraceContext outbound = new MapOutboundTraceContext();
+		this.runtime.outbound(outbound);
+		ServerWebExchange tracedExchange = mutateHeaders(exchange, outbound);
+		ReactiveTraceContext.putSnapshot(tracedExchange, snapshot);
+		return chain.filter(tracedExchange)
+			.contextWrite(ctx -> ctx.put(ReactiveTraceContext.KEY_TRACE_CONTEXT, snapshot));
 	}
 
 	private ServerWebExchange mutateHeaders(ServerWebExchange exchange, MapOutboundTraceContext outbound) {
