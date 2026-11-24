@@ -22,7 +22,8 @@
 - OAuth2 JDBC 授权服务移除了接收 `LobHandler` 的三参构造器及 row mapper 的 `setLobHandler`。读写 mapper 均采用 Jackson 3。自定义映射的应用按指南迁移并复验历史数据。[OAuth2 授权持久化](migration-guide-4.x.md#oauth2-授权持久化)
 - Trace Context 提供基础和扩展示例。网关在入站、出站追踪头异名时复用当前请求上下文。`lb://` 内省已验证服务发现和常规 URI。两代 LoadBalancer 均可能在查询值含裸 `=` 且 URI 其他位置已有百分号转义时，将 `%` 再编码为 `%25`。对照样本将值内的 `=` 编码为 `%3D` 后通过。[网关内省 URI](migration-guide-4.x.md#网关内省-uri)
 - Jasypt 支持完整 `GMENC(...)` 与密文体占位符，已验证应用上下文中的环境读取、值注入和配置绑定。属性解析异常采用脱敏消息。日志对照中，v3 在重初始化后把明文传给 appender，v4 appender 初始化时收到密文，应用上下文随后可读取明文。指向异名加密器 bean 时，默认 bean 仍需主密钥。[上游 Jasypt Boot 4.2 适配 PR #439](https://github.com/ulisesbocchio/jasypt-spring-boot/pull/439)
-- SDE 的 RestClient 和 WebClient 原 runner 已在两代各通过同代回环调用。Kit v4 的两种 HTTP Service 分组代理各通过一项合成成功调用，核对了方法策略、双向加密签名 envelope 和解包结果。跨代互通、错误回包和不同配置的组合由使用方另行验收。
+- Redisson 两代离线消费者通过配置装配、模拟队列与 Topic 回调，以及合成 Codec 样本的双向互读。真实 Redis 交付和部署数据由使用方验收。[Redisson 消息与 Codec](migration-guide-4.x.md#redisson-消息与-codec)
+- SDE 的 RestClient 和 WebClient 原 runner 已在两代各通过同代回环调用。RestClient 到 MVC 的跨代成功样本双向通过。Kit v4 的两种 HTTP Service 分组代理通过四项合成回环调用，核对了显式方法策略、默认策略、组级请求头、双向加密签名 envelope 和解包结果。分组代理跨代互通和错误回包由使用方另行验收。
 - CRUD 恢复 `AbstractNodeIdxSupport.moveSubtree` 并验证写入异常的事务回滚。调用方按实际数据库校验主表与闭包的一致性，并明确并发结构写约定。
 
 本地验证覆盖了上述用例和离线 Maven 解析。应用的依赖组合、持久化样本及启用的链路可按迁移指南逐项验收。

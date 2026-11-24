@@ -196,9 +196,22 @@ v4 组确认旧类无法加载，MockWebServer 回环 HTTP 与 JUnit Pioneer loc
 
 启用 `lb://` 内省时，用实际部署的实例发现配置确认下游收到的原始路径和查询。在 Spring Cloud Commons `4.3.3` 与 `5.1.0` 的对照中，查询值内的裸 `=` 与 URI 其他位置已有的百分号转义同时出现时，LoadBalancer 重建 URI 会将已有的 `%` 再编码为 `%25`。例如将 `?x=a=b&scope=a%2Fb` 中查询值内的 `=` 写为 `%3D`，即 `?x=a%3Db&scope=a%2Fb`，两版均保留了该样本的编码。修改后复验下游实际收到的 URI 和内省结果。
 
+### Redisson 消息与 Codec
+
+Kit 的 `fist-redisson` 将 Redisson starter 声明为可选依赖。按应用实际启用的 Redis 拓扑核对
+starter 和 Spring Data 适配器。已验制品从 Redisson `3.52.0` 与 `redisson-spring-data-35`
+迁移到 Redisson `4.3.1` 与 `redisson-spring-data-40`。无 Redis 拓扑按实际依赖核对自动配置排除项。
+Boot 4 验收使用 `org.redisson.spring.starter.RedissonAutoConfigurationV4` 与
+`org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration`。
+
+离线消费者使用模拟客户端核对默认通道名、自定义 `NameGenerator` 和 `Codec`、
+队列与 Topic 配置绑定和回调。使用 `StringCodec` 和 `Kryo5Codec` 的固定合成样本双向互读通过。
+应用启用 Redis 时，使用部署配置和代表性历史 payload 验证连接、实际 Codec、队列和 Topic 交付、
+重连及下游业务回链。
+
 ### Trace Context、Jasypt 和 SDE
 
 - Trace Context 按实际开启的 Servlet、WebFlux、Gateway 和 Feign 路径验收。发送带头和缺头请求，在接收端检查透传或生成行为。入站、出站头异名时，核对入口与路由使用同一个请求 ID。Feign relay 和关闭 Trace 的行为按应用配置验收。见 [Trace Context 示例](../../../examples/fist-trace-context/README.md)。
 - Jasypt 用合成密文分别验证完整 `GMENC(...)` 和 `GMENC(${cipher.payload})`。检查 `Environment`、`@Value`、`@ConfigurationProperties` 实际读取结果，以及错误配置时的脱敏异常和替换有效配置后的恢复。若 `logback-spring.xml` 引用加密属性，直接检查 appender 初始化时收到的值。合成对照中，v3 的 appender 在日志重初始化后收到明文，v4 的 appender 只启动一次且收到密文，应用上下文中的 `Environment` 随后读到明文。涉及上游扩展的路径分别验收。[Jasypt 主密钥配置](jasypt-master-key.md) · [上游 Jasypt Boot 4.2 适配 PR #439](https://github.com/ulisesbocchio/jasypt-spring-boot/pull/439)
 - 自定义 `StringEncryptor` 要替代 Kit 的默认 bean 时，使用名称 `jasyptStringEncryptor`。若仅通过 `jasypt.encryptor.bean` 指向异名 bean，两代样例的默认 bean 仍会初始化，仍需配置其主密钥。按实际 bean 名称验证启动和解密。
-- SDE 按实际使用的 Feign、RestClient、WebClient 或 HTTP Service 分组代理走真实出站，核对两端 envelope、方法策略和解包结果。需要双向跨代互通时分别执行 v3 客户端到 v4 服务、v4 客户端到 v3 服务。对默认策略、失败响应和独立分组另准备样本。见 [SDE 示例](../../../examples/fist-sde/README.md) 和 [SDE 协议](sde-protocol.md)。
+- SDE 按实际使用的 Feign、RestClient、WebClient 或 HTTP Service 分组代理走真实出站，核对两端 envelope、策略和解包结果。分组代理分别调用显式注解方法和未注解方法，检查组级请求头及 SDE 默认策略。v4 的两种代理已用合成订单通过四项回环对照。需要双向跨代互通时分别执行 v3 客户端到 v4 服务、v4 客户端到 v3 服务。按应用配置另验类型级策略及失败响应。见 [SDE 示例](../../../examples/fist-sde/README.md) 和 [SDE 协议](sde-protocol.md)。
