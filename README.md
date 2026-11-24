@@ -7,6 +7,11 @@
 - spring-boot: `4.2`
 - spring-cloud: `2026.0`
 
+## FIST Kit 4.x
+
+- [发布说明（草案）](docs/public/develop/release-notes-4.x-draft.md)
+- [应用迁移指南](docs/public/develop/migration-guide-4.x.md)
+
 ## 配置加密
 
 - [Spring Boot 4.2 Jasypt 主密钥配置](docs/public/develop/jasypt-master-key.md)
