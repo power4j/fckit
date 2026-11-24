@@ -28,7 +28,9 @@ class TraceContextBasicApplicationTest {
 
 		assertThat(body.path("values").path("requestId").asString()).isEqualTo("REQ-BASIC");
 		assertThat(body.path("values").path("systemCode").asString()).isEqualTo("trace-basic");
-		assertThat(body.path("spanId").asString()).isEmpty();
+		JsonNode spanId = body.path("spanId");
+		assertThat(spanId.isString()).isTrue();
+		assertThat(spanId.asString()).isEmpty();
 		assertThat(output).contains("[REQ-BASIC,trace-basic,basic.work]");
 	}
 
