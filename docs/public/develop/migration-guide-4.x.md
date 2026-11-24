@@ -8,7 +8,7 @@
 
 将应用父 POM、BOM、直接依赖和传递依赖中的 Kit 坐标一起迁移到 `com.power4j.fist4`。保持应用自己的 parent 时，导入 Kit BOM 来管理 Kit 组件版本，并由应用管理 Boot 和所需的 Cloud BOM。仅导入 BOM 的应用可以绑定 Enforcer，在 `validate` 拒绝直接和传递引入的 Kit v3。
 
-下方 POM 使用本地预装的 SNAPSHOT，适合验证坐标和依赖树。三个 starter 同列用于验证，应用按实际功能保留依赖。已有父 POM 的工程将相应区块合入现有 POM。
+下方 POM 使用本地预装的 SNAPSHOT，适合验证坐标和依赖树。三个 starter 同列用于验证，应用按实际功能保留依赖。使用 Gateway 或 OpenFeign 时，导入示例中的 `org.springframework.cloud:spring-cloud-dependencies:2026.0.0`，并声明相应 starter。无需 Cloud 依赖的应用可以省略该 BOM。已有父 POM 的工程将相应区块合入现有 POM。
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0">
@@ -18,6 +18,7 @@
   <version>1.0.0-SNAPSHOT</version>
   <properties>
     <spring-boot.version>4.2.0</spring-boot.version>
+    <spring-cloud.version>2026.0.0</spring-cloud.version>
     <fist-kit.version>4.0.0-SNAPSHOT</fist-kit.version>
   </properties>
   <dependencyManagement>
@@ -26,6 +27,13 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
         <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -83,11 +91,13 @@
 </project>
 ```
 
+从消费者 `pom.xml` 所在目录执行。将命令中的路径替换为已预装 Kit SNAPSHOT、BOM 及其导入项、传递依赖和 Maven 插件的本地仓库。若缓存是在使用镜像或自定义仓库 ID 时准备的，离线复跑沿用相同的 Maven settings。
+
 ```sh
-mvn -o validate org.apache.maven.plugins:maven-dependency-plugin:3.10.0:tree '-Dincludes=com.power4j.fist3:*,com.power4j.fist4:*'
+mvn -o "-Dmaven.repo.local=/path/to/prepared-maven-cache" validate org.apache.maven.plugins:maven-dependency-plugin:3.10.0:tree "-Dincludes=com.power4j.fist3:*,com.power4j.fist4:*"
 ```
 
-已有缓存包含 BOM、依赖和 Maven 插件后才能使用 `-o`。样例实测三项 starter 均按 `4.0.0-SNAPSHOT` 解析，直接或经另一组件引入 v3 都在 `validate` 被拒绝。使用 BOM 且省略 Enforcer 时，依赖树可以同时解析两个 groupId。
+样例实测三项 starter 均按 `4.0.0-SNAPSHOT` 解析，直接或经另一组件引入 v3 都在 `validate` 被拒绝。使用 BOM 且省略 Enforcer 时，依赖树可以同时解析两个 groupId。后续按应用实际依赖执行打包和启动验收。
 
 继承 `fist-kit-parent` 或 `fist-kit-build` 的应用均会继承跨代 Enforcer 规则和 Java 格式检查等构建执行。仅继承 `fist-kit-parent` 时，另外导入 Kit BOM 或显式指定 Kit 依赖版本。`fist-kit-build` 的父链已提供 Kit 版本管理。选择继承前，用 `mvn help:effective-pom` 核对构建执行和原有应用 parent 的差异。
 
@@ -150,14 +160,24 @@ mvn -o validate org.apache.maven.plugins:maven-dependency-plugin:3.10.0:tree '-D
 1. 按消费方列出它实际读取的字段和类型。分别对照浏览器或客户端、普通 Feign/RestClient、网关用户信息提取等入口的 Boot 3 和 Boot 4 响应。对登录与 opaque token 内省，核对消费方读取的嵌套对象路径、身份 ID 的字符串或数字类型、角色和权限集合，以及缺失、`null`、空集合的区别。跑通登录、内省、网关转发和下游身份识别。
 2. 分别确认实际参与读写的 HTTP converter、mapper 和自定义模块。Servlet 对照从 Jackson 2 `MappingJackson2HttpMessageConverter` 迁移到 Jackson 3 `JacksonJsonHttpMessageConverter`。合成 DTO 中，默认 `Long` 和 `BigDecimal` 序列化为字符串，排除 `NumberToStr` 后为数值。启用混淆定制的样本观察到 `@JsonProperty` 别名处理存在差异。默认配置和应用覆盖应分别核对数值类型和精度、日期与时区、属性别名及混淆字段。
 3. 在跨服务 DTO、缓存和值对象上固定对端依赖的 JSON 字段契约。Kit Jackson module 提供服务内默认行为，各服务可以分别覆盖。排查时检查生产者和消费者是否使用 Spring 管理的 mapper，以及手工构建的 mapper 是否注册了同一组模块。对直接调用的 Jackson 2 API 保留显式依赖，SDE 默认 codec 仍使用 Jackson 2。
-4. 使用脱敏的 Boot 3 授权记录及隔离数据库，走实际 JDBC 授权服务的历史读取和内省路径。分别核对 row mapper、写入参数映射和结构化用户属性还原。再执行 Boot 4 新记录写入、关闭上下文后回读及内省。需要跨版本回退时，额外让旧版应用读取新版写出的代表性记录。历史读写结论以应用的 mapper、样本和数据库为准。
+
+### OAuth2 授权持久化
+
+1. 将 `DefaultAuthorizationService(JdbcOperations, RegisteredClientRepository, LobHandler)` 改为二参构造器 `DefaultAuthorizationService(JdbcOperations, RegisteredClientRepository)`，删除 row mapper 的 `setLobHandler(...)` 调用。默认实现使用 Spring JDBC 的 `SqlBinaryValue` 和 `SqlCharacterValue` 写入 LOB，通过 `ResultSet` 读取。
+2. 自定义持久化 JSON 时，同时迁移读取用的 `OAuth2AuthorizationRowMapper` 和写入用的 `OAuth2AuthorizationParametersMapper`。两者的 `setObjectMapper` 与 `getObjectMapper` 均使用 `tools.jackson.databind.ObjectMapper`。在两侧注册 Spring Security 和 Authorization Server 的 Jackson 3 模块，以及应用需要的模块和 mix-in。可通过 `setAuthorizationRowMapper` 和 `setAuthorizationParametersMapper` 装配自定义映射。需要保留驱动专用 LOB 处理时，在对应映射中实现，并用目标 JDBC 驱动及实际 BLOB 或 CLOB 列类型验收。
+3. 使用脱敏的 Boot 3 授权记录及隔离数据库，走实际 JDBC 授权服务读取历史记录并内省，核对结构化用户属性。再写入 Boot 4 新记录、关闭上下文后回读并内省。需要跨版本回退时，让旧版读取新版写出的代表性记录。历史兼容结论以应用自己的 mapper、样本和数据库为准。
 
 ### MyBatis 查询结果映射
 
 使用含非空集合或 JSON 列的代表性记录，逐次比较原始数据库值、Mapper 查询结果和 API 输出。对 MyBatis Plus 自动生成查询，字段声明 `@TableField(typeHandler = ...)` 时检查实体是否使用 `@TableName(autoResultMap = true)`。对 XML、自定义查询或 DTO 投影，检查实际使用的 `resultMap` 或结果映射是否显式绑定 handler。分别验证 `null`、空值、非空值和写入后回读。若新旧版本结果不同，沿配置注册、对象创建和查询调用路径定位差异。
 
+### 网关内省 URI
+
+启用 `lb://` 内省时，用实际部署的实例发现配置确认下游收到的原始路径和查询。在 Spring Cloud Commons `4.3.3` 与 `5.1.0` 的对照中，查询值内的裸 `=` 与 URI 其他位置已有的百分号转义同时出现时，LoadBalancer 重建 URI 会将已有的 `%` 再编码为 `%25`。例如将 `?x=a=b&scope=a%2Fb` 中查询值内的 `=` 写为 `%3D`，即 `?x=a%3Db&scope=a%2Fb`，两版均保留了该样本的编码。修改后复验下游实际收到的 URI 和内省结果。
+
 ### Trace Context、Jasypt 和 SDE
 
 - Trace Context 按实际开启的 Servlet、WebFlux、Gateway 和 Feign 路径验收。发送带头和缺头请求，在接收端检查透传或生成行为。入站、出站头异名时，核对入口与路由使用同一个请求 ID。Feign relay 和关闭 Trace 的行为按应用配置验收。见 [Trace Context 示例](../../../examples/fist-trace-context/README.md)。
-- Jasypt 用合成密文分别验证完整 `GMENC(...)` 和 `GMENC(${cipher.payload})`。检查 `Environment`、`@Value`、`@ConfigurationProperties` 实际读取结果，以及错误配置时的脱敏异常和替换有效配置后的恢复。依赖日志初始化或上游 Jasypt 扩展的场景按应用单独验收。见 [Jasypt 主密钥配置](jasypt-master-key.md)。
+- Jasypt 用合成密文分别验证完整 `GMENC(...)` 和 `GMENC(${cipher.payload})`。检查 `Environment`、`@Value`、`@ConfigurationProperties` 实际读取结果，以及错误配置时的脱敏异常和替换有效配置后的恢复。若 `logback-spring.xml` 引用加密属性，直接检查 appender 初始化时收到的值。合成对照中，v3 的 appender 在日志重初始化后收到明文，v4 的 appender 只启动一次且收到密文，应用上下文中的 `Environment` 随后读到明文。涉及上游扩展的路径分别验收。[Jasypt 主密钥配置](jasypt-master-key.md) · [上游 Jasypt Boot 4.2 适配 PR #439](https://github.com/ulisesbocchio/jasypt-spring-boot/pull/439)
+- 自定义 `StringEncryptor` 要替代 Kit 的默认 bean 时，使用名称 `jasyptStringEncryptor`。若仅通过 `jasypt.encryptor.bean` 指向异名 bean，两代样例的默认 bean 仍会初始化，仍需配置其主密钥。按实际 bean 名称验证启动和解密。
 - SDE 按实际使用的 Feign、RestClient、WebClient 或 HTTP Service 分组代理走真实出站，核对两端 envelope、方法策略和解包结果。需要双向跨代互通时分别执行 v3 客户端到 v4 服务、v4 客户端到 v3 服务。对默认策略、失败响应和独立分组另准备样本。见 [SDE 示例](../../../examples/fist-sde/README.md) 和 [SDE 协议](sde-protocol.md)。
