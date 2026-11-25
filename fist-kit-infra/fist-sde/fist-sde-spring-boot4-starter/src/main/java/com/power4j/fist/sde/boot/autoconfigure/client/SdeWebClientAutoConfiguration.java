@@ -7,18 +7,19 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.webclient.WebClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.reactive.function.client.support.WebClientHttpServiceGroupConfigurer;
-import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * SDE WebClient 自动配置。
  * <p>
- * 注册 ExchangeFilterFunction，并在 Spring Boot 4 不再提供 WebClientCustomizer 时提供带 SDE 过滤器的
+ * 注册 ExchangeFilterFunction 并通过 {@link WebClientCustomizer} 挂载到 Spring Boot 管理的
  * WebClient.Builder。
  */
 @AutoConfiguration(after = SdeClientAutoConfiguration.class)
-@ConditionalOnClass(name = "org.springframework.web.reactive.function.client.WebClient")
+@ConditionalOnClass(name = { "org.springframework.web.reactive.function.client.WebClient",
+		"org.springframework.boot.webclient.WebClientCustomizer" })
 @ConditionalOnBean(SecureExchangeOperations.class)
 public class SdeWebClientAutoConfiguration {
 
@@ -35,14 +36,18 @@ public class SdeWebClientAutoConfiguration {
 	}
 
 	/**
-	 * 提供已挂载 SDE 过滤器的 WebClient.Builder。
+	 * 将 SDE 过滤器挂载到 Spring Boot 管理的 WebClient.Builder。
 	 * @param filterFunction WebClient 过滤器
-	 * @return WebClient.Builder
+	 * @return WebClient 定制器
 	 */
 	@Bean
-	@ConditionalOnMissingBean(WebClient.Builder.class)
-	public WebClient.Builder secureSdeWebClientBuilder(SecureWebClientExchangeFilterFunction filterFunction) {
-		return WebClient.builder().filter(filterFunction);
+	@ConditionalOnMissingBean(name = "secureSdeWebClientCustomizer")
+	public WebClientCustomizer secureSdeWebClientCustomizer(SecureWebClientExchangeFilterFunction filterFunction) {
+		return (builder) -> builder.filters((filters) -> {
+			if (!filters.contains(filterFunction)) {
+				filters.add(filterFunction);
+			}
+		});
 	}
 
 	/**

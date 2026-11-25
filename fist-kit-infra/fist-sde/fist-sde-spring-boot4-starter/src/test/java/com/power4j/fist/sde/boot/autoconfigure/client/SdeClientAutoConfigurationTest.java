@@ -12,8 +12,11 @@ import feign.codec.Decoder;
 import feign.codec.Encoder;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.restclient.RestClientCustomizer;
+import org.springframework.boot.webclient.WebClientCustomizer;
+import org.springframework.boot.webclient.autoconfigure.WebClientAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.support.RestClientHttpServiceGroupConfigurer;
@@ -64,10 +67,20 @@ class SdeClientAutoConfigurationTest {
 
 	@Test
 	void shouldRegisterWebClientAdapterOnClasspath() {
-		this.runner.withPropertyValues("fist.sde.enabled=true", "fist.sde.client.enabled=true")
+		this.runner.withConfiguration(AutoConfigurations.of(WebClientAutoConfiguration.class))
+			.withPropertyValues("fist.sde.enabled=true", "fist.sde.client.enabled=true")
 			.run((context) -> assertThat(context).hasSingleBean(SecureWebClientExchangeFilterFunction.class)
+				.hasSingleBean(WebClientCustomizer.class)
 				.hasSingleBean(WebClient.Builder.class)
 				.hasSingleBean(WebClientHttpServiceGroupConfigurer.class));
+	}
+
+	@Test
+	void shouldKeepRestClientWhenBootWebClientModuleIsAbsent() {
+		this.runner.withClassLoader(new FilteredClassLoader("org.springframework.boot.webclient"))
+			.withPropertyValues("fist.sde.enabled=true", "fist.sde.client.enabled=true")
+			.run((context) -> assertThat(context).hasSingleBean(RestClientCustomizer.class)
+				.doesNotHaveBean(SecureWebClientExchangeFilterFunction.class));
 	}
 
 	@Configuration(proxyBeanMethods = false)

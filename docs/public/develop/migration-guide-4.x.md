@@ -217,3 +217,17 @@ Boot 4 验收使用 `org.redisson.spring.starter.RedissonAutoConfigurationV4` �
 - Jasypt 用合成密文分别验证完整 `GMENC(...)` 和 `GMENC(${cipher.payload})`。检查 `Environment`、`@Value`、`@ConfigurationProperties` 实际读取结果，以及错误配置时的脱敏异常和替换有效配置后的恢复。若 `logback-spring.xml` 引用加密属性，直接检查 appender 初始化时收到的值。合成对照中，v3 的 appender 在日志重初始化后收到明文，v4 的 appender 只启动一次且收到密文，应用上下文中的 `Environment` 随后读到明文。涉及上游扩展的路径分别验收。[Jasypt 主密钥配置](jasypt-master-key.md) · [上游 Jasypt Boot 4.2 适配 PR #439](https://github.com/ulisesbocchio/jasypt-spring-boot/pull/439)
 - 自定义 `StringEncryptor` 要替代 Kit 的默认 bean 时，使用名称 `jasyptStringEncryptor`。若仅通过 `jasypt.encryptor.bean` 指向异名 bean，两代样例的默认 bean 仍会初始化，仍需配置其主密钥。按实际 bean 名称验证启动和解密。
 - SDE 按实际使用的 Feign、RestClient、WebClient 或 HTTP Service 分组代理走真实出站，核对两端 envelope、策略和解包结果。分组代理分别调用显式注解方法和未注解方法，检查组级请求头及 SDE 默认策略。v4 的两种代理已用合成订单通过四项回环对照。需要双向跨代互通时分别执行 v3 客户端到 v4 服务、v4 客户端到 v3 服务。按应用配置另验类型级策略及失败响应。见 [SDE 示例](../../../examples/fist-sde/README.md) 和 [SDE 协议](sde-protocol.md)。
+
+#### SDE WebClient Builder 装配
+
+Boot 4 的 `WebClientCustomizer` 位于 `org.springframework.boot.webclient`，由
+`spring-boot-webclient` 提供。启用 SDE 客户端时，Kit 通过该入口为 Boot 注入的
+`WebClient.Builder` 挂载 SDE 过滤器，与 v3 的定制入口行为一致。早期 v4 适配中的
+`secureSdeWebClientBuilder` singleton fallback 已删除，以保留 Boot 的 prototype Builder、
+连接器、codec 和其他 customizer。应用使用 Boot WebClient 时，声明对应的
+`spring-boot-starter-webclient` 或包含该模块的 WebFlux starter；Kit 将此 Boot 模块声明为可选依赖。
+
+应用自行声明的 Builder bean，以及 `WebClient.builder()` 创建的 Builder，不会自动应用
+Boot customizer。需要 SDE 时显式挂载 `SecureWebClientExchangeFilterFunction`，或调用
+`secureSdeWebClientCustomizer`。Kit 的 customizer 和 HTTP Service 分组配置会检查同一过滤器实例，
+避免重复挂载；分组代理继续保留方法策略与默认策略处理。
