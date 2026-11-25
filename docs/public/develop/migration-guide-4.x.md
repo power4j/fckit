@@ -1,6 +1,6 @@
 # FIST Kit 4.x 应用迁移指南
 
-本指南随 4.x 发布说明草案评审。验证基线为 Kit `c8eaf80b` 的 `4.0.0-SNAPSHOT`、JDK 17、Spring Boot `4.2.0` 和 Spring Cloud `2026.0.0`。正式发布时以对应版本的 BOM 和发布说明为准。
+本指南随 4.x 发布说明草案评审。组件兼容性和示例的验证基线为 Kit `c8eaf80b` 的 `4.0.0-SNAPSHOT`、JDK 17、Spring Boot `4.2.0` 和 Spring Cloud `2026.0.0`。父 POM 的生命周期继承变更在下文单独说明。正式发布时以对应版本的 BOM 和发布说明为准。
 
 [FIST Kit 4.x 发布说明（草案）](release-notes-4.x-draft.md)
 
@@ -99,7 +99,9 @@ mvn -o "-Dmaven.repo.local=/path/to/prepared-maven-cache" validate org.apache.ma
 
 样例实测三项 starter 均按 `4.0.0-SNAPSHOT` 解析，直接或经另一组件引入 v3 都在 `validate` 被拒绝。使用 BOM 且省略 Enforcer 时，依赖树可以同时解析两个 groupId。后续按应用实际依赖执行打包和启动验收。
 
-继承 `fist-kit-parent` 或 `fist-kit-build` 的应用均会继承跨代 Enforcer 规则和 Java 格式检查等构建执行。仅继承 `fist-kit-parent` 时，另外导入 Kit BOM 或显式指定 Kit 依赖版本。`fist-kit-build` 的父链已提供 Kit 版本管理。选择继承前，用 `mvn help:effective-pom` 核对构建执行和原有应用 parent 的差异。
+在旧基线 `c8eaf80b` 中，继承发布的 `fist-kit-parent` 或 `fist-kit-build` 也会继承 Kit 的 Java 格式检查、POM 扁平化、源码归档和 SBOM 生成。自 `fix(build): isolate Kit v4 parent lifecycle executions` 起，这四项执行由应用自行配置，跨代 Enforcer 规则仍在 `validate` 执行。
+
+仅继承 `fist-kit-parent` 时，另外导入 Kit BOM 或显式指定 Kit 依赖版本。`fist-kit-build` 的父链已提供 Kit 版本管理。选择继承前，用 `mvn help:effective-pom` 核对构建执行和原有应用 parent 的差异。
 
 [Maven BOM 导入](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html) · [Maven Enforcer 规则](https://maven.apache.org/enforcer/enforcer-rules/bannedDependencies.html)
 
