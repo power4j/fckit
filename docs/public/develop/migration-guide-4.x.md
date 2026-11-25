@@ -1,6 +1,6 @@
 # FIST Kit 4.x 应用迁移指南
 
-本指南随 4.x 发布说明草案评审。组件兼容性和示例的验证基线为 Kit `c8eaf80b` 的 `4.0.0-SNAPSHOT`、JDK 17、Spring Boot `4.2.0` 和 Spring Cloud `2026.0.0`。父 POM 的生命周期继承变更在下文单独说明。正式发布时以对应版本的 BOM 和发布说明为准。
+本指南随 4.x 发布说明草案评审。组件兼容性和示例的历史验证基线为 Kit `c8eaf80b` 的 `4.0.0-SNAPSHOT`、JDK 17、Spring Boot `4.2.0` 和 Spring Cloud `2026.0.0`。本文补充截至 `027019c0` 的已核证迁移变更；父 POM 的生命周期继承收窄（`2e5cb220`）和 SDE WebClient 装配修复（`027019c0`）在下文单独说明，历史用例结果仍对应原验收基线。正式发布时以对应版本的 BOM 和发布说明为准。
 
 [FIST Kit 4.x 发布说明（草案）](release-notes-4.x-draft.md)
 
@@ -99,7 +99,7 @@ mvn -o "-Dmaven.repo.local=/path/to/prepared-maven-cache" validate org.apache.ma
 
 样例实测三项 starter 均按 `4.0.0-SNAPSHOT` 解析，直接或经另一组件引入 v3 都在 `validate` 被拒绝。使用 BOM 且省略 Enforcer 时，依赖树可以同时解析两个 groupId。后续按应用实际依赖执行打包和启动验收。
 
-在旧基线 `c8eaf80b` 中，继承发布的 `fist-kit-parent` 或 `fist-kit-build` 也会继承 Kit 的 Java 格式检查、POM 扁平化、源码归档和 SBOM 生成。自 `fix(build): isolate Kit v4 parent lifecycle executions` 起，这四项执行由应用自行配置，跨代 Enforcer 规则仍在 `validate` 执行。
+在旧基线 `c8eaf80b` 中，继承发布的 `fist-kit-parent` 或 `fist-kit-build` 也会继承 Kit 的 Java 格式检查、POM 扁平化、源码归档和 SBOM 生成。自 `2e5cb220`（`fix(build): isolate Kit v4 parent lifecycle executions`）起，这四项执行移入 Kit 源码构建专用父 POM，外部应用继承发布的父 POM 时不再自动执行，需按需自行配置；跨代 Enforcer 规则仍在 `validate` 执行。
 
 仅继承 `fist-kit-parent` 时，另外导入 Kit BOM 或显式指定 Kit 依赖版本。`fist-kit-build` 的父链已提供 Kit 版本管理。选择继承前，用 `mvn help:effective-pom` 核对构建执行和原有应用 parent 的差异。
 
@@ -189,6 +189,50 @@ v4 组确认旧类无法加载，MockWebServer 回环 HTTP 与 JUnit Pioneer loc
 1. 将 `DefaultAuthorizationService(JdbcOperations, RegisteredClientRepository, LobHandler)` 改为二参构造器 `DefaultAuthorizationService(JdbcOperations, RegisteredClientRepository)`，删除 row mapper 的 `setLobHandler(...)` 调用。默认实现使用 Spring JDBC 的 `SqlBinaryValue` 和 `SqlCharacterValue` 写入 LOB，通过 `ResultSet` 读取。
 2. 自定义持久化 JSON 时，同时迁移读取用的 `OAuth2AuthorizationRowMapper` 和写入用的 `OAuth2AuthorizationParametersMapper`。两者的 `setObjectMapper` 与 `getObjectMapper` 均使用 `tools.jackson.databind.ObjectMapper`。在两侧注册 Spring Security 和 Authorization Server 的 Jackson 3 模块，以及应用需要的模块和 mix-in。可通过 `setAuthorizationRowMapper` 和 `setAuthorizationParametersMapper` 装配自定义映射。需要保留驱动专用 LOB 处理时，在对应映射中实现，并用目标 JDBC 驱动及实际 BLOB 或 CLOB 列类型验收。
 3. 使用脱敏的 Boot 3 授权记录及隔离数据库，走实际 JDBC 授权服务读取历史记录并内省，核对结构化用户属性。再写入 Boot 4 新记录、关闭上下文后回读并内省。需要跨版本回退时，让旧版读取新版写出的代表性记录。历史兼容结论以应用自己的 mapper、样本和数据库为准。
+
+### OAuth2 刷新令牌定制
+
+`OAuth2ResourceOwnerBaseAuthenticationProvider` 已移除
+`setRefreshTokenGenerator(Supplier<String>)`。刷新令牌与访问令牌统一由构造器接收的
+`OAuth2TokenGenerator<? extends OAuth2Token>` 生成。
+
+1. 删除旧 setter 调用。自定义刷新令牌时，实现 `OAuth2TokenGenerator<OAuth2RefreshToken>`，
+   在 `context.getTokenType()` 为 `OAuth2TokenType.REFRESH_TOKEN` 时返回 `OAuth2RefreshToken`，
+   保留所需的签发时间和客户端刷新令牌有效期；不支持的令牌类型返回 `null`。
+2. 用 `DelegatingOAuth2TokenGenerator` 将该实现与应用现有的访问令牌生成器组合，
+   保留现有 claims 定制及所需的 JWT 生成器。无需定制刷新令牌时使用 `OAuth2RefreshTokenGenerator`。
+3. 将组合生成器作为第三个构造参数传给 Kit 的密码、短信或 SSO provider；
+   自有子类通过 `super(authenticationManager, authorizationService, tokenGenerator)` 传入。
+   例如，下列片段中的生成器和服务均为应用已有实例，`customRefreshTokenGenerator` 为上述自定义实现：
+
+```java
+OAuth2TokenGenerator<OAuth2Token> tokenGenerator = new DelegatingOAuth2TokenGenerator(
+        accessTokenGenerator, customRefreshTokenGenerator);
+OAuth2ResourceOwnerPasswordAuthenticationProvider provider =
+        new OAuth2ResourceOwnerPasswordAuthenticationProvider(
+                authenticationManager, authorizationService, tokenGenerator);
+```
+
+在应用现有的 token endpoint 配置中注册该 provider。标准授权服务器流程可将同一组合生成器
+注册为 `OAuth2TokenGenerator` bean，或通过 `OAuth2AuthorizationServerConfigurer.tokenGenerator(...)`
+指定；手工创建的 Kit provider 仍需显式传入构造参数。Kit 在客户端启用刷新授权且客户端认证方式
+不是 `NONE` 时请求生成刷新令牌，生成结果必须为 `OAuth2RefreshToken`。升级后按实际授权类型
+复验访问令牌签发、刷新令牌有效期及刷新请求。
+
+[Spring Security 令牌生成器接入](https://docs.spring.io/spring-security/reference/7.1/servlet/oauth2/authorization-server/core-model-components.html#oauth2-token-generator)
+
+### 已移除入口与兼容缺口
+
+以下记录当前源码现状，不表示已接受删除。v4 需承接 v3 全部公共能力；四应用未确认直接引用
+不足以证明兼容性闭合。这些入口无已核证的一对一替代，尚待恢复或等价迁移评估。
+
+- `com.power4j.fist.data.tenant.annotation.InTenant` 和 `InTenantAspect` 已移除，无直接同名替代。
+  检查旧注解的使用点，以及显式导入、注册旧切面的配置。当前 `TenantInvokeAspect` 处理
+  `@ApiTrait` 的平台级调用，不能据此认定与旧注解语义等价。逐处核对原租户切换、恢复及隔离要求，
+  将调用点纳入恢复或等价迁移评估，并验证对应语义；尚无已核证的通用一对一替代方案。
+- `com.power4j.fist.boot.common.error.Breaker` 已移除，无直接同名替代。检查普通导入、静态导入
+  和实际工具方法调用，将其纳入恢复或等价迁移评估，核对错误码、消息、提示与国际化行为。
+  尚无已核证的逐方法替代表，不将应用自有同名方法视为 Kit 调用。
 
 ### MyBatis 查询结果映射
 
