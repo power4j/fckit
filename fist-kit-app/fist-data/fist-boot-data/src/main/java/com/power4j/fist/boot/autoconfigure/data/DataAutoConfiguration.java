@@ -19,6 +19,7 @@ package com.power4j.fist.boot.autoconfigure.data;
 import com.power4j.fist.data.crud.validate.DefaultObjectValidator;
 import com.power4j.fist.data.crud.validate.ObjectValidator;
 import com.power4j.fist.data.crud.validate.ValidateUtil;
+import com.power4j.fist.data.tenant.InTenantAspect;
 import com.power4j.fist.data.tenant.TenantContextFilter;
 import com.power4j.fist.data.tenant.TenantInvokeAspect;
 import jakarta.validation.ValidatorFactory;
@@ -50,6 +51,11 @@ import static jakarta.servlet.DispatcherType.REQUEST;
 public class DataAutoConfiguration {
 
 	@Bean
+	public InTenantAspect inTenantAspect() {
+		return new InTenantAspect();
+	}
+
+	@Bean
 	public TenantInvokeAspect tenantInvokeAspect() {
 		return new TenantInvokeAspect();
 	}
@@ -57,7 +63,8 @@ public class DataAutoConfiguration {
 	@ConditionalOnClass({ Servlet.class })
 	@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 	@AutoConfigureAfter(name = { "org.springframework.boot.autoconfigure.security.SecurityFilterAutoConfiguration",
-			"org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration" })
+			"org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration",
+			"org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration" })
 	static class TenantServletFilterConfiguration {
 
 		private static final String FILTER_NAME = "tenantContextFilter";

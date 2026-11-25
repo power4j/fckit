@@ -16,6 +16,7 @@
 
 package com.power4j.fist.boot.autoconfigure.common;
 
+import com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration;
 import com.power4j.fist.boot.autoconfigure.mon.AppMonConfiguration;
 import com.power4j.fist.boot.common.jackson.JacksonConfig;
 import com.power4j.fist.support.spring.util.ApplicationContextHolder;
@@ -30,7 +31,7 @@ import org.springframework.context.annotation.Import;
  */
 @Slf4j
 @AutoConfiguration
-@Import({ ApplicationContextHolder.class, JacksonConfig.class, AppMonConfiguration.class })
+@Import({ ApplicationContextHolder.class, MessageConfiguration.class, JacksonConfig.class, AppMonConfiguration.class })
 public class CommonConfiguration {
 
 }

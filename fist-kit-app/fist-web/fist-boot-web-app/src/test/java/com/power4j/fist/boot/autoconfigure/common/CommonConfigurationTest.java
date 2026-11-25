@@ -10,12 +10,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CommonConfigurationTest {
 
 	@Test
-	void shouldNotImportMessageConfiguration() {
+	void shouldImportMessageConfiguration() {
 		Import imports = CommonConfiguration.class.getAnnotation(Import.class);
 
 		assertThat(imports).isNotNull();
 		assertThat(Arrays.stream(imports.value()).map(Class::getName))
-			.doesNotContain("com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration");
+			.contains("com.power4j.fist.boot.autoconfigure.i18n.MessageConfiguration");
 	}
 
 }

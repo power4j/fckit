@@ -223,16 +223,23 @@ OAuth2ResourceOwnerPasswordAuthenticationProvider provider =
 
 ### 已移除入口与兼容缺口
 
-以下记录当前源码现状，不表示已接受删除。v4 需承接 v3 全部公共能力；四应用未确认直接引用
-不足以证明兼容性闭合。这些入口无已核证的一对一替代，尚待恢复或等价迁移评估。
+本节记录 v3 公共入口在 v4 的承接情况。v4 需承接 v3 全部公共能力；此前版本曾删除下列
+`@Deprecated` 入口，现已按 v3 原样恢复并保留 `@Deprecated`。恢复的入口仅为 v3 兼容保留，
+不构成新代码的推荐用法；四应用的实际调用点仍需按自身配置复验。
 
-- `com.power4j.fist.data.tenant.annotation.InTenant` 和 `InTenantAspect` 已移除，无直接同名替代。
-  检查旧注解的使用点，以及显式导入、注册旧切面的配置。当前 `TenantInvokeAspect` 处理
-  `@ApiTrait` 的平台级调用，不能据此认定与旧注解语义等价。逐处核对原租户切换、恢复及隔离要求，
-  将调用点纳入恢复或等价迁移评估，并验证对应语义；尚无已核证的通用一对一替代方案。
-- `com.power4j.fist.boot.common.error.Breaker` 已移除，无直接同名替代。检查普通导入、静态导入
-  和实际工具方法调用，将其纳入恢复或等价迁移评估，核对错误码、消息、提示与国际化行为。
-  尚无已核证的逐方法替代表，不将应用自有同名方法视为 Kit 调用。
+- `com.power4j.fist.data.tenant.annotation.InTenant` 和 `InTenantAspect` 已恢复（保留
+  `@Deprecated`）。恢复内容包括注解、切面，以及 `DataAutoConfiguration` 中重新注册的
+  `inTenantAspect` bean。旧注解支持以 SpEL 表达式指定租户，由切面在 `TenantBroker` 的租户
+  上下文中执行目标方法。新代码推荐使用 `com.power4j.fist.data.tenant.isolation.TenantBroker`
+  直接指定租户执行；`TenantInvokeAspect` 处理 `@ApiTrait` 的平台级调用，与旧注解不是同一语义。
+  使用旧注解的应用按实际调用点复验租户切换、恢复及隔离行为。
+- `com.power4j.fist.boot.common.error.Breaker` 已恢复（保留 `@Deprecated`）。恢复内容包括
+  `Breaker`、`MessageConfiguration`，以及 `CommonConfiguration` 对 `MessageConfiguration` 的
+  `@Import`；`MessageConfiguration` 负责向 `Breaker` 注入 `LocaleResolver` 和
+  `MessageSourceAccessor`。新代码推荐使用 `com.power4j.fist.boot.common.error.CommonErrors` 和
+  `MsgBundleRejectedException` 表达错误码、消息与国际化提示。使用旧工具方法的应用按实际调用点
+  复验错误码、消息、提示与国际化行为；`Breaker` 依赖 `MessageConfiguration` 完成静态注入，
+  自定义 `MessageSource` 或 `LocaleResolver` 时核对其实际取值。
 
 ### MyBatis 查询结果映射
 

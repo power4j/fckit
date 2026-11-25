@@ -31,6 +31,8 @@
 
 ### Fixed
 
+- 恢复已删除的 `@InTenant`/`InTenantAspect` 租户注解入口和 `Breaker` 错误工具类，按 v3 原样保留 `@Deprecated`，恢复对应自动装配与国际化注入。
+- 修复 `DataAutoConfiguration` 租户过滤器排序声明中失效的 Boot 4 安全自动配置包名。
 - 修复 SDE 在 Spring Boot 4 中的 WebClient 自动配置，恢复新包 `WebClientCustomizer` 接入并移除 singleton Builder fallback，保留 Boot 的 prototype Builder、连接器、codec 和其他定制，避免重复挂载 SDE 过滤器。
 - 收窄发布父 POM 的生命周期继承。应用继续继承跨代依赖检查，自行配置格式检查、POM 扁平化、源码归档和 SBOM 生成。
 - 恢复 Servlet 静态资源缺失时的 HTTP 404 和 `A9900` 错误响应，保留请求方法和资源路径提示。
