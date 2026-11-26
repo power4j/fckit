@@ -1,10 +1,54 @@
 # Changelog
 
-本文件记录 FIST Kit v3 的用户可见变更。
+本文件记录 FIST Kit 的用户可见变更。4.x（`com.power4j.fist4`，Spring Boot 4 线）自此文件顶部开始记录；下方 3.x 段落为历史归档。
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，并遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [4.0.0-rc1] - 2026-11-27
+
+首个面向 Spring Boot 4 的公开预发布版本。完整变更清单见[发布说明](docs/public/develop/release-notes-4.x.md)与[应用迁移指南](docs/public/develop/migration-guide-4.x.md)。
+
+### Added
+
+- `com.power4j.fist4` groupId 与 30 对 BOM 组件，Jasypt、SDE、Trace Context 采用 `spring-boot4-starter` 命名。
+- 新增 `fist-jasypt-core` 和独立 Jasypt CLI，支持读取已有 `GMENC(...)` 配置密文。
+- 新增 `fist-jasypt-spring-boot4-starter`，支持文件、显式原值及旧属性来源加载主密钥。
+- 新增 `fist-trace-context-spring-boot4-starter`，支持 Servlet、WebFlux、Gateway 和 Feign 的请求追踪，并沿用 `fist.trace-context` 配置。
+- SDE RestClient/WebClient 适配 Spring HTTP Service Clients，支持通过 `@SecureExchange` 传递请求级策略上下文；两种 HTTP Service 分组代理可用。
+- 新增 `examples/fist-web-data-security/example-servlet`、`examples/fist-oauth2-server/example-authorization-server`、`examples/fist-jasypt`、`examples/fist-trace-context`、`examples/fist-sde` 组合示例。
+
+### Changed
+
+- 将 Spring Boot 和 Spring Cloud 构建矩阵升级到 `4.2.0` 和 `2026.0.0`。
+- Servlet MVC JSON 路径采用 Jackson 3；OAuth2 JDBC 授权服务读写 mapper 均采用 Jackson 3。
+- API 文档升级到 Springdoc `3.2.1`，使用 Swagger Core 3 和 Jackson 3；移除 Springfox。
+- MyBatis Plus starter 切换为 `mybatis-plus-spring-boot4-starter`。
+- OAuth2 自定义授权类型适配 Spring Authorization Server 的 `OAuth2TokenGenerator` 模型。
+- 收窄发布父 POM 的生命周期继承：应用继续继承跨代依赖检查，自行配置格式检查、POM 扁平化、源码归档和 SBOM 生成。
+
+### Fixed
+
+- 恢复已删除的 `@InTenant`/`InTenantAspect` 租户注解入口和 `Breaker` 错误工具类，按 v3 原样保留 `@Deprecated`，恢复对应自动装配与国际化注入。
+- 修复 `DataAutoConfiguration` 租户过滤器排序声明中失效的 Boot 4 安全自动配置包名。
+- 修复 SDE 在 Spring Boot 4 中的 WebClient 自动配置，恢复新包 `WebClientCustomizer` 接入并移除 singleton Builder fallback。
+- 恢复 Servlet 静态资源缺失时的 HTTP 404 和 `A9900` 错误响应。
+- 修复网关使用 `lb://` 内省地址时的请求协议转换，保留服务发现及原始 URI 路径和查询。
+- 修复网关入站与出站追踪头名称不同时可能重复生成请求 ID 的问题。
+- 恢复 Jasypt 对 `GMENC(${cipher.payload})` 的解密支持。
+- 恢复 `AbstractNodeIdxSupport.moveSubtree`，支持移动子树并维护闭包索引。
+
+### Removed
+
+- 移除 `fist-boot-apidoc` 的 Springfox 支持，API 文档扩展统一保留 SpringDoc 3 路径。
+- 移除未实际使用的 Spring Cloud Alibaba BOM 和 `fist-cloud-rpc-feign` 的 Sentinel starter 依赖。
+- 移除 Groovy、Spock、groovy-tables 和 gmavenplus 构建链路。
+- OAuth2 JDBC 授权服务移除接收 `LobHandler` 的三参构造器及 row mapper 的 `setLobHandler`；自定义授权 provider 移除 `setRefreshTokenGenerator(Supplier<String>)`。
+
+## [3.x 历史]
+
+以下段落为 v3 线（`com.power4j.fist3`）历史归档，不再更新。
+
+## [Unreleased]（v3）
 
 ### Added
 

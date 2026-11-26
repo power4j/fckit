@@ -11,7 +11,9 @@ set -euo pipefail
 
 POM="pom.xml"
 MASTER_BRANCH="master"
-DEV_BRANCH="dev"
+# 4.x 线：master 即开发线（dev 分支已废弃）。置为与 MASTER_BRANCH 相同，
+# 发布在同一分支完成"置发布版本 -> 打 tag -> 置下一开发版本"。
+DEV_BRANCH="master"
 LOCAL_MODE=false
 
 # ---- 解析参数 ----
@@ -45,22 +47,22 @@ git_push() {
   fi
 }
 
-# ---- 版本号格式校验（仅允许 X.X.X）----
+# ---- 版本号格式校验（允许 X.X.X 及预发布后缀 X.X.X-rc1 / X.X.X-milestone1 等）----
 validate_version() {
   local ver="$1"
-  if [[ ! "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "错误：版本号格式不正确，必须为 X.X.X（如 3.11.0）"
+  if [[ ! "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+(\.[A-Za-z0-9]+)*)?$ ]]; then
+    echo "错误：版本号格式不正确，必须为 X.X.X 或 X.X.X-预发布后缀（如 4.0.0、4.0.0-rc1）"
     return 1
   fi
 }
 
 # ---- 交互式输入版本号 ----
-read -r -p "请输入发布版本号（格式 X.X.X，如 3.11.0）: " RELEASE_VERSION
+read -r -p "请输入发布版本号（格式 X.X.X 或 X.X.X-rc1，如 4.0.0-rc1）: " RELEASE_VERSION
 if ! validate_version "$RELEASE_VERSION"; then
   exit 1
 fi
 
-read -r -p "请输入下一个开发版本号（格式 X.X.X，如 3.12.0）: " NEXT_BASE_VERSION
+read -r -p "请输入下一个开发版本号（格式 X.X.X，如 4.0.0）: " NEXT_BASE_VERSION
 if ! validate_version "$NEXT_BASE_VERSION"; then
   exit 1
 fi
@@ -79,6 +81,8 @@ if [[ "$CURRENT_BRANCH" != "$DEV_BRANCH" ]]; then
   echo "错误：请在 $DEV_BRANCH 分支上执行发布脚本（当前分支：$CURRENT_BRANCH）。"
   exit 1
 fi
+# 注：4.x 线 dev 分支即 master（同一线），MASTER_BRANCH 与 DEV_BRANCH 相同，
+# 发布脚本会在同一分支上完成"置发布版本 -> 打 tag -> 置下一开发版本"。
 
 if git tag | grep -qx "$TAG"; then
   echo "错误：tag $TAG 已存在。"
@@ -105,10 +109,12 @@ echo ""
 echo "[1/8] 拉取最新 $DEV_BRANCH ..."
 git_pull "$DEV_BRANCH"
 
-echo "[2/8] 切换到 $MASTER_BRANCH 并合并 $DEV_BRANCH ..."
+echo "[2/8] 拉取 $MASTER_BRANCH ..."
 git checkout "$MASTER_BRANCH"
 git_pull "$MASTER_BRANCH"
-git merge "$DEV_BRANCH" --no-ff -m "feat: release $RELEASE_VERSION"
+if [[ "$MASTER_BRANCH" != "$DEV_BRANCH" ]]; then
+  git merge "$DEV_BRANCH" --no-ff -m "feat: release $RELEASE_VERSION"
+fi
 
 echo "[3/8] 修改版本号为 $RELEASE_VERSION ..."
 ./mvnw versions:set-property -Dproperty=revision -DnewVersion="$RELEASE_VERSION" -DgenerateBackupPoms=false --no-transfer-progress -q
@@ -132,10 +138,13 @@ git commit -m "chore: bump version to $NEXT_VERSION"
 echo "[7/8] 推送 $MASTER_BRANCH ..."
 git_push "$MASTER_BRANCH"
 
-echo "[8/8] 同步回 $DEV_BRANCH ..."
-git checkout "$DEV_BRANCH"
-git merge "$MASTER_BRANCH" --no-ff -m "chore: sync $NEXT_VERSION from $MASTER_BRANCH"
-git_push "$DEV_BRANCH"
+echo "[8/8] 收尾 ..."
+if [[ "$MASTER_BRANCH" != "$DEV_BRANCH" ]]; then
+  git checkout "$DEV_BRANCH"
+  git merge "$MASTER_BRANCH" --no-ff -m "chore: sync $NEXT_VERSION from $MASTER_BRANCH"
+  git_push "$DEV_BRANCH"
+fi
+echo "  开发分支保持 $MASTER_BRANCH @ $NEXT_VERSION"
 
 echo ""
 echo "========================================"

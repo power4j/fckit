@@ -2,7 +2,7 @@
 
 本指南随 4.x 发布说明草案评审。组件兼容性和示例的历史验证基线为 Kit `c8eaf80b` 的 `4.0.0-SNAPSHOT`、JDK 17、Spring Boot `4.2.0` 和 Spring Cloud `2026.0.0`。本文补充截至 `027019c0` 的已核证迁移变更；父 POM 的生命周期继承收窄（`2e5cb220`）和 SDE WebClient 装配修复（`027019c0`）在下文单独说明，历史用例结果仍对应原验收基线。正式发布时以对应版本的 BOM 和发布说明为准。
 
-[FIST Kit 4.x 发布说明（草案）](release-notes-4.x-draft.md)
+[FIST Kit 4.x 发布说明](release-notes-4.x.md)
 
 ## 切换 Maven 坐标
 

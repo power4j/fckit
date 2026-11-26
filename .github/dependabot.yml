@@ -1,9 +1,11 @@
 # see https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuring-dependabot-version-updates
+# FIST Kit 4.x 面向 Spring Boot 4.2 / Framework 7 / Security 7 / Cloud 2026.0 独立维护。
+# ignore 规则拦截 Boot 3.x 生态（v3 线）的版本，避免 dependabot 对 4.x 线提出降级方向的建议。
 version: 2
 updates:
   - package-ecosystem: maven
     directory: "/"
-    target-branch: "dev"
+    target-branch: "master"
     schedule:
       interval: weekly
       day: monday
@@ -26,39 +28,30 @@ updates:
           - "org.mybatis:*"
           - "com.baomidou:mybatis-plus*"
     ignore:
-      # Spring Boot 4.x -> 不兼容 Boot 3.x 生态
+      # Boot 3.x 生态属于 v3 线，4.x 线不接受
       - dependency-name: "org.springframework.boot:*"
-        versions: ["[4.0,)"]
-      # Spring Framework 7.x -> 对应 Boot 4.x
+        versions: ["< 4.0"]
+      # Spring Framework 6.x 及以下属于 Boot 3.x 生态
       - dependency-name: "org.springframework:*"
-        versions: ["[7.0,)"]
-      # Spring Security 7.x -> 对应 Boot 4.x
+        versions: ["< 7.0"]
       - dependency-name: "org.springframework.security:*"
-        versions: ["[7.0,)"]
-      # Spring Cloud 2025.1.x Release Train -> 对应 Boot 4.0.x
+        versions: ["< 7.0"]
       - dependency-name: "org.springframework.cloud:*"
-        versions: ["[2025.1,)"]
-      # OAuth2 Authorization Server 2.x -> Spring Security 7.x / Boot 4.x
+        versions: ["< 2026.0"]
       - dependency-name: "org.springframework.security:spring-security-oauth2-authorization-server"
-        versions: ["[2.0,)"]
-      # Spring Boot Admin 4.x -> Boot 4.x
+        versions: ["< 2.0"]
       - dependency-name: "de.codecentric:spring-boot-admin*"
-        versions: ["[4.0,)"]
-      # springdoc-openapi 3.x -> Boot 4.x
+        versions: ["< 4.0"]
       - dependency-name: "org.springdoc:*"
-        versions: ["[3.0,)"]
-      # mybatis-spring 4.x -> Spring Framework 7.x / Boot 4.x
+        versions: ["< 3.0"]
       - dependency-name: "org.mybatis:mybatis-spring"
-        versions: ["[4.0,)"]
-      # Spring Cloud Alibaba 2024.x Release Train -> 预计对应 Boot 4.x
+        versions: ["< 4.0"]
       - dependency-name: "com.alibaba.cloud:*"
-        versions: ["[2024.0,)"]
-      # Redisson 4.x -> 不兼容 Boot 3.x 生态
+        versions: ["< 2025.1"]
       - dependency-name: "org.redisson:*"
-        versions: ["[4.0,)"]
-      # OkHttp 5.x -> 不兼容当前生态，仅接受 4.x
+        versions: ["< 4.0"]
       - dependency-name: "com.squareup.okhttp3:*"
-        versions: ["[5.0,)"]
+        versions: [">= 5.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
