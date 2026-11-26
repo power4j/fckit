@@ -6,12 +6,11 @@
 
 ## 分支策略
 
-4.x 线在 `master` 单线开发：`master` 同时是日常开发分支与发布基线，每次发布打 tag。
+本项目在 `master` 单线开发：`master` 同时是日常开发分支与发布基线，每次发布打 tag。
 
 | 分支 | 用途 |
 |---|---|
 | `master` | 开发与发布基线（单线），每次发布打 tag |
-| `snapshot` | 推送到此分支自动发布 SNAPSHOT |
 | 功能分支 | 从 `master` 拉出，完成后合并回 `master` |
 | `v3` | v3 线（`com.power4j.fist3`）历史归档，不再更新 |
 
@@ -20,8 +19,7 @@
 | 触发条件 | 执行动作 |
 |---|---|
 | push 到 `master` | 编译 + 测试（ci.yml） |
-| push 到 `snapshot` 分支 | 发布 SNAPSHOT 到 Maven Central（oss-deploy.yml） |
-| push 任意 tag | 发布正式版到 Maven Central（oss-deploy.yml） |
+| push 任意 tag | 发布到 Maven Central（oss-deploy.yml） |
 
 ---
 
@@ -68,7 +66,11 @@ git push origin vX.Y.Z
 
 ### 第二阶段：开启下一开发版本
 
-**Step 5：master 上升版本为下一 SNAPSHOT**
+**Step 5：确认 Actions 发布成功**
+
+在仓库 Actions 页确认 `Publish to the Maven Central` 运行为绿色，并在 [Maven Central](https://central.sonatype.com/search?namespace=com.power4j.fist4) 检索到新版本制品。
+
+**Step 6：master 上升版本为下一 SNAPSHOT**
 
 编辑根 `pom.xml`：
 
@@ -78,7 +80,7 @@ git push origin vX.Y.Z
 
 > GA 版本发布后通常 Z = 下一维护位，例如发布 4.0.0-rc1 后保持 4.0.0-SNAPSHOT 至 GA，GA 后升为 4.1.0-SNAPSHOT。
 
-**Step 6：提交并推送**
+**Step 7：提交并推送**
 
 ```bash
 git add pom.xml
@@ -97,6 +99,8 @@ git push origin master
                  │
            vX.Y.Z ──push──► GitHub Actions 自动发布
                  │
+        [Actions 成功，Central 可检索]
+                 │
       [修改版本 X.Z-SNAPSHOT]
                  │
            push master
@@ -106,9 +110,11 @@ git push origin master
 
 ## 注意事项
 
-- 打 tag 前必须确认 `pom.xml` 中版本号已改为正式版（不含 `-SNAPSHOT`）
+- 打 tag 前必须确认 `pom.xml` 中版本号已改为发布版（不含 `-SNAPSHOT`）
 - `examples/` 和 `benchmarks/` 模块配置了 `maven.deploy.skip=true`，不会被发布
-- 发布需要仓库中配置以下 Secrets：`MAVEN_GPG_KEY`、`MAVEN_GPG_PASSPHRASE`、`MAVEN_CENTRAL_USERNAME`、`MAVEN_CENTRAL_PASSWORD`
+- 发布依赖仓库 Actions Secrets（Settings → Secrets and variables → Actions）：
+  `MAVEN_GPG_KEY`、`MAVEN_GPG_PASSPHRASE`、`MAVEN_CENTRAL_USERNAME`、`MAVEN_CENTRAL_PASSWORD`
+- Secrets 缺失时 tag 触发的发布会失败；可在本地以同一 `ossrh-settings.xml` 配好环境变量后用 `oss-release.sh` 作为备用通道
 - 脚本自动化见项目根目录 `release.sh`，直接运行后按提示输入版本号即可：
   ```bash
   ./release.sh
