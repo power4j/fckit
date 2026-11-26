@@ -2,9 +2,13 @@
 
 [4.x 应用迁移指南](migration-guide-4.x.md) · [变更日志](../../../CHANGELOG.md)
 
-## 4.0.0-rc1
+## 4.0.0-rc2
 
-发布日期：2026-11-27。首个公开预发布版本。
+发布日期：2026-11-27。首个公开预发布版本（rc1 因发布流水线配置期间版本号被跳过，内容并入 rc2）。
+
+### 依赖升级（相对 rc1 准备基线）
+
+spring-boot-admin `4.1.5`、spring-javaformat `0.0.48`、guava `33.8.0-jre`、bouncycastle `bcprov-jdk18on 1.87`、nimbusds `11.39`、commons-collections4 `4.6.0`、cyclonedx-maven-plugin `2.9.3`、maven-compiler-plugin `3.16.0`、jacoco `0.8.16`，以及构建与文档工作流组件升级。
 
 ### 验证基线
 

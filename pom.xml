@@ -59,7 +59,7 @@
 
   <properties>
     <skipTests>false</skipTests>
-    <revision>4.0.0-rc1</revision>
+    <revision>4.0.0-rc2</revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.target>17</maven.compiler.target>

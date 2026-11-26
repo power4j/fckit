@@ -4,9 +4,17 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，并遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [4.0.0-rc1] - 2026-11-27
+## [4.0.0-rc2] - 2026-11-27
 
 首个面向 Spring Boot 4 的公开预发布版本。完整变更清单见[发布说明](docs/public/develop/release-notes-4.x.md)与[应用迁移指南](docs/public/develop/migration-guide-4.x.md)。
+
+### Changed
+
+- 依赖升级：spring-boot-admin `4.1.5`、spring-javaformat `0.0.48`、guava `33.8.0-jre`、bouncycastle `1.87`、nimbusds `11.39`、commons-collections4 `4.6.0`、cyclonedx 插件 `2.9.3`、compiler 插件 `3.16.0`、jacoco `0.8.16`，构建与文档工作流组件升级。
+
+## [4.0.0-rc1]
+
+未发布：发布流水线配置期间版本被跳过，内容并入 rc2。
 
 ### Added
 
