@@ -2,6 +2,19 @@
 
 [4.x 应用迁移指南](migration-guide-4.x.md) · [变更日志](../../../CHANGELOG.md)
 
+## 4.0.0-rc3
+
+发布日期：2026-11-27。
+
+### 依赖升级（相对 rc2）
+
+mybatis-plus `3.5.18.1`（含全表校验绕过与租户拦截器越权两个安全修复）、mybatis-spring `4.1.0`、excel-spring-boot-starter `4.0.0`。
+
+### 升级注意
+
+- `CrudRepository` 由 `com.baomidou.mybatisplus.extension.repository` 迁至 `com.baomidou.mybatisplus.spring.repository`，类 API 未变，调整 import 即可。
+- FastExcel（cn.idev.excel）已捐 Apache 更名 Fesod：`org.apache.fesod.sheet`，常用类 API 延续；`excel-spring-boot-starter` 4.0.0 的传递依赖已随之切换。
+
 ## 4.0.0-rc2
 
 发布日期：2026-11-27。首个公开预发布版本，已发布至 Maven Central（rc1 因发布流水线配置期间版本号被跳过，内容并入 rc2）。

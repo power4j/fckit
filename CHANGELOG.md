@@ -4,6 +4,17 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，并遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [4.0.0-rc3] - 2026-11-27
+
+### Changed
+
+- 依赖升级：mybatis-plus `3.5.18.1`（含全表校验绕过与租户拦截器越权两个安全修复）、mybatis-spring `4.1.0`、excel-spring-boot-starter `4.0.0`（底层 FastExcel 已捐 Apache 更名 Fesod，包名 `cn.idev.excel` → `org.apache.fesod.sheet`）。
+
+### 升级注意
+
+- 自定义了 MyBatis-Plus Repository 的应用：`CrudRepository` 从 `com.baomidou.mybatisplus.extension.repository` 迁移到 `com.baomidou.mybatisplus.spring.repository`，类 API 未变，调整 import 即可。
+- 直接使用 FastExcel（cn.idev.excel）的应用：迁移到 `org.apache.fesod.sheet`，常用类（EasyExcel、AnalysisContext、AnalysisEventListener）API 延续。
+
 ## [4.0.0-rc2] - 2026-11-27
 
 首个面向 Spring Boot 4 的公开预发布版本。完整变更清单见[发布说明](docs/public/develop/release-notes-4.x.md)与[应用迁移指南](docs/public/develop/migration-guide-4.x.md)。
