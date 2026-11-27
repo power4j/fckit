@@ -27,7 +27,7 @@ import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
-import com.baomidou.mybatisplus.extension.repository.CrudRepository;
+import com.baomidou.mybatisplus.spring.repository.CrudRepository;
 import com.power4j.fist.boot.mybaits.crud.repository.matcher.Eq;
 import com.power4j.fist.boot.mybaits.util.LambdaHelper;
 import com.power4j.fist.boot.mybaits.util.PageUtil;

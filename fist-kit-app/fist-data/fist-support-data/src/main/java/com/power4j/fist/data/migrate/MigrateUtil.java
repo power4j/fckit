@@ -16,7 +16,7 @@
 
 package com.power4j.fist.data.migrate;
 
-import cn.idev.excel.context.AnalysisContext;
+import org.apache.fesod.sheet.context.AnalysisContext;
 import com.power4j.fist.data.excel.ExcelParser;
 import lombok.experimental.UtilityClass;
 
